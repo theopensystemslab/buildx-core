@@ -11,6 +11,9 @@ devDependencies:
   "@types/node":
     specifier: ^20.11.5
     version: 20.11.21
+  "@types/three":
+    specifier: ^0.161.2
+    version: 0.161.2
   "@typescript-eslint/eslint-plugin":
     specifier: ^6.19.1
     version: 6.21.0(@typescript-eslint/parser@6.21.0)(eslint@8.57.0)(typescript@5.3.3)
@@ -20,6 +23,9 @@ devDependencies:
   "@vitest/coverage-v8":
     specifier: ^1.2.1
     version: 1.3.1(vitest@1.3.1)
+  camera-controls:
+    specifier: ^2.8.3
+    version: 2.8.3(three@0.161.0)
   copyfiles:
     specifier: ^2.4.1
     version: 2.4.1
@@ -68,6 +74,9 @@ devDependencies:
   stylelint-prettier:
     specifier: ^5.0.0
     version: 5.0.0(prettier@3.2.5)(stylelint@16.2.1)
+  three:
+    specifier: ^0.161.0
+    version: 0.161.0
   ts-node:
     specifier: ^10.9.2
     version: 10.9.2(@types/node@20.11.21)(typescript@5.3.3)
@@ -942,10 +951,36 @@ packages:
       }
     dev: true
 
+  /@types/stats.js@0.17.3:
+    resolution:
+      {
+        integrity: sha512-pXNfAD3KHOdif9EQXZ9deK82HVNaXP5ZIF5RP2QG6OQFNTaY2YIetfrE9t528vEreGQvEPRDDc8muaoYeK0SxQ==,
+      }
+    dev: true
+
+  /@types/three@0.161.2:
+    resolution:
+      {
+        integrity: sha512-DazpZ+cIfBzbW/p0zm6G8CS03HBMd748A3R1ZOXHpqaXZLv2I5zNgQUrRG//UfJ6zYFp2cUoCQaOLaz8ubH07w==,
+      }
+    dependencies:
+      "@types/stats.js": 0.17.3
+      "@types/webxr": 0.5.14
+      fflate: 0.6.10
+      meshoptimizer: 0.18.1
+    dev: true
+
   /@types/tough-cookie@4.0.5:
     resolution:
       {
         integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==,
+      }
+    dev: true
+
+  /@types/webxr@0.5.14:
+    resolution:
+      {
+        integrity: sha512-UEMMm/Xn3DtEa+gpzUrOcDj+SJS1tk5YodjwOxcqStNhCfPcwgyC5Srg2ToVKyg2Fhq16Ffpb0UWUQHqoT9AMA==,
       }
     dev: true
 
@@ -1400,6 +1435,17 @@ packages:
         integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==,
       }
     engines: { node: ">=6" }
+    dev: true
+
+  /camera-controls@2.8.3(three@0.161.0):
+    resolution:
+      {
+        integrity: sha512-zFjqUR6onLkG+z1A6vAWfzovxZxWVSvp6e5t3lfZgfgPZtX3n74aykNAUaoRbq8Y3tOxadHkDjbfGDOP9hFf2w==,
+      }
+    peerDependencies:
+      three: ">=0.126.1"
+    dependencies:
+      three: 0.161.0
     dev: true
 
   /chai@4.4.1:
@@ -2095,6 +2141,13 @@ packages:
       }
     dependencies:
       reusify: 1.0.4
+    dev: true
+
+  /fflate@0.6.10:
+    resolution:
+      {
+        integrity: sha512-IQrh3lEPM93wVCEczc9SaAOvkmcoQn/G8Bo1e8ZPlY3X3bnAxWaBdvTdvM1hP62iZp0BXWDy4vTAy4fF0+Dlpg==,
+      }
     dev: true
 
   /file-entry-cache@6.0.1:
@@ -2901,6 +2954,13 @@ packages:
         integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==,
       }
     engines: { node: ">= 8" }
+    dev: true
+
+  /meshoptimizer@0.18.1:
+    resolution:
+      {
+        integrity: sha512-ZhoIoL7TNV4s5B6+rx5mC//fw8/POGyNxS/DZyCJeiZ12ScLfVwRE/GfsxwiTkMYYD5DmK2/JXnEVXqL4rF+Sw==,
+      }
     dev: true
 
   /micromatch@4.0.5:
@@ -3961,6 +4021,13 @@ packages:
     resolution:
       {
         integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==,
+      }
+    dev: true
+
+  /three@0.161.0:
+    resolution:
+      {
+        integrity: sha512-LC28VFtjbOyEu5b93K0bNRLw1rQlMJ85lilKsYj6dgTu+7i17W+JCCEbvrpmNHF1F3NAUqDSWq50UD7w9H2xQw==,
       }
     dev: true
 
