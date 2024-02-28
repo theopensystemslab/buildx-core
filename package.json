@@ -1,13 +1,13 @@
 {
-  "name": "vite-vanilla-ts-lib-starter",
+  "name": "lib-buildx",
   "private": true,
   "version": "0.0.2",
-  "main": "./dist/vite-vanilla-ts-lib-starter.cjs",
-  "module": "./dist/vite-vanilla-ts-lib-starter.mjs",
+  "main": "./dist/lib-buildx.cjs",
+  "module": "./dist/lib-buildx.mjs",
   "exports": {
     ".": {
-      "require": "./dist/vite-vanilla-ts-lib-starter.cjs",
-      "import": "./dist/vite-vanilla-ts-lib-starter.mjs"
+      "require": "./dist/lib-buildx.cjs",
+      "import": "./dist/lib-buildx.mjs"
     },
     "./dist/": {
       "import": "./dist/",
