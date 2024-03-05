@@ -1,4 +1,37 @@
-# vite-vanilla-ts-lib-starter
+# Our Readme
+
+## Systems
+
+### `src/systems/`
+
+exports of functions like `modulesQuery` which are like this:
+
+```js
+export type QueryFn<T> = (
+  airtable: Airtable
+) => (arg: { input: { systemIds: string[] } }) => Promise<T[]>;
+```
+
+ah, this depends on buildx.config.yaml
+
+```yaml
+systems:
+  - id: speckle-skylark
+    name: WikiHouse Skylark
+    airtableId: app9duJc6vjuA9b8m
+```
+
+and then at some point
+
+```js
+airtable
+  .base(systemFromId(systemId)?.airtableId ?? "") // key line
+  .table("modules")
+  .select(moduleSelector)
+  .all();
+```
+
+# Template Readme
 
 The starter is built on top of Vite 5.x and prepared for writing libraries in TypeScript. It generates a hybrid package - both support for CommonJS and ESM modules.
 
