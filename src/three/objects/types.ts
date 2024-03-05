@@ -4,10 +4,10 @@ export const UserDataTypeEnum = z.enum([
   // "HouseTransformsGroup",
   // "HouseTransformsHandlesGroup",
   // "HouseLayoutGroup",
-  // "ColumnGroup",
+  "ColumnGroup",
   // // layout group handles go in start/end column groups
   // //   this is a special case for stretch Z handles
-  // "GridGroup",
+  "GridGroup",
   "ModuleGroup",
   "ElementMesh",
   // "StretchHandleGroup",
@@ -17,14 +17,6 @@ export const UserDataTypeEnum = z.enum([
 ]);
 
 export type UserDataTypeEnum = z.infer<typeof UserDataTypeEnum>;
-
-export type ModuleGroupUserData = {
-  type: typeof UserDataTypeEnum.Enum.ModuleGroup;
-  gridGroupIndex: number;
-  dna: string;
-  length: number;
-  z: number;
-};
 
 export type ElementMeshUserData = {
   type: typeof UserDataTypeEnum.Enum.ElementMesh;

@@ -1,14 +1,27 @@
+import { BuildElement } from "@/systemsData/elements";
 import { BuildModule } from "@/systemsData/modules";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Group, Material } from "three";
 import { Brush } from "three-bvh-csg";
-import {
-  ElementMeshUserData,
-  ModuleGroupUserData,
-  UserDataTypeEnum,
-} from "./userData";
-import { BuildElement } from "@/systemsData/elements";
+import { ElementMeshUserData, UserDataTypeEnum } from "./types";
+
+export type ModuleGroupUserData = {
+  type: typeof UserDataTypeEnum.Enum.ModuleGroup;
+  gridGroupIndex: number;
+  dna: string;
+  length: number;
+  z: number;
+};
+
+export class ModuleGroup extends Group {
+  userData: ModuleGroupUserData;
+
+  constructor(userData: ModuleGroupUserData) {
+    super();
+    this.userData = userData;
+  }
+}
 
 const createModuleGroup = async ({
   gridGroupIndex,
@@ -28,9 +41,18 @@ const createModuleGroup = async ({
   ) => Promise<Record<string, BufferGeometry>>;
   getBuildElement: (ifcTag: string) => BuildElement;
   getInitialThreeMaterial: (ifcTag: string) => Material;
-}) => {
-  const moduleGroup = new Group(); // as ModuleGroup;
+}): Promise<ModuleGroup> => {
+  const moduleGroupUserData: ModuleGroupUserData = {
+    type: UserDataTypeEnum.Enum.ModuleGroup,
+    gridGroupIndex,
+    dna,
+    length,
+    z,
+  };
 
+  const moduleGroup = new ModuleGroup(moduleGroupUserData);
+
+  moduleGroup.userData = moduleGroupUserData;
   moduleGroup.scale.set(1, 1, flip ? 1 : -1);
   moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
 
@@ -70,16 +92,6 @@ const createModuleGroup = async ({
 
   //   setVisibleAndRaycast(moduleGroup);
   // };
-
-  const moduleGroupUserData: ModuleGroupUserData = {
-    type: UserDataTypeEnum.Enum.ModuleGroup,
-    gridGroupIndex,
-    dna,
-    length,
-    z,
-  };
-
-  moduleGroup.userData = moduleGroupUserData;
 
   // if (visible) setVisibleAndRaycast(moduleGroup);
   // else setInvisibleNoRaycast(moduleGroup);

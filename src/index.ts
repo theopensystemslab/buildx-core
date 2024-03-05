@@ -3,7 +3,7 @@ import { pipe } from "fp-ts/lib/function";
 import { produce } from "immer";
 import { BufferGeometry, NormalBufferAttributes } from "three";
 import { mergeBufferGeometries } from "three-stdlib";
-import createModuleGroup from "./three/objects/moduleGroup";
+import createModuleGroup from "./three/objects/createModuleGroup";
 import "./style.css";
 import { BuildElement, elementsQuery } from "./systemsData/elements";
 import { BuildMaterial, materialsQuery } from "./systemsData/materials";
