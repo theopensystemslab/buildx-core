@@ -1,4 +1,4 @@
-import { BuildMaterial } from "@/systems/materials";
+import { BuildMaterial } from "@/systemsData/materials";
 import { DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from "three";
 
 const createThreeMaterial = (material: BuildMaterial) => {

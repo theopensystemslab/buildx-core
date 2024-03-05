@@ -1,4 +1,4 @@
-import { BuildMaterial } from "@/systems/materials";
+import { BuildMaterial } from "@/systemsData/materials";
 import { Material } from "three";
 import createThreeMaterial from "./createThreeMaterial";
 

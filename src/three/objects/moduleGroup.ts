@@ -1,4 +1,4 @@
-import { BuildModule } from "@/systems/modules";
+import { BuildModule } from "@/systemsData/modules";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Group, Material } from "three";
@@ -8,7 +8,7 @@ import {
   ModuleGroupUserData,
   UserDataTypeEnum,
 } from "./userData";
-import { BuildElement } from "@/systems/elements";
+import { BuildElement } from "@/systemsData/elements";
 
 const createModuleGroup = async ({
   gridGroupIndex,
