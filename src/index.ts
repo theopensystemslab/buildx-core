@@ -1,2 +1,2 @@
 import "./style.css";
-import "./examples/renderOBB";
+import "./examples/cameraPlay2";
