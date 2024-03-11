@@ -1,8 +1,8 @@
-import { BuildElement } from "@/systemsData/elements";
 import { BuildModule } from "@/systemsData/modules";
+import { DefaultGetters } from "@/tasks/defaultory";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { BufferGeometry, Group, Material } from "three";
+import { Group } from "three";
 import { Brush } from "three-bvh-csg";
 import { ElementMeshUserData, UserDataTypeEnum } from "./types";
 
@@ -25,22 +25,22 @@ export class ModuleGroup extends Group {
 
 const createModuleGroup = async ({
   gridGroupIndex,
-  module: { speckleBranchUrl, length, dna },
+  module: { systemId, speckleBranchUrl, length, dna },
   flip,
   z,
-  getIfcTaggedModelGeometries,
+  getIfcGeometries,
   getBuildElement,
   getInitialThreeMaterial,
-}: {
+}: DefaultGetters & {
   gridGroupIndex: number;
   module: BuildModule;
   flip: boolean;
   z: number;
-  getIfcTaggedModelGeometries: (
-    speckleBranchUrl: string
-  ) => Promise<Record<string, BufferGeometry>>;
-  getBuildElement: (ifcTag: string) => BuildElement;
-  getInitialThreeMaterial: (ifcTag: string) => Material;
+  // getIfcGeometries: (
+  //   speckleBranchUrl: string
+  // ) => Promise<Record<string, BufferGeometry>>;
+  // getBuildElement: (ifcTag: string) => BuildElement;
+  // getInitialThreeMaterial: (ifcTag: string) => Material;
 }): Promise<ModuleGroup> => {
   const moduleGroupUserData: ModuleGroupUserData = {
     type: UserDataTypeEnum.Enum.ModuleGroup,
@@ -56,14 +56,14 @@ const createModuleGroup = async ({
   moduleGroup.scale.set(1, 1, flip ? 1 : -1);
   moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
 
-  const modelGeometries = await getIfcTaggedModelGeometries(speckleBranchUrl);
+  const modelGeometries = await getIfcGeometries(speckleBranchUrl);
 
   // element meshes
   pipe(
     Object.entries(modelGeometries),
     A.map(([ifcTag, geometry]) => {
-      const element = getBuildElement(ifcTag);
-      const material = getInitialThreeMaterial(ifcTag);
+      const element = getBuildElement({ systemId, ifcTag });
+      const material = getInitialThreeMaterial({ systemId, ifcTag });
       const brush = new Brush(geometry, material);
       brush.castShadow = true;
       const elementMeshUserData: ElementMeshUserData = {
