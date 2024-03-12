@@ -1,19 +1,19 @@
 import createBasicScene from "@/three/createBasicScene";
 import GroundCircle from "@/three/objects/GroundCircle";
 import OBBMesh from "@/three/objects/OBBMesh";
+import adjustCameraToAndFrameOBB from "@/three/utils/camera";
+import { PI, floor, random } from "@/utils/math";
+import { GUI } from "dat.gui";
 import {
   AxesHelper,
   CameraHelper,
   Euler,
-  MathUtils,
   Matrix3,
   Matrix4,
-  Object3D,
   OrthographicCamera,
   Vector3,
 } from "three";
 import { OBB } from "three-stdlib";
-import { GUI } from "dat.gui";
 
 const { addObjectToScene, scene, renderer, camera } = createBasicScene();
 
@@ -46,7 +46,7 @@ orthoCamera.lookAt(center);
 console.log(scene.position);
 
 const cameraHelper = new CameraHelper(orthoCamera);
-scene.add(cameraHelper);
+// scene.add(cameraHelper);
 
 // GUI setup
 const gui = new GUI();
@@ -128,8 +128,6 @@ function animate() {
 
 animate();
 
-const { floor, random } = Math;
-
 /**
  * Generates a random integer between min (inclusive) and max (inclusive).
  * @param {number} min The minimum value.
@@ -160,7 +158,7 @@ function randomizeOBB() {
   // Rotation (unchanged, as precision for rotations is typically fine as is)
   const rotation = new Matrix3().setFromMatrix4(
     new Matrix4().makeRotationFromEuler(
-      new Euler(0, random() * Math.PI, 0) // only rotate around Y-axis
+      new Euler(0, random() * PI, 0) // only rotate around Y-axis
     )
   );
 
@@ -173,87 +171,6 @@ window.addEventListener("keydown", event => {
     const newOBB = randomizeOBB();
     obbMesh.updateOBB(newOBB); // Assuming obbMesh is your instance of OBBMesh
 
-    adjustCameraToOBBMesh(
-      obbMesh,
-      orthoCamera,
-      obbMesh.userData.obb.halfSize.z * 2,
-      45,
-      45
-    );
-
-    adjustCameraFrustum(obbMesh, orthoCamera, 3);
+    adjustCameraToAndFrameOBB(obbMesh.userData.obb, orthoCamera, 45, 45);
   }
 });
-
-function adjustCameraToOBBMesh(
-  obbMesh: Object3D,
-  camera: OrthographicCamera,
-  distance: number,
-  upwardsAngleDeg: number,
-  sideAngleDeg: number
-): void {
-  const meshPosition = obbMesh.position;
-
-  // Convert angles from degrees to radians
-  const upwardsAngleRad = MathUtils.degToRad(upwardsAngleDeg);
-  const sideAngleRad = MathUtils.degToRad(sideAngleDeg);
-
-  // Calculate the front direction of the OBBMesh
-  const frontDirection = new Vector3(0, 0, -1).applyQuaternion(
-    obbMesh.quaternion
-  );
-
-  // Calculate the side direction (perpendicular to the front and up direction)
-  const sideDirection = new Vector3()
-    .crossVectors(frontDirection, new Vector3(0, 1, 0))
-    .normalize();
-
-  // Calculate the upwards direction (perpendicular to the front and side directions)
-  const upwardsDirection = new Vector3()
-    .crossVectors(sideDirection, frontDirection)
-    .normalize();
-
-  // Apply the side and upwards rotation
-  const cameraOffset = new Vector3()
-    .addScaledVector(frontDirection, -distance)
-    .addScaledVector(sideDirection, Math.sin(sideAngleRad) * distance)
-    .addScaledVector(upwardsDirection, Math.sin(upwardsAngleRad) * distance);
-
-  // Update the camera position
-  camera.position.copy(meshPosition.clone().add(cameraOffset));
-
-  // Make the camera look at the OBBMesh center
-  camera.lookAt(meshPosition);
-}
-
-function adjustCameraFrustum(
-  obbMesh: Object3D,
-  camera: OrthographicCamera,
-  padding = 1
-) {
-  const halfSize = obbMesh.userData.obb.halfSize;
-
-  // Calculate frustum dimensions based on the OBB's halfSize
-  const aspectRatio = camera.right / camera.top;
-  camera.left = -(halfSize.x + padding); // Include padding to ensure the mesh is not clipped at the edges
-  camera.right = halfSize.x + padding;
-  camera.top = halfSize.y + padding;
-  camera.bottom = -(halfSize.y + padding);
-
-  // Adjust for aspect ratio
-  if ((halfSize.x * 2) / (halfSize.y * 2) < aspectRatio) {
-    const newWidth = (halfSize.y * 2 + padding * 2) * aspectRatio;
-    camera.left = -newWidth / 2;
-    camera.right = newWidth / 2;
-  } else {
-    const newHeight = (halfSize.x * 2 + padding * 2) / aspectRatio;
-    camera.top = newHeight / 2;
-    camera.bottom = -newHeight / 2;
-  }
-
-  // Adjust the near and far planes based on the size and position of the OBBMesh
-  camera.near = padding;
-  camera.far = halfSize.z * 2 + padding * 2; // Ensure the far plane is beyond the furthest point of the OBBMesh
-
-  camera.updateProjectionMatrix();
-}
