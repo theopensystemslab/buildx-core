@@ -5,7 +5,9 @@ import OBBMesh from "../three/objects/OBBMesh";
 
 const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
 
-const { addObjectToScene, renderer, scene, camera } = createBasicScene(canvas);
+const { addObjectToScene, renderer, scene, camera } = createBasicScene({
+  canvas,
+});
 
 const halfSize = new Vector3(1, 2, 3);
 const center = new Vector3(3, 2, 1);

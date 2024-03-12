@@ -46,6 +46,11 @@ class OBBMesh extends Mesh {
     this.position.copy(center);
     this.setRotationFromMatrix(new Matrix4().setFromMatrix3(obb.rotation));
   }
+
+  updateOBB(newOBB: OBB) {
+    this.userData.obb = newOBB;
+    this.syncWithOBB();
+  }
 }
 
 export default OBBMesh;
