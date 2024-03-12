@@ -144,15 +144,3 @@ const getDefaultGetters: T.Task<DefaultGetters> = pipe(
 );
 
 export default getDefaultGetters;
-
-// )().then(
-//   O.match(
-//     () => {
-//       console.log("none");
-//     },
-//     x => {
-//       console.log(x);
-//       addObjectToScene(x);
-//     }
-//   )
-// );

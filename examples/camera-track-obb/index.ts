@@ -1,7 +1,6 @@
-import createBasicScene from "@/three/createBasicScene";
+import { adjustCameraToAndFrameOBB, createBasicScene } from "@/index";
 import GroundCircle from "@/three/objects/GroundCircle";
 import OBBMesh from "@/three/objects/OBBMesh";
-import adjustCameraToAndFrameOBB from "@/three/utils/camera";
 import { PI, floor, random } from "@/utils/math";
 import { GUI } from "dat.gui";
 import {
@@ -42,8 +41,6 @@ const orthoCamera = new OrthographicCamera(
 );
 orthoCamera.position.set(0, 5, 10);
 orthoCamera.lookAt(center);
-
-console.log(scene.position);
 
 const cameraHelper = new CameraHelper(orthoCamera);
 // scene.add(cameraHelper);

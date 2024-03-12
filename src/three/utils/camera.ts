@@ -8,14 +8,14 @@ import {
 } from "three";
 import { OBB } from "three-stdlib";
 
-function adjustCameraToAndFrameOBB(
+export const adjustCameraToAndFrameOBB = (
   obb: OBB,
   camera: OrthographicCamera,
   upwardsAngleDeg: number,
   sideAngleDeg: number,
   scalePadding: number = 1, // Default scalePadding value
   aspectRatio: number = 1 // Default aspect ratio set to 1 for a square HUD
-): void {
+): void => {
   const halfSize = obb.halfSize;
   const distance = halfSize.length() * 2; // Distance is a function of the OBB's size
   const padding = halfSize.length() * scalePadding; // Padding scaled based on the OBB's size
@@ -74,6 +74,4 @@ function adjustCameraToAndFrameOBB(
 
   // Update the camera projection matrix
   camera.updateProjectionMatrix();
-}
-
-export default adjustCameraToAndFrameOBB;
+};
