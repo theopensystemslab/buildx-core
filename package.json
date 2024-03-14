@@ -20,6 +20,7 @@
     "camera-controls": "^2.8.3",
     "dat.gui": "^0.7.9",
     "fp-ts": "^2.16.3",
+    "fp-ts-std": "^0.18.0",
     "graphql-request": "^6.1.0",
     "immer": "^10.0.4",
     "rimraf": "^5.0.5",

@@ -1,10 +1,9 @@
 import { PositionedRow } from "@/layouts/types";
+import { DefaultGetters } from "@/tasks/defaultory";
 import { T } from "@/utils/functions";
 import { Group } from "three";
-import { GridGroup, GridGroupUserData } from "./GridGroup";
-import createModuleGroup from "./ModuleGroup";
+import { GridGroup, createGridGroup } from "./GridGroup";
 import { UserDataTypeEnum } from "./types";
-import { DefaultGetters } from "@/tasks/defaultory";
 
 export type ColumnGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnGroup;
@@ -30,8 +29,8 @@ export const createColumnGroup =
     startColumn = false,
     endColumn = false,
     ...defaultGetters
-    // houseTransformsGroup,
-  }: DefaultGetters & {
+  }: // houseTransformsGroup,
+  DefaultGetters & {
     positionedRows: PositionedRow[];
     columnIndex: number;
     startColumn?: boolean;
@@ -42,39 +41,12 @@ export const createColumnGroup =
     const gridGroups = await (async function () {
       const gridGroups: Array<GridGroup> = [];
 
-      for (const { positionedModules, y, levelIndex } of positionedRows) {
-        let length = 0;
-
-        const gridGroupUserData: GridGroupUserData = {
-          type: UserDataTypeEnum.Enum.GridGroup,
-          levelIndex,
-          length,
-          height: positionedModules[0].module.height,
-        };
-
-        const gridGroup = new GridGroup(gridGroupUserData);
-
-        for (const {
-          z,
-          module,
-          moduleIndex: gridGroupIndex,
-        } of positionedModules) {
-          const moduleGroup = await createModuleGroup({
-            module,
-            gridGroupIndex,
-            z,
-            flip: endColumn,
-            ...defaultGetters,
-          });
-
-          gridGroup.position.setY(y);
-          gridGroup.add(moduleGroup);
-
-          length += module.length;
-        }
-
-        gridGroup.userData = gridGroupUserData;
-
+      for (const positionedRow of positionedRows) {
+        const gridGroup = await createGridGroup({
+          ...defaultGetters,
+          ...positionedRow,
+          flip: endColumn,
+        });
         gridGroups.push(gridGroup);
       }
       return gridGroups;
