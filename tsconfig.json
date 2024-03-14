@@ -5,22 +5,24 @@
       "@/*": ["./src/*"],
       "@@/*": ["./*"]
     },
-    "target": "ESNext",
+    "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
-    "moduleResolution": "Node",
-    "strict": true,
-    "sourceMap": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "esModuleInterop": true,
+    "isolatedModules": true,
     "noEmit": true,
+
+    /* Linting */
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client", "node"]
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "examples"],
   "exclude": ["node_modules"]
