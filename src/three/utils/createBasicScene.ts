@@ -5,6 +5,7 @@ import {
   Clock,
   Matrix4,
   Object3D,
+  OrthographicCamera,
   PerspectiveCamera,
   Quaternion,
   Raycaster,
@@ -34,21 +35,35 @@ CameraControls.install({ THREE: subsetOfTHREE });
 
 interface BasicSceneComponents {
   scene: Scene;
-  camera: PerspectiveCamera;
+  camera: PerspectiveCamera | OrthographicCamera;
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   addObjectToScene: (object: Object3D) => void;
+  render: () => void;
 }
 
-function createBasicScene(canvas: HTMLCanvasElement): BasicSceneComponents {
+const defaultParams = {
+  canvas: document.querySelector("#canvas") as HTMLCanvasElement,
+  camera: (() => {
+    const camera = new PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(10, 10, 10);
+    return camera;
+  })(),
+};
+
+function createBasicScene({
+  canvas = defaultParams.canvas,
+  camera = defaultParams.camera,
+}: {
+  canvas?: HTMLCanvasElement;
+  camera?: PerspectiveCamera | OrthographicCamera;
+} = defaultParams): BasicSceneComponents {
   const scene = new Scene();
-  const camera = new PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.z = 5;
 
   const renderer = new WebGLRenderer({ canvas });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -78,7 +93,21 @@ function createBasicScene(canvas: HTMLCanvasElement): BasicSceneComponents {
 
   // Handle window resize
   window.addEventListener("resize", (): void => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    if (camera instanceof PerspectiveCamera) {
+      camera.aspect = window.innerWidth / window.innerHeight;
+    } else if (camera instanceof OrthographicCamera) {
+      // Calculate new dimensions based on the aspect ratio
+      const aspect = window.innerWidth / window.innerHeight;
+      const frustumHeight = camera.top - camera.bottom;
+      const frustumWidth = frustumHeight * aspect;
+
+      // Adjust the camera properties
+      camera.left = frustumWidth / -2;
+      camera.right = frustumWidth / 2;
+      camera.top = frustumHeight / 2;
+      camera.bottom = frustumHeight / -2;
+    }
+
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     render(); // Ensure scene is re-rendered after resize
@@ -90,7 +119,7 @@ function createBasicScene(canvas: HTMLCanvasElement): BasicSceneComponents {
     render(); // Explicitly render scene after adding object
   };
 
-  return { scene, camera, renderer, cameraControls, addObjectToScene };
+  return { scene, camera, renderer, cameraControls, addObjectToScene, render };
 }
 
 export default createBasicScene;
