@@ -54,6 +54,30 @@ export const createRow = (modules: BuildModule[]): Row => {
   };
 };
 
+export const dnasToModules =
+  ({
+    systemId,
+    buildModules,
+  }: {
+    systemId: string;
+    buildModules: BuildModule[];
+  }) =>
+  (dnas: string[]) => {
+    const result = pipe(
+      dnas,
+      A.filterMap((dna) =>
+        pipe(
+          buildModules,
+          A.findFirst((x) => x.systemId === systemId && dna === x.dna)
+        )
+      )
+    );
+
+    if (result.length !== dnas.length) throw new Error("length mismatch");
+
+    return result;
+  };
+
 export const modulesToRows = (modules: BuildModule[]): BuildModule[][] => {
   const jumpIndices = pipe(
     modules,

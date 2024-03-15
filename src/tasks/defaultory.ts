@@ -6,26 +6,61 @@ import { BufferGeometry, Material } from "three";
 import { getThreeMaterial } from "../three/materials/getThreeMaterial";
 import { elementsTask, houseTypesTask, materialsTask } from "./airtables";
 import modelsTask from "./models";
-import { retryTask } from "@/utils/async";
+import { BuildMaterial } from "@/systemsData/materials";
 
 export type DefaultGetters = {
   getIfcGeometries: (
     speckleBranchUrl: string
-  ) => Promise<Record<string, BufferGeometry>>;
-  getBuildElement: (x: { systemId: string; ifcTag: string }) => BuildElement;
+  ) => T.Task<Record<string, BufferGeometry>>;
+  getBuildElement: (x: {
+    systemId: string;
+    ifcTag: string;
+  }) => T.Task<BuildElement>;
   getInitialThreeMaterial: (x: {
     systemId: string;
     ifcTag: string;
-  }) => Material;
+  }) => T.Task<Material>;
 };
 
 // Use sequenceT to run the tasks concurrently
 const allTasks = sequenceT(T.ApplicativePar)(
   elementsTask,
   materialsTask,
-  retryTask(modelsTask),
+  modelsTask,
   houseTypesTask
 );
+
+export const getBuildElement = (allElements: BuildElement[]) => {
+  return ({ systemId, ifcTag }: { systemId: string; ifcTag: string }) => {
+    const element = allElements.find(
+      (x) => x.systemId === systemId && x.ifcTag === ifcTag
+    );
+
+    if (typeof element === "undefined") throw new Error("no element");
+
+    return T.of(element);
+  };
+};
+
+export const getInitialThreeMaterial =
+  (allElements: BuildElement[], allMaterials: BuildMaterial[]) =>
+  ({ systemId, ifcTag }: { systemId: string; ifcTag: string }) => {
+    return pipe(
+      getBuildElement(allElements)({ systemId, ifcTag }),
+      T.map((buildElement) => {
+        const defaultMaterialSpec = buildElement.defaultMaterial;
+        const buildMaterial = allMaterials.find(
+          (m) =>
+            m.systemId === systemId && m.specification === defaultMaterialSpec
+        );
+
+        if (typeof buildMaterial === "undefined")
+          throw new Error("no material");
+
+        return getThreeMaterial(buildMaterial);
+      })
+    );
+  };
 
 const defaultoryTask = pipe(
   allTasks,
@@ -43,7 +78,7 @@ const defaultoryTask = pipe(
 
       if (typeof element === "undefined") throw new Error("no element");
 
-      return element;
+      return T.of(element);
     };
 
     const getIfcGeometries = (speckleBranchUrl: string) =>
@@ -64,16 +99,21 @@ const defaultoryTask = pipe(
       systemId: string;
       ifcTag: string;
     }) => {
-      const buildElement = getBuildElement({ systemId, ifcTag });
-      const defaultMaterialSpec = buildElement.defaultMaterial;
-      const buildMaterial = materials.find(
-        (m) =>
-          m.systemId === systemId && m.specification === defaultMaterialSpec
+      return pipe(
+        getBuildElement({ systemId, ifcTag }),
+        T.map((buildElement) => {
+          const defaultMaterialSpec = buildElement.defaultMaterial;
+          const buildMaterial = materials.find(
+            (m) =>
+              m.systemId === systemId && m.specification === defaultMaterialSpec
+          );
+
+          if (typeof buildMaterial === "undefined")
+            throw new Error("no material");
+
+          return getThreeMaterial(buildMaterial);
+        })
       );
-
-      if (typeof buildMaterial === "undefined") throw new Error("no material");
-
-      return getThreeMaterial(buildMaterial);
     };
 
     return {

@@ -5,7 +5,8 @@ import { createGridGroup } from "@/three/objects/GridGroup";
 import { isModuleGroup } from "@/three/objects/ModuleGroup";
 import { A, O, T, TO, pipeLog } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
-import { Raycaster, Vector2 } from "three";
+import { MeshBasicMaterial, Raycaster, SphereGeometry, Vector2 } from "three";
+import { Brush, Evaluator } from "three-bvh-csg";
 
 const { addObjectToScene, scene, camera, outlinePass, renderer, render } =
   createBasicScene();
@@ -41,6 +42,7 @@ function checkIntersection() {
         const object = intersect.object;
         if (object.parent && isModuleGroup(object.parent)) {
           outlinePass.selectedObjects = object.parent.children;
+          console.log(outlinePass.selectedObjects);
         }
       }
     )
@@ -82,7 +84,7 @@ pipe(
             TO.fromOption,
             TO.chain(
               flow(createRow, (row) =>
-                TO.fromTask(() =>
+                pipe(
                   createGridGroup({
                     ...row,
                     flip: false,
@@ -91,9 +93,25 @@ pipe(
                     getInitialThreeMaterial,
                     levelIndex: 0,
                     y: 0,
-                  }).then((gridGroup) => {
+                  }),
+                  TO.fromTask,
+                  TO.map((gridGroup) => {
                     console.log({ gridGroup });
                     addObjectToScene(gridGroup);
+
+                    const evaluator = new Evaluator();
+
+                    const clippingBrush = new Brush(
+                      new SphereGeometry(),
+                      new MeshBasicMaterial({ color: "white" })
+                    );
+
+                    window.addEventListener("keydown", (event) => {
+                      // Spacebar or Enter key
+                      if (event.key === " " || event.key === "Enter") {
+                        evaluator.evaluateHierarchy(gridGroup, clippingBrush);
+                      }
+                    });
                   })
                 )
               )

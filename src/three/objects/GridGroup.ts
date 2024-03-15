@@ -1,7 +1,9 @@
 import { PositionedRow } from "@/layouts/types";
 import { DefaultGetters } from "@/tasks/defaultory";
-import { Group } from "three";
-import createModuleGroup, { ModuleGroup } from "./ModuleGroup";
+import { A, T } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
+import { Operation } from "three-bvh-csg";
+import createModuleGroup from "./ModuleGroup";
 import { UserDataTypeEnum } from "./types";
 
 export type GridGroupUserData = {
@@ -11,7 +13,7 @@ export type GridGroupUserData = {
   height: number;
 };
 
-export class GridGroup extends Group {
+export class GridGroup extends Operation {
   userData: GridGroupUserData;
 
   constructor(userData: GridGroupUserData) {
@@ -20,7 +22,7 @@ export class GridGroup extends Group {
   }
 }
 
-export const createGridGroup = async ({
+export const createGridGroup = ({
   positionedModules,
   levelIndex,
   y,
@@ -29,34 +31,27 @@ export const createGridGroup = async ({
 }: DefaultGetters &
   PositionedRow & {
     flip: boolean;
-  }) => {
-  let length = 0;
-
-  const moduleGroups: ModuleGroup[] = [];
-
-  for (const { z, module, moduleIndex: gridGroupIndex } of positionedModules) {
-    const moduleGroup = await createModuleGroup({
-      module,
-      gridGroupIndex,
-      z,
-      flip,
-      ...defaultGetters,
-    });
-
-    moduleGroups.push(moduleGroup);
-
-    length += module.length;
-  }
-
-  const gridGroup = new GridGroup({
-    type: UserDataTypeEnum.Enum.GridGroup,
-    levelIndex,
-    length,
-    height: positionedModules[0].module.height,
-  });
-
-  gridGroup.add(...moduleGroups);
-  gridGroup.position.setY(y);
-
-  return gridGroup;
-};
+  }): T.Task<GridGroup> =>
+  pipe(
+    positionedModules,
+    A.traverse(T.ApplicativeSeq)(({ module, moduleIndex: gridGroupIndex, z }) =>
+      createModuleGroup({
+        module,
+        gridGroupIndex,
+        z,
+        flip,
+        ...defaultGetters,
+      })
+    ),
+    T.map((moduleGroups) => {
+      const gridGroup = new GridGroup({
+        type: UserDataTypeEnum.Enum.GridGroup,
+        levelIndex,
+        length: moduleGroups.reduce((acc, v) => acc + v.userData.length, 0),
+        height: positionedModules[0].module.height,
+      });
+      gridGroup.add(...moduleGroups);
+      gridGroup.position.setY(y);
+      return gridGroup;
+    })
+  );

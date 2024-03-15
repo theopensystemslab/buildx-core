@@ -1,10 +1,11 @@
 import { BuildModule } from "@/systemsData/modules";
 import { DefaultGetters } from "@/tasks/defaultory";
-import { A } from "@/utils/functions";
+import { A, T } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Object3D } from "three";
-import { Brush } from "three-bvh-csg";
+import { Object3D } from "three";
+import { Operation, OperationGroup } from "three-bvh-csg";
 import { ElementMeshUserData, UserDataTypeEnum } from "./types";
+import { sequenceT } from "fp-ts/lib/Apply";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
@@ -17,7 +18,7 @@ export type ModuleGroupUserData = {
   z: number;
 };
 
-export class ModuleGroup extends Group {
+export class ModuleGroup extends OperationGroup {
   userData: ModuleGroupUserData;
 
   constructor(userData: ModuleGroupUserData) {
@@ -26,7 +27,7 @@ export class ModuleGroup extends Group {
   }
 }
 
-const createModuleGroup = async ({
+const createModuleGroup = ({
   gridGroupIndex,
   module: { systemId, speckleBranchUrl, length, dna },
   flip,
@@ -39,12 +40,7 @@ const createModuleGroup = async ({
   module: BuildModule;
   flip: boolean;
   z: number;
-  // getIfcGeometries: (
-  //   speckleBranchUrl: string
-  // ) => Promise<Record<string, BufferGeometry>>;
-  // getBuildElement: (ifcTag: string) => BuildElement;
-  // getInitialThreeMaterial: (ifcTag: string) => Material;
-}): Promise<ModuleGroup> => {
+}): T.Task<ModuleGroup> => {
   const moduleGroupUserData: ModuleGroupUserData = {
     type: UserDataTypeEnum.Enum.ModuleGroup,
     gridGroupIndex,
@@ -59,47 +55,42 @@ const createModuleGroup = async ({
   moduleGroup.scale.set(1, 1, flip ? 1 : -1);
   moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
 
-  const modelGeometries = await getIfcGeometries(speckleBranchUrl);
-
-  // element meshes
-  pipe(
-    Object.entries(modelGeometries),
-    A.map(([ifcTag, geometry]) => {
-      const element = getBuildElement({ systemId, ifcTag });
-      const material = getInitialThreeMaterial({ systemId, ifcTag });
-      const brush = new Brush(geometry, material);
-      brush.castShadow = true;
-      const elementMeshUserData: ElementMeshUserData = {
-        type: UserDataTypeEnum.Enum.ElementMesh,
-        ifcTag,
-        category: element.category,
-      };
-      brush.userData = elementMeshUserData;
-      moduleGroup.add(brush);
-    })
+  const operationsTask = pipe(
+    getIfcGeometries(speckleBranchUrl),
+    T.chain((modelGeometries) =>
+      // element meshes
+      pipe(
+        Object.entries(modelGeometries),
+        A.traverse(T.ApplicativeSeq)(([ifcTag, geometry]) => {
+          return pipe(
+            sequenceT(T.ApplicativePar)(
+              getBuildElement({ systemId, ifcTag }),
+              getInitialThreeMaterial({ systemId, ifcTag })
+            ),
+            T.map(([element, material]) => {
+              const operation = new Operation(geometry, material);
+              operation.castShadow = true;
+              const elementMeshUserData: ElementMeshUserData = {
+                type: UserDataTypeEnum.Enum.ElementMesh,
+                ifcTag,
+                category: element.category,
+              };
+              operation.userData = elementMeshUserData;
+              return operation;
+            })
+          );
+        })
+      )
+    )
   );
 
-  // const setThisModuleGroupVisible = () => {
-  //   pipe(
-  //     moduleGroup.parent!.children,
-  //     A.filter(
-  //       (x): x is ModuleGroup =>
-  //         isModuleGroup(x) &&
-  //         x.userData.gridGroupIndex === moduleGroup.userData.gridGroupIndex &&
-  //         x.visible
-  //     ),
-  //     A.map(moduleGroup => {
-  //       setInvisibleNoRaycast(moduleGroup);
-  //     })
-  //   );
-
-  //   setVisibleAndRaycast(moduleGroup);
-  // };
-
-  // if (visible) setVisibleAndRaycast(moduleGroup);
-  // else setInvisibleNoRaycast(moduleGroup);
-
-  return moduleGroup;
+  return pipe(
+    operationsTask,
+    T.map((operations) => {
+      moduleGroup.add(...operations);
+      return moduleGroup;
+    })
+  );
 };
 
 export default createModuleGroup;

@@ -46,7 +46,7 @@ export const createColumnGroup =
           ...defaultGetters,
           ...positionedRow,
           flip: endColumn,
-        });
+        })();
         gridGroups.push(gridGroup);
       }
       return gridGroups;
