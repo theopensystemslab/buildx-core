@@ -2,9 +2,12 @@ import { BuildModule } from "@/systemsData/modules";
 import { DefaultGetters } from "@/tasks/defaultory";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group } from "three";
+import { Group, Object3D } from "three";
 import { Brush } from "three-bvh-csg";
 import { ElementMeshUserData, UserDataTypeEnum } from "./types";
+
+export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
+  node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
 
 export type ModuleGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ModuleGroup;

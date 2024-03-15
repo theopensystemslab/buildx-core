@@ -6,6 +6,7 @@ import { BufferGeometry, Material } from "three";
 import { getThreeMaterial } from "../three/materials/getThreeMaterial";
 import { elementsTask, houseTypesTask, materialsTask } from "./airtables";
 import modelsTask from "./models";
+import { retryTask } from "@/utils/async";
 
 export type DefaultGetters = {
   getIfcGeometries: (
@@ -22,7 +23,7 @@ export type DefaultGetters = {
 const allTasks = sequenceT(T.ApplicativePar)(
   elementsTask,
   materialsTask,
-  modelsTask,
+  retryTask(modelsTask),
   houseTypesTask
 );
 

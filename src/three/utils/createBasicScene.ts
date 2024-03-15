@@ -17,6 +17,7 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 
 const subsetOfTHREE = {
   Vector2,
@@ -40,6 +41,7 @@ interface BasicSceneComponents {
   cameraControls: CameraControls;
   addObjectToScene: (object: Object3D) => void;
   render: () => void;
+  outlinePass: OutlinePass;
 }
 
 const defaultParams = {
@@ -68,6 +70,17 @@ function createBasicScene({
   const renderer = new WebGLRenderer({ canvas });
   renderer.setSize(window.innerWidth, window.innerHeight);
 
+  const composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
+
+  const outlinePass = new OutlinePass(
+    new Vector2(window.innerWidth, window.innerHeight),
+    scene,
+    camera
+  );
+  composer.addPass(outlinePass);
+
   const light = new AmbientLight(0xffffff); // Add ambient light
   scene.add(light);
 
@@ -75,7 +88,8 @@ function createBasicScene({
   const clock = new Clock();
 
   const render = (): void => {
-    renderer.render(scene, camera);
+    composer.render();
+    // renderer.render(scene, camera);
   };
 
   // Efficient rendering on camera or scene update
@@ -109,7 +123,12 @@ function createBasicScene({
     }
 
     camera.updateProjectionMatrix();
+
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    renderPass.setSize(window.innerWidth, window.innerHeight);
+    outlinePass.setSize(window.innerWidth, window.innerHeight);
+
     render(); // Ensure scene is re-rendered after resize
   });
 
@@ -119,7 +138,15 @@ function createBasicScene({
     render(); // Explicitly render scene after adding object
   };
 
-  return { scene, camera, renderer, cameraControls, addObjectToScene, render };
+  return {
+    scene,
+    camera,
+    renderer,
+    cameraControls,
+    addObjectToScene,
+    render,
+    outlinePass,
+  };
 }
 
 export default createBasicScene;
