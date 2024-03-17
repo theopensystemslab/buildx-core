@@ -36,7 +36,7 @@ export const createGridGroup = ({
     positionedModules,
     A.traverse(T.ApplicativeSeq)(({ module, moduleIndex: gridGroupIndex, z }) =>
       createModuleGroup({
-        module,
+        buildModule: module,
         gridGroupIndex,
         z,
         flip,

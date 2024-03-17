@@ -42,7 +42,6 @@ function checkIntersection() {
         const object = intersect.object;
         if (object.parent && isModuleGroup(object.parent)) {
           outlinePass.selectedObjects = object.parent.children;
-          console.log(outlinePass.selectedObjects);
         }
       }
     )
@@ -96,7 +95,6 @@ pipe(
                   }),
                   TO.fromTask,
                   TO.map((gridGroup) => {
-                    console.log({ gridGroup });
                     addObjectToScene(gridGroup);
 
                     const evaluator = new Evaluator();

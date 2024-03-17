@@ -1,20 +1,20 @@
 import { BuildModule } from "@/systemsData/modules";
 import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
+import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import { Object3D } from "three";
-import { Operation, OperationGroup } from "three-bvh-csg";
+import { Operation, OperationGroup, SUBTRACTION } from "three-bvh-csg";
 import { ElementMeshUserData, UserDataTypeEnum } from "./types";
-import { sequenceT } from "fp-ts/lib/Apply";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
 
-export type ModuleGroupUserData = {
+export type ModuleGroupUserData = BuildModule & {
   type: typeof UserDataTypeEnum.Enum.ModuleGroup;
   gridGroupIndex: number;
-  dna: string;
-  length: number;
+  // dna: string;
+  // length: number;
   z: number;
 };
 
@@ -29,7 +29,7 @@ export class ModuleGroup extends OperationGroup {
 
 const createModuleGroup = ({
   gridGroupIndex,
-  module: { systemId, speckleBranchUrl, length, dna },
+  buildModule,
   flip,
   z,
   getIfcGeometries,
@@ -37,17 +37,20 @@ const createModuleGroup = ({
   getInitialThreeMaterial,
 }: DefaultGetters & {
   gridGroupIndex: number;
-  module: BuildModule;
+  buildModule: BuildModule;
   flip: boolean;
   z: number;
 }): T.Task<ModuleGroup> => {
   const moduleGroupUserData: ModuleGroupUserData = {
+    ...buildModule,
     type: UserDataTypeEnum.Enum.ModuleGroup,
     gridGroupIndex,
-    dna,
-    length,
+    // dna,
+    // length,
     z,
   };
+
+  const { systemId, speckleBranchUrl, length } = buildModule;
 
   const moduleGroup = new ModuleGroup(moduleGroupUserData);
 
@@ -68,15 +71,17 @@ const createModuleGroup = ({
               getInitialThreeMaterial({ systemId, ifcTag })
             ),
             T.map(([element, material]) => {
-              const operation = new Operation(geometry, material);
-              operation.castShadow = true;
+              const elementOp = new Operation(geometry, material);
+              elementOp.castShadow = true;
+              // @ts-ignore
+              elementOp.operation = SUBTRACTION;
               const elementMeshUserData: ElementMeshUserData = {
                 type: UserDataTypeEnum.Enum.ElementMesh,
                 ifcTag,
                 category: element.category,
               };
-              operation.userData = elementMeshUserData;
-              return operation;
+              elementOp.userData = elementMeshUserData;
+              return elementOp;
             })
           );
         })
