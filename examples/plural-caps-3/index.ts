@@ -35,6 +35,8 @@ pipe(
       new MeshBasicMaterial({ color: "white" })
     );
     clippingBrush.position.setY(CLIPPING_BRUSH_HEIGHT / 2 + 1.3);
+    clippingBrush.visible = false;
+    clippingBrush.updateMatrixWorld();
 
     addObjectToScene(clippingBrush);
 

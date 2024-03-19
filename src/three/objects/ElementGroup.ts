@@ -35,11 +35,13 @@ type ElementBrushUserData = {
 };
 
 export class ElementBrush extends Brush {
-  declare userData: ElementBrushUserData;
+  userData: ElementBrushUserData;
 
   constructor(...args: ConstructorParameters<typeof Brush>) {
     super(...args);
-    this.userData.type = UserDataTypeEnum.Enum.ElementBrush;
+    this.userData = {
+      type: UserDataTypeEnum.Enum.ElementBrush,
+    };
   }
 }
 
@@ -51,11 +53,13 @@ type ClippedBrushUserData = {
 };
 
 export class ClippedBrush extends Brush {
-  declare userData: ClippedBrushUserData;
+  userData: ClippedBrushUserData;
 
   constructor(...args: ConstructorParameters<typeof Brush>) {
     super(...args);
-    this.userData.type = UserDataTypeEnum.Enum.ClippedBrush;
+    this.userData = {
+      type: UserDataTypeEnum.Enum.ClippedBrush,
+    };
   }
 }
 
