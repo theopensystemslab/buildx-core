@@ -3,9 +3,15 @@ import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Object3D } from "three";
-import { Operation, OperationGroup, SUBTRACTION } from "three-bvh-csg";
-import { ElementMeshUserData, UserDataTypeEnum } from "./types";
+import { BoxGeometry, Group, MeshBasicMaterial, Object3D } from "three";
+import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
+import createElementGroup, {
+  isClippedBrush,
+  isElementBrush,
+} from "./ElementGroup";
+import { UserDataTypeEnum } from "./types";
+
+const clippingMaterial = new MeshBasicMaterial({ color: "white" });
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
@@ -13,17 +19,68 @@ export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
 export type ModuleGroupUserData = BuildModule & {
   type: typeof UserDataTypeEnum.Enum.ModuleGroup;
   gridGroupIndex: number;
-  // dna: string;
-  // length: number;
   z: number;
 };
 
-export class ModuleGroup extends OperationGroup {
+export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
+  declare clippingBrush: Brush;
+  evaluator: Evaluator;
 
   constructor(userData: ModuleGroupUserData) {
     super();
     this.userData = userData;
+    this.evaluator = new Evaluator();
+  }
+
+  createLevelCutBrushes(cutHeight: number) {
+    const { width, length } = this.userData;
+
+    this.clippingBrush = new Brush(
+      new BoxGeometry(width, cutHeight, length),
+      clippingMaterial
+    );
+
+    this.destroyClippedBrushes();
+
+    this.traverse((node) => {
+      if (isElementBrush(node)) {
+        const clippedBrush = this.evaluator.evaluate(
+          node,
+          this.clippingBrush,
+          SUBTRACTION
+        );
+        clippedBrush.visible = false;
+        node.parent?.add(clippedBrush);
+      }
+    });
+  }
+
+  showClippedBrushes() {
+    this.traverse((node) => {
+      if (isElementBrush(node)) {
+        node.visible = false;
+      } else if (isClippedBrush(node)) {
+        node.visible = true;
+      }
+    });
+  }
+
+  destroyClippedBrushes() {
+    this.traverse((node) => {
+      if (!isClippedBrush(node)) return;
+      node.removeFromParent();
+    });
+  }
+
+  showElementBrushes() {
+    this.traverse((node) => {
+      if (isElementBrush(node)) {
+        node.visible = true;
+      } else if (isClippedBrush(node)) {
+        node.visible = false;
+      }
+    });
   }
 }
 
@@ -45,8 +102,6 @@ const createModuleGroup = ({
     ...buildModule,
     type: UserDataTypeEnum.Enum.ModuleGroup,
     gridGroupIndex,
-    // dna,
-    // length,
     z,
   };
 
@@ -58,41 +113,36 @@ const createModuleGroup = ({
   moduleGroup.scale.set(1, 1, flip ? 1 : -1);
   moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
 
-  const operationsTask = pipe(
+  const elementGroupTask = pipe(
     getIfcGeometries(speckleBranchUrl),
     T.chain((modelGeometries) =>
-      // element meshes
       pipe(
         Object.entries(modelGeometries),
-        A.traverse(T.ApplicativeSeq)(([ifcTag, geometry]) => {
-          return pipe(
+        A.traverse(T.ApplicativeSeq)(([ifcTag, geometry]) =>
+          pipe(
             sequenceT(T.ApplicativePar)(
               getBuildElement({ systemId, ifcTag }),
               getInitialThreeMaterial({ systemId, ifcTag })
             ),
-            T.map(([element, material]) => {
-              const elementOp = new Operation(geometry, material);
-              elementOp.castShadow = true;
-              // @ts-ignore
-              elementOp.operation = SUBTRACTION;
-              const elementMeshUserData: ElementMeshUserData = {
-                type: UserDataTypeEnum.Enum.ElementMesh,
+            T.map(([element, material]) =>
+              createElementGroup({
+                systemId,
                 ifcTag,
-                category: element.category,
-              };
-              elementOp.userData = elementMeshUserData;
-              return elementOp;
-            })
-          );
-        })
+                geometry,
+                material,
+                element,
+              })
+            )
+          )
+        )
       )
     )
   );
 
   return pipe(
-    operationsTask,
-    T.map((operations) => {
-      moduleGroup.add(...operations);
+    elementGroupTask,
+    T.map((elementGroups) => {
+      moduleGroup.add(...elementGroups);
       return moduleGroup;
     })
   );

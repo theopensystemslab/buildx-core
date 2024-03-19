@@ -1,4 +1,6 @@
+import { A, O } from "@/utils/functions";
 import CameraControls from "camera-controls";
+import { pipe } from "fp-ts/lib/function";
 import {
   AmbientLight,
   Box3,
@@ -61,9 +63,11 @@ const defaultParams = {
 function createBasicScene({
   canvas = defaultParams.canvas,
   camera = defaultParams.camera,
+  outliner,
 }: {
   canvas?: HTMLCanvasElement;
   camera?: PerspectiveCamera | OrthographicCamera;
+  outliner?: (object: Object3D) => Object3D[];
 } = defaultParams): BasicSceneComponents {
   const scene = new Scene();
 
@@ -137,6 +141,47 @@ function createBasicScene({
     scene.add(object);
     render(); // Explicitly render scene after adding object
   };
+
+  if (outliner) {
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+
+    const raycaster = new Raycaster();
+
+    const mouse = new Vector2();
+
+    function onPointerMove(event: any) {
+      if (event.isPrimary === false) return;
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      checkIntersection();
+    }
+
+    function checkIntersection() {
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObject(scene, true);
+
+      pipe(
+        intersects,
+        A.head,
+        O.match(
+          () => {
+            outlinePass.selectedObjects = [];
+          },
+          (intersect) => {
+            const object = intersect.object;
+            if (outliner) {
+              outlinePass.selectedObjects = outliner(object);
+            }
+          }
+        )
+      );
+
+      render();
+    }
+  }
 
   return {
     scene,

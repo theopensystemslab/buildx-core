@@ -9,7 +9,10 @@ export const UserDataTypeEnum = z.enum([
   // //   this is a special case for stretch Z handles
   "GridGroup",
   "ModuleGroup",
-  "ElementMesh",
+  "ElementGroup",
+  "ElementBrush",
+  "ClippedBrush",
+  // "ElementMesh",
   // "StretchHandleGroup",
   // "StretchHandleMesh",
   // "RotateHandlesGroup",
@@ -18,8 +21,8 @@ export const UserDataTypeEnum = z.enum([
 
 export type UserDataTypeEnum = z.infer<typeof UserDataTypeEnum>;
 
-export type ElementMeshUserData = {
-  type: typeof UserDataTypeEnum.Enum.ElementMesh;
+export type ElementGroupUserData = {
+  type: typeof UserDataTypeEnum.Enum.ElementGroup;
   ifcTag: string;
   category: string;
 };

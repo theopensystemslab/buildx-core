@@ -12,58 +12,19 @@ import createModuleGroup, { isModuleGroup } from "@/three/objects/ModuleGroup";
 import { A, O, T, TO } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import {
-  AxesHelper,
-  BoxGeometry,
-  MeshBasicMaterial,
-  Raycaster,
-  Vector2,
-} from "three";
+import { AxesHelper, BoxGeometry, MeshBasicMaterial } from "three";
 import { Evaluator, Operation, SUBTRACTION } from "three-bvh-csg";
 
-const { addObjectToScene, scene, camera, outlinePass, renderer, render } =
-  createBasicScene();
+const { addObjectToScene } = createBasicScene({
+  outliner: (object) => {
+    if (object.parent && isModuleGroup(object.parent)) {
+      return object.parent.children;
+    }
+    return [];
+  },
+});
 
 addObjectToScene(new AxesHelper());
-
-renderer.domElement.addEventListener("pointermove", onPointerMove);
-
-const raycaster = new Raycaster();
-
-const mouse = new Vector2();
-
-function onPointerMove(event: any) {
-  if (event.isPrimary === false) return;
-
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  checkIntersection();
-}
-
-function checkIntersection() {
-  raycaster.setFromCamera(mouse, camera);
-
-  const intersects = raycaster.intersectObject(scene, true);
-
-  pipe(
-    intersects,
-    A.head,
-    O.match(
-      () => {
-        outlinePass.selectedObjects = [];
-      },
-      (intersect) => {
-        const object = intersect.object;
-        if (object.parent && isModuleGroup(object.parent)) {
-          outlinePass.selectedObjects = object.parent.children;
-        }
-      }
-    )
-  );
-
-  render();
-}
 
 const moduleGroupTaskOption = pipe(
   sequenceT(T.ApplicativePar)(
