@@ -72,8 +72,6 @@ const createElementGroup = ({
   element: BuildElement;
 }): ElementGroup => {
   const elementBrush = new ElementBrush(geometry, material);
-  // const clippedBrush = new ClippedBrush(geometry, clippingMaterial);
-  // clippedBrush.visible = false;
 
   const elementGroup = new ElementGroup({
     type: UserDataTypeEnum.Enum.ElementGroup,
@@ -82,7 +80,6 @@ const createElementGroup = ({
   });
 
   elementGroup.add(elementBrush);
-  // elementGroup.add(clippedBrush);
 
   return elementGroup;
 };

@@ -3,15 +3,14 @@ import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { BoxGeometry, Group, MeshBasicMaterial, Object3D } from "three";
+import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import createElementGroup, {
+  ClippedBrush,
   isClippedBrush,
   isElementBrush,
 } from "./ElementGroup";
 import { UserDataTypeEnum } from "./types";
-
-const clippingMaterial = new MeshBasicMaterial({ color: "white" });
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
@@ -24,7 +23,6 @@ export type ModuleGroupUserData = BuildModule & {
 
 export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
-  declare clippingBrush: Brush;
   evaluator: Evaluator;
 
   constructor(userData: ModuleGroupUserData) {
@@ -33,24 +31,17 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  createLevelCutBrushes(cutHeight: number) {
-    const { width, length } = this.userData;
-
-    this.clippingBrush = new Brush(
-      new BoxGeometry(width, cutHeight, length),
-      clippingMaterial
-    );
-
+  createLevelCutBrushes(clippingBrush: Brush) {
     this.destroyClippedBrushes();
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
-        const clippedBrush = this.evaluator.evaluate(
-          node,
-          this.clippingBrush,
-          SUBTRACTION
-        );
+        const clippedBrush = new ClippedBrush();
+
+        this.evaluator.evaluate(node, clippingBrush, SUBTRACTION, clippedBrush);
+
         clippedBrush.visible = false;
+
         node.parent?.add(clippedBrush);
       }
     });
