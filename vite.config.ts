@@ -25,8 +25,13 @@ export default defineConfig(({ mode }) => {
       return {
         base: "./",
         build: {
+          lib: {
+            entry: resolve(__dirname, "src/index.ts"),
+            name: "BuildX",
+            formats: ["es"],
+            fileName: "lib-buildx",
+          },
           rollupOptions: {
-            external: (id: string) => !id.startsWith(".") && !isAbsolute(id),
             output: {
               preserveModules: true,
             },
