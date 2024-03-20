@@ -2,7 +2,9 @@ import { PositionedRow } from "@/layouts/types";
 import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Operation } from "three-bvh-csg";
+import { Group, Object3D } from "three";
+import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
+import { ClippedBrush, isClippedBrush, isElementBrush } from "./ElementGroup";
 import createModuleGroup from "./ModuleGroup";
 import { UserDataTypeEnum } from "./types";
 
@@ -13,12 +15,71 @@ export type GridGroupUserData = {
   height: number;
 };
 
-export class GridGroup extends Operation {
+export class GridGroup extends Group {
   userData: GridGroupUserData;
+  evaluator: Evaluator;
 
   constructor(userData: GridGroupUserData) {
     super();
     this.userData = userData;
+    this.evaluator = new Evaluator();
+  }
+
+  createLevelCutBrushes(clippingBrush: Brush) {
+    this.destroyClippedBrushes();
+
+    this.traverse((node) => {
+      if (isElementBrush(node)) {
+        const clippedBrush = new ClippedBrush();
+        const originalParent = node.parent;
+
+        if (originalParent) {
+          node.removeFromParent();
+
+          node.updateMatrixWorld();
+
+          this.evaluator.evaluate(
+            node,
+            clippingBrush,
+            SUBTRACTION,
+            clippedBrush
+          );
+
+          clippedBrush.visible = false;
+          originalParent.add(clippedBrush);
+
+          originalParent.add(node);
+        }
+      }
+    });
+  }
+
+  showClippedBrushes() {
+    this.traverse((node) => {
+      if (isElementBrush(node)) {
+        node.visible = false;
+      } else if (isClippedBrush(node)) {
+        node.visible = true;
+      }
+    });
+  }
+
+  destroyClippedBrushes() {
+    this.traverse((node) => {
+      if (isClippedBrush(node)) {
+        node.removeFromParent();
+      }
+    });
+  }
+
+  showElementBrushes() {
+    this.traverse((node) => {
+      if (isElementBrush(node)) {
+        node.visible = true;
+      } else if (isClippedBrush(node)) {
+        node.visible = false;
+      }
+    });
   }
 }
 
@@ -26,12 +87,8 @@ export const createGridGroup = ({
   positionedModules,
   levelIndex,
   y,
-  flip,
   ...defaultGetters
-}: DefaultGetters &
-  PositionedRow & {
-    flip: boolean;
-  }): T.Task<GridGroup> =>
+}: DefaultGetters & PositionedRow): T.Task<GridGroup> =>
   pipe(
     positionedModules,
     A.traverse(T.ApplicativeSeq)(({ module, moduleIndex: gridGroupIndex, z }) =>
@@ -39,7 +96,6 @@ export const createGridGroup = ({
         buildModule: module,
         gridGroupIndex,
         z,
-        flip,
         ...defaultGetters,
       })
     ),

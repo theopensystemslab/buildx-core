@@ -48,7 +48,6 @@ const getModuleGroupTO = ({
             TO.chain((buildModule) =>
               pipe(
                 createModuleGroup({
-                  flip: false,
                   getBuildElement: getBuildElement(elements),
                   getIfcGeometries: getModelGeometriesTask,
                   getInitialThreeMaterial: getInitialThreeMaterial(

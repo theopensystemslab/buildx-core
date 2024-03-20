@@ -1,8 +1,15 @@
 import { BuildModule } from "@/systemsData/modules";
 import { roundp } from "@/utils/math";
-import { PositionedBuildModule, Row } from "./types";
-import { A, O } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import {
+  Column,
+  ColumnLayout,
+  PositionedBuildModule,
+  PositionedColumn,
+  PositionedRow,
+  Row,
+} from "./types";
+import { A, O, T } from "@/utils/functions";
+import { flow, pipe } from "fp-ts/lib/function";
 import { produce } from "immer";
 import { transpose } from "fp-ts-std/Array";
 
@@ -242,3 +249,63 @@ export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
     A.flatten
   );
 };
+export const positionRows = A.reduceWithIndex(
+  [],
+  (levelIndex, acc: PositionedRow[], row: Row) => {
+    const levelLetter = row.levelType[0];
+
+    const y =
+      levelLetter === "F"
+        ? 0
+        : roundp(
+            acc[levelIndex - 1].y +
+              acc[levelIndex - 1].positionedModules[0].module.height
+          );
+
+    return [...acc, { ...row, levelIndex, y }];
+  }
+);
+export const createRowLayout = (rowsMatrix: BuildModule[][]): PositionedRow[] =>
+  pipe(rowsMatrix, A.map(createRow), positionRows);
+
+export const createColumn = (rows: BuildModule[][]): Column =>
+  pipe(rows, createRowLayout, (positionedRows) => ({
+    positionedRows,
+    columnLength: positionedRows[0].rowLength,
+  }));
+
+export const positionColumns = A.reduceWithIndex(
+  [],
+  (
+    columnIndex: number,
+    acc: PositionedColumn[],
+    { positionedRows }: Column
+  ) => {
+    const columnLength = positionedRows[0].rowLength;
+    if (columnIndex === 0) {
+      return [
+        {
+          positionedRows,
+          columnIndex,
+          columnLength,
+          z: 0,
+        },
+      ];
+    } else {
+      const last = acc[columnIndex - 1];
+
+      return [
+        ...acc,
+        {
+          positionedRows,
+          columnIndex,
+          columnLength,
+          z: roundp(last.z + last.columnLength),
+        },
+      ];
+    }
+  }
+);
+
+export const createColumnLayout = (matrix: BuildModule[][][]): ColumnLayout =>
+  pipe(matrix, A.map(createColumn), positionColumns);

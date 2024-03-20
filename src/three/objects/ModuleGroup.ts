@@ -129,7 +129,6 @@ export class ModuleGroup extends Group {
 const createModuleGroup = ({
   gridGroupIndex,
   buildModule,
-  flip,
   z,
   getIfcGeometries,
   getBuildElement,
@@ -137,7 +136,6 @@ const createModuleGroup = ({
 }: DefaultGetters & {
   gridGroupIndex: number;
   buildModule: BuildModule;
-  flip: boolean;
   z: number;
 }): T.Task<ModuleGroup> => {
   const moduleGroupUserData: ModuleGroupUserData = {
@@ -147,9 +145,16 @@ const createModuleGroup = ({
     z,
   };
 
-  const { systemId, speckleBranchUrl, length } = buildModule;
+  const {
+    systemId,
+    speckleBranchUrl,
+    length,
+    structuredDna: { positionType },
+  } = buildModule;
 
   const moduleGroup = new ModuleGroup(moduleGroupUserData);
+
+  const flip = gridGroupIndex !== 0 && positionType === "END";
 
   moduleGroup.userData = moduleGroupUserData;
   moduleGroup.scale.set(1, 1, flip ? 1 : -1);
