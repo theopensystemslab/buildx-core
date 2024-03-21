@@ -12,7 +12,7 @@ import { A, O, T, TO } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 
-const getModuleGroupTO = ({
+const moduleGroupTaskOption = ({
   houseTypeIndex,
   columnIndex,
   levelIndex,
@@ -67,4 +67,4 @@ const getModuleGroupTO = ({
     )
   );
 
-export default getModuleGroupTO;
+export default moduleGroupTaskOption;

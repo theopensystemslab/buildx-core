@@ -2,7 +2,7 @@ import { PositionedRow } from "@/layouts/types";
 import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Object3D } from "three";
+import { Group } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import { ClippedBrush, isClippedBrush, isElementBrush } from "./ElementGroup";
 import createModuleGroup from "./ModuleGroup";

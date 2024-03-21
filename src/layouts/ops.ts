@@ -1,5 +1,9 @@
 import { BuildModule } from "@/systemsData/modules";
+import { A, O } from "@/utils/functions";
 import { roundp } from "@/utils/math";
+import { transpose } from "fp-ts-std/Array";
+import { pipe } from "fp-ts/lib/function";
+import { produce } from "immer";
 import {
   Column,
   ColumnLayout,
@@ -8,10 +12,6 @@ import {
   PositionedRow,
   Row,
 } from "./types";
-import { A, O, T } from "@/utils/functions";
-import { flow, pipe } from "fp-ts/lib/function";
-import { produce } from "immer";
-import { transpose } from "fp-ts-std/Array";
 
 export const createPositionedModules = (
   module: BuildModule,

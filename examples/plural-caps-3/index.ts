@@ -1,5 +1,5 @@
 import { createBasicScene } from "@/index";
-import getModuleGroupTO from "@/tasks/getModuleGroupTO";
+import moduleGroupTaskOption from "@/tasks/moduleGroupTaskOption";
 import { isModuleGroup } from "@/three/objects/ModuleGroup";
 import { TO } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
@@ -17,7 +17,7 @@ const { addObjectToScene, render } = createBasicScene({
 addObjectToScene(new AxesHelper());
 
 pipe(
-  getModuleGroupTO({
+  moduleGroupTaskOption({
     houseTypeIndex: 0,
     columnIndex: 3,
     levelIndex: 1,

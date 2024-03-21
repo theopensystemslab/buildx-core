@@ -45,7 +45,6 @@ export const createColumnGroup =
         const gridGroup = await createGridGroup({
           ...defaultGetters,
           ...positionedRow,
-          flip: endColumn,
         })();
         gridGroups.push(gridGroup);
       }

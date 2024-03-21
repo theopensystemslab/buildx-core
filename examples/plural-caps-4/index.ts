@@ -1,5 +1,5 @@
 import { createBasicScene } from "@/index";
-import getRowGroupTO from "@/tasks/getRowGroupTO";
+import rowGroupTaskOption from "@/tasks/rowGroupTaskOption";
 import { ModuleGroup, isModuleGroup } from "@/three/objects/ModuleGroup";
 import { TO } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
@@ -17,7 +17,7 @@ const { addObjectToScene, render } = createBasicScene({
 addObjectToScene(new AxesHelper());
 
 pipe(
-  getRowGroupTO({
+  rowGroupTaskOption({
     houseTypeIndex: 1,
     levelIndex: 1,
   }),

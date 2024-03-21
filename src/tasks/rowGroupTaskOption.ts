@@ -12,7 +12,7 @@ import { A, T, TO } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 
-const getRowGroupTO = ({
+const rowGroupTaskOption = ({
   houseTypeIndex,
   levelIndex,
 }: {
@@ -63,4 +63,4 @@ const getRowGroupTO = ({
     )
   );
 
-export default getRowGroupTO;
+export default rowGroupTaskOption;
