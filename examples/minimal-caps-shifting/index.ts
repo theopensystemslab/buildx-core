@@ -7,7 +7,13 @@ import { A, O, T } from "@/utils/functions";
 import { GUI } from "dat.gui";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { AxesHelper, BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
+import {
+  AxesHelper,
+  BoxGeometry,
+  DoubleSide,
+  MeshBasicMaterial,
+  Vector3,
+} from "three";
 import { Brush } from "three-bvh-csg";
 
 const { addObjectToScene, scene } = createBasicScene();
@@ -108,6 +114,15 @@ pipe(
       clipped = !clipped;
     }
 
+    const zv = new Vector3(0, 0, 1);
+
+    function moveModuleGroup() {
+      if (!activeModuleGroup) return;
+
+      activeModuleGroup.position.add(zv);
+      activeModuleGroup.updateMatrixWorld();
+    }
+
     // Extend your existing keydown event listener
     document.addEventListener("keydown", (event) => {
       switch (event.key) {
@@ -119,6 +134,9 @@ pipe(
           break;
         case "c": // Step 3: Binding the 'c' key to call methods on the current module group
           clipModuleGroup();
+          break;
+        case "t":
+          moveModuleGroup();
           break;
         // Include other cases if needed
       }

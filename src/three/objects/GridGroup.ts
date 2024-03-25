@@ -5,7 +5,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import { ClippedBrush, isClippedBrush, isElementBrush } from "./ElementGroup";
-import createModuleGroup from "./ModuleGroup";
+import createModuleGroup, { isModuleGroup } from "./ModuleGroup";
 import { UserDataTypeEnum } from "./types";
 
 export type GridGroupUserData = {
@@ -29,27 +29,8 @@ export class GridGroup extends Group {
     this.destroyClippedBrushes();
 
     this.traverse((node) => {
-      if (isElementBrush(node)) {
-        const clippedBrush = new ClippedBrush();
-        const originalParent = node.parent;
-
-        if (originalParent) {
-          node.removeFromParent();
-
-          node.updateMatrixWorld();
-
-          this.evaluator.evaluate(
-            node,
-            clippingBrush,
-            SUBTRACTION,
-            clippedBrush
-          );
-
-          clippedBrush.visible = false;
-          originalParent.add(clippedBrush);
-
-          originalParent.add(node);
-        }
+      if (isModuleGroup(node)) {
+        node.createLevelCutBrushes(clippingBrush);
       }
     });
   }

@@ -39,7 +39,6 @@ export class ModuleGroup extends Group {
     clippingBrush.position.setZ(this.position.z);
     clippingBrush.updateMatrixWorld();
 
-    // 3. Invert the Z-axis of the translation matrix
     const zInvertedMatrix = new Matrix4().makeTranslation(
       0,
       0,
