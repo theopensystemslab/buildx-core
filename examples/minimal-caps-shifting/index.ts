@@ -23,10 +23,10 @@ pipe(
   T.map(([allModules, allElements, allMaterials]) => {
     console.log("hello?", { allElements });
     // module processor
-    const processModule = async (selectedId: string) => {
+    const processModule = async (selectedDna: string) => {
       pipe(
         allModules,
-        A.findFirst(({ id }) => id === selectedId),
+        A.findFirst(({ dna }) => dna === selectedDna),
         O.map(async (buildModule) => {
           const nextModuleGroup = await createModuleGroup({
             buildModule,
@@ -53,19 +53,35 @@ pipe(
 
     // Create an object to hold the selected module ID
     const settings = {
-      selectedModuleId: allModules[0].id, // Default to the first module's ID
+      dna: allModules[0].dna, // Default to the first module's ID
     };
 
-    // Add a dropdown to select a module
-    gui
-      .add(
-        settings,
-        "selectedModuleId",
-        allModules.map((module) => module.id)
-      )
-      .name("Select Module")
-      .onChange(processModule);
+    const options = allModules.map((module) => module.dna);
 
-    processModule(settings.selectedModuleId);
+    // Add a dropdown to select a module
+    gui.add(settings, "dna").name("Select Module").onChange(processModule);
+
+    processModule(settings.dna);
+
+    function cycleOptions(direction: "prev" | "next") {
+      let currentIndex = options.indexOf(settings.dna);
+      if (direction === "next") {
+        currentIndex = (currentIndex + 1) % options.length;
+      } else if (direction === "prev") {
+        currentIndex = (currentIndex - 1 + options.length) % options.length;
+      }
+      settings.dna = options[currentIndex];
+      gui.updateDisplay();
+      processModule(settings.dna);
+    }
+
+    // Listen for keydown events
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "j") {
+        cycleOptions("prev");
+      } else if (event.key === "k") {
+        cycleOptions("next");
+      }
+    });
   })
 )();
