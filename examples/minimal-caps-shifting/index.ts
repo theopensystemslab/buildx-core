@@ -7,21 +7,20 @@ import { A, O, T } from "@/utils/functions";
 import { GUI } from "dat.gui";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { AxesHelper } from "three";
+import { AxesHelper, BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
+import { Brush } from "three-bvh-csg";
 
 const { addObjectToScene, scene } = createBasicScene();
 
 addObjectToScene(new AxesHelper());
 
-// GUI setup
 const gui = new GUI();
 
-let prevModuleGroup: ModuleGroup | null = null;
+let activeModuleGroup: ModuleGroup | null = null;
 
 pipe(
   sequenceT(T.ApplicativePar)(modulesTask, elementsTask, materialsTask),
   T.map(([allModules, allElements, allMaterials]) => {
-    console.log("hello?", { allElements });
     // module processor
     const processModule = async (selectedDna: string) => {
       pipe(
@@ -41,25 +40,28 @@ pipe(
             z: 0,
           })();
 
-          if (prevModuleGroup) {
-            scene.remove(prevModuleGroup);
-            prevModuleGroup = null;
+          if (activeModuleGroup) {
+            scene.remove(activeModuleGroup);
+            activeModuleGroup = null;
           }
           addObjectToScene(nextModuleGroup);
-          prevModuleGroup = nextModuleGroup;
+          activeModuleGroup = nextModuleGroup;
         })
       );
     };
 
-    // Create an object to hold the selected module ID
+    // GUI setup
     const settings = {
-      dna: allModules[0].dna, // Default to the first module's ID
+      dna: allModules[5].dna, // Default to the first module's dna
     };
 
     const options = allModules.map((module) => module.dna);
 
     // Add a dropdown to select a module
-    gui.add(settings, "dna").name("Select Module").onChange(processModule);
+    gui
+      .add(settings, "dna", options)
+      .name("Select Module")
+      .onChange(processModule);
 
     processModule(settings.dna);
 
@@ -75,12 +77,50 @@ pipe(
       processModule(settings.dna);
     }
 
-    // Listen for keydown events
+    const C = 10;
+
+    const clippingBrush = new Brush(
+      new BoxGeometry(10, C, 10),
+      new MeshBasicMaterial({ color: "white", side: DoubleSide })
+    );
+    clippingBrush.position.set(
+      0,
+      C / 2 + 0.8,
+      0
+      // C / 2
+    );
+    clippingBrush.visible = false;
+    clippingBrush.updateMatrixWorld();
+
+    let clipped = false;
+
+    function clipModuleGroup() {
+      if (!activeModuleGroup) return;
+
+      if (clipped) {
+        activeModuleGroup.destroyClippedBrushes();
+        activeModuleGroup.showElementBrushes();
+      } else {
+        activeModuleGroup.createLevelCutBrushes(clippingBrush);
+        activeModuleGroup.showClippedBrushes();
+      }
+
+      clipped = !clipped;
+    }
+
+    // Extend your existing keydown event listener
     document.addEventListener("keydown", (event) => {
-      if (event.key === "j") {
-        cycleOptions("prev");
-      } else if (event.key === "k") {
-        cycleOptions("next");
+      switch (event.key) {
+        case "j":
+          cycleOptions("prev");
+          break;
+        case "k":
+          cycleOptions("next");
+          break;
+        case "c": // Step 3: Binding the 'c' key to call methods on the current module group
+          clipModuleGroup();
+          break;
+        // Include other cases if needed
       }
     });
   })

@@ -27,8 +27,6 @@ pipe(
     const rowLength = rowGroup.userData.length;
     const rowWidth = (rowGroup.children[0] as ModuleGroup).userData.width;
 
-    let s = true;
-
     const CLIPPING_BRUSH_HEIGHT = 10;
 
     const clippingBrush = new Brush(
@@ -44,6 +42,8 @@ pipe(
     clippingBrush.updateMatrixWorld();
 
     addObjectToScene(clippingBrush);
+
+    let s = true;
 
     window.addEventListener("keydown", (event) => {
       // Spacebar or Enter key

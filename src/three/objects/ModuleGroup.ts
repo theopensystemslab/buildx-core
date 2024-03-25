@@ -31,69 +31,19 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  // createLevelCutBrushes(clippingBrush: Brush) {
-  //   this.destroyClippedBrushes();
-
-  //   this.traverse((node) => {
-  //     if (isElementBrush(node)) {
-  //       const clippedBrush = new ClippedBrush();
-  //       node.parent?.add(clippedBrush);
-
-  //       node.updateMatrixWorld();
-  //       this.evaluator.evaluate(node, clippingBrush, SUBTRACTION, clippedBrush);
-
-  //       clippedBrush.visible = false;
-  //       clippedBrush.updateMatrixWorld();
-  //     }
-  //   });
-  // }
-
   createLevelCutBrushes(clippingBrush: Brush) {
     this.destroyClippedBrushes();
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
-        const originalGeometry = node.geometry;
-        originalGeometry.computeBoundingBox();
-        console.log("Original Bounding Box:", originalGeometry.boundingBox);
-
-        // Sample some vertices from the original geometry
-        const originalPositions = originalGeometry.attributes.position.array;
-        console.log("Original Vertex Positions Sample:");
-        for (let i = 0; i < Math.min(15, originalPositions.length); i += 3) {
-          // Sample first 5 vertices
-          console.log(
-            `x=${originalPositions[i]}, y=${originalPositions[i + 1]}, z=${
-              originalPositions[i + 2]
-            }`
-          );
-        }
-
         const clippedBrush = new ClippedBrush();
         node.parent?.add(clippedBrush);
 
         node.updateMatrixWorld();
-
-        // Perform the clipping operation
         this.evaluator.evaluate(node, clippingBrush, SUBTRACTION, clippedBrush);
 
-        const clippedGeometry = clippedBrush.geometry;
-        clippedGeometry.computeBoundingBox();
-        console.log("Clipped Bounding Box:", clippedGeometry.boundingBox);
-
-        // Sample some vertices from the clipped geometry
-        const clippedPositions = clippedGeometry.attributes.position.array;
-        console.log("Clipped Vertex Positions Sample:");
-        for (let i = 0; i < Math.min(15, clippedPositions.length); i += 3) {
-          // Sample first 5 vertices
-          console.log(
-            `x=${clippedPositions[i]}, y=${clippedPositions[i + 1]}, z=${
-              clippedPositions[i + 2]
-            }`
-          );
-        }
-
         clippedBrush.visible = false;
+        clippedBrush.updateMatrixWorld();
       }
     });
   }
@@ -157,8 +107,15 @@ const createModuleGroup = ({
   const flip = gridGroupIndex !== 0 && positionType === "END";
 
   moduleGroup.userData = moduleGroupUserData;
+
+  // these transforms are necessary for our application but...
   moduleGroup.scale.set(1, 1, flip ? 1 : -1);
-  moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
+  // moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
+
+  // when applied, the CSG clipping operations are broken
+  // so I think I need to un-apply them each time I do the
+  // clipping operations, and then re-apply them to the resultant
+  // brushes?
 
   const elementGroupTask = pipe(
     getIfcGeometries(speckleBranchUrl),
