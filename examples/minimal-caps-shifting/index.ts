@@ -16,7 +16,7 @@ import {
 } from "three";
 import { Brush } from "three-bvh-csg";
 
-const { addObjectToScene, scene } = createBasicScene();
+const { addObjectToScene, scene, render } = createBasicScene();
 
 addObjectToScene(new AxesHelper());
 
@@ -140,6 +140,7 @@ pipe(
           break;
         // Include other cases if needed
       }
+      render();
     });
   })
 )();

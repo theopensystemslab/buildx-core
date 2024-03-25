@@ -39,11 +39,13 @@ export class ModuleGroup extends Group {
     clippingBrush.position.setZ(this.position.z);
     clippingBrush.updateMatrixWorld();
 
-    const zInvertedMatrix = new Matrix4().makeTranslation(
-      0,
-      0,
-      this.position.z
-    );
+    // const zInvertedMatrix = new Matrix4().makeTranslation(
+    //   0,
+    //   0,
+    //   -this.position.z
+    // );
+
+    const inverseMatrix = this.matrix.invert();
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
@@ -53,7 +55,7 @@ export class ModuleGroup extends Group {
         node.updateMatrixWorld();
         this.evaluator.evaluate(node, clippingBrush, SUBTRACTION, clippedBrush);
 
-        clippedBrush.geometry.applyMatrix4(zInvertedMatrix);
+        clippedBrush.geometry.applyMatrix4(inverseMatrix);
 
         clippedBrush.visible = false;
         clippedBrush.updateMatrixWorld();

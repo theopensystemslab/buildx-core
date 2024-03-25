@@ -3,7 +3,7 @@ import rowGroupTaskOption from "@/tasks/rowGroupTaskOption";
 import { ModuleGroup, isModuleGroup } from "@/three/objects/ModuleGroup";
 import { TO } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { AxesHelper, BoxGeometry, MeshBasicMaterial } from "three";
+import { AxesHelper, BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
 import { Brush } from "three-bvh-csg";
 
 const { addObjectToScene, render } = createBasicScene({
@@ -31,7 +31,7 @@ pipe(
 
     const clippingBrush = new Brush(
       new BoxGeometry(rowWidth * 1.2, CLIPPING_BRUSH_HEIGHT, rowLength * 1.2),
-      new MeshBasicMaterial({ color: "white" })
+      new MeshBasicMaterial({ color: "white", side: DoubleSide })
     );
     clippingBrush.position.set(
       0,
