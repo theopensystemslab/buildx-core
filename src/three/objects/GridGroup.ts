@@ -3,8 +3,8 @@ import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
-import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
-import { ClippedBrush, isClippedBrush, isElementBrush } from "./ElementGroup";
+import { Brush, Evaluator } from "three-bvh-csg";
+import { isClippedBrush, isElementBrush } from "./ElementGroup";
 import createModuleGroup, { isModuleGroup } from "./ModuleGroup";
 import { UserDataTypeEnum } from "./types";
 

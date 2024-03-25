@@ -3,7 +3,7 @@ import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Matrix4, Object3D } from "three";
+import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import createElementGroup, {
   ClippedBrush,
@@ -45,7 +45,7 @@ export class ModuleGroup extends Group {
     //   -this.position.z
     // );
 
-    const inverseMatrix = this.matrix.invert();
+    const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
