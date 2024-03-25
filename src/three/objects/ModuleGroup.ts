@@ -3,7 +3,7 @@ import { DefaultGetters } from "@/tasks/defaultory";
 import { A, T } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Object3D } from "three";
+import { Group, Matrix4, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import createElementGroup, {
   ClippedBrush,
@@ -32,21 +32,19 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  initTransforms() {
-    const { flip, z } = this.userData;
-    this.scale.set(1, 1, flip ? 1 : -1);
-    this.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
-  }
-
-  resetTransforms() {
-    this.scale.set(1, 1, 1);
-    this.position.set(0, 0, 0);
-  }
-
   createLevelCutBrushes(clippingBrush: Brush) {
     this.destroyClippedBrushes();
 
-    this.resetTransforms();
+    clippingBrush.scale.setZ(this.scale.z);
+    clippingBrush.position.setZ(this.position.z);
+    clippingBrush.updateMatrixWorld();
+
+    // 3. Invert the Z-axis of the translation matrix
+    const zInvertedMatrix = new Matrix4().makeTranslation(
+      0,
+      0,
+      this.position.z
+    );
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
@@ -56,12 +54,12 @@ export class ModuleGroup extends Group {
         node.updateMatrixWorld();
         this.evaluator.evaluate(node, clippingBrush, SUBTRACTION, clippedBrush);
 
+        clippedBrush.geometry.applyMatrix4(zInvertedMatrix);
+
         clippedBrush.visible = false;
         clippedBrush.updateMatrixWorld();
       }
     });
-
-    this.initTransforms();
   }
 
   showClippedBrushes() {
@@ -108,6 +106,7 @@ const createModuleGroup = ({
     systemId,
     speckleBranchUrl,
     structuredDna: { positionType },
+    length: moduleLength,
   } = buildModule;
 
   const flip = gridGroupIndex !== 0 && positionType === "END";
@@ -124,7 +123,8 @@ const createModuleGroup = ({
 
   moduleGroup.userData = moduleGroupUserData;
 
-  moduleGroup.initTransforms();
+  moduleGroup.scale.setZ(flip ? 1 : -1);
+  moduleGroup.position.setZ(flip ? z + moduleLength / 2 : z - moduleLength / 2);
 
   const elementGroupTask = pipe(
     getIfcGeometries(speckleBranchUrl),
