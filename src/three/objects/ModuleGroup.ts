@@ -19,6 +19,7 @@ export type ModuleGroupUserData = BuildModule & {
   type: typeof UserDataTypeEnum.Enum.ModuleGroup;
   gridGroupIndex: number;
   z: number;
+  flip: boolean;
 };
 
 export class ModuleGroup extends Group {
@@ -31,8 +32,21 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
+  initTransforms() {
+    const { flip, z } = this.userData;
+    this.scale.set(1, 1, flip ? 1 : -1);
+    this.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
+  }
+
+  resetTransforms() {
+    this.scale.set(1, 1, 1);
+    this.position.set(0, 0, 0);
+  }
+
   createLevelCutBrushes(clippingBrush: Brush) {
     this.destroyClippedBrushes();
+
+    this.resetTransforms();
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
@@ -46,6 +60,8 @@ export class ModuleGroup extends Group {
         clippedBrush.updateMatrixWorld();
       }
     });
+
+    this.initTransforms();
   }
 
   showClippedBrushes() {
@@ -88,34 +104,27 @@ const createModuleGroup = ({
   buildModule: BuildModule;
   z: number;
 }): T.Task<ModuleGroup> => {
+  const {
+    systemId,
+    speckleBranchUrl,
+    structuredDna: { positionType },
+  } = buildModule;
+
+  const flip = gridGroupIndex !== 0 && positionType === "END";
+
   const moduleGroupUserData: ModuleGroupUserData = {
     ...buildModule,
     type: UserDataTypeEnum.Enum.ModuleGroup,
     gridGroupIndex,
     z,
+    flip,
   };
-
-  const {
-    systemId,
-    speckleBranchUrl,
-    length,
-    structuredDna: { positionType },
-  } = buildModule;
 
   const moduleGroup = new ModuleGroup(moduleGroupUserData);
 
-  const flip = gridGroupIndex !== 0 && positionType === "END";
-
   moduleGroup.userData = moduleGroupUserData;
 
-  // these transforms are necessary for our application but...
-  moduleGroup.scale.set(1, 1, flip ? 1 : -1);
-  // moduleGroup.position.set(0, 0, flip ? z + length / 2 : z - length / 2);
-
-  // when applied, the CSG clipping operations are broken
-  // so I think I need to un-apply them each time I do the
-  // clipping operations, and then re-apply them to the resultant
-  // brushes?
+  moduleGroup.initTransforms();
 
   const elementGroupTask = pipe(
     getIfcGeometries(speckleBranchUrl),
