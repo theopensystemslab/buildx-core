@@ -3,7 +3,7 @@ import { DefaultGetters } from "@/tasks/defaultory";
 import { T } from "@/utils/functions";
 import { Group } from "three";
 import { GridGroup, createGridGroup } from "./GridGroup";
-import { UserDataTypeEnum } from "./types";
+import { UserDataTypeEnum } from "../types";
 
 export type ColumnGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnGroup;

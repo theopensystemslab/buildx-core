@@ -2,7 +2,9 @@ import { createBasicScene } from "@/index";
 import { elementsTask, materialsTask, modulesTask } from "@/tasks/airtables";
 import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
 import { getModelGeometriesTask } from "@/tasks/models";
-import createModuleGroup, { ModuleGroup } from "@/three/objects/ModuleGroup";
+import createModuleGroup, {
+  ModuleGroup,
+} from "@/three/objects/house/ModuleGroup";
 import { A, O, T } from "@/utils/functions";
 import { GUI } from "dat.gui";
 import { sequenceT } from "fp-ts/lib/Apply";

@@ -7,7 +7,7 @@ import {
   Object3D,
 } from "three";
 import { Brush } from "three-bvh-csg";
-import { UserDataTypeEnum } from "./types";
+import { UserDataTypeEnum } from "../types";
 
 export const isElementGroup = (node: Object3D): node is ElementGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ElementGroup;

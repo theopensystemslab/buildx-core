@@ -7,7 +7,7 @@ import {
 } from "@/tasks/airtables";
 import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
 import { getModelGeometriesTask } from "@/tasks/models";
-import { createGridGroup } from "@/three/objects/GridGroup";
+import { createGridGroup } from "@/three/objects/house/GridGroup";
 import { A, T, TO } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";

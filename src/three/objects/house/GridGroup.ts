@@ -6,7 +6,7 @@ import { Group } from "three";
 import { Brush, Evaluator } from "three-bvh-csg";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
 import createModuleGroup, { isModuleGroup } from "./ModuleGroup";
-import { UserDataTypeEnum } from "./types";
+import { UserDataTypeEnum } from "../types";
 
 export type GridGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.GridGroup;

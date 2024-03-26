@@ -1,6 +1,6 @@
 import { createBasicScene } from "@/index";
 import moduleGroupTaskOption from "@/tasks/moduleGroupTaskOption";
-import { isModuleGroup } from "@/three/objects/ModuleGroup";
+import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { TO } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { AxesHelper, BoxGeometry, MeshBasicMaterial } from "three";

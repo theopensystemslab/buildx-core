@@ -10,7 +10,7 @@ import createElementGroup, {
   isClippedBrush,
   isElementBrush,
 } from "./ElementGroup";
-import { UserDataTypeEnum } from "./types";
+import { UserDataTypeEnum } from "../types";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
