@@ -109,7 +109,7 @@ pipe(
         activeModuleGroup.destroyClippedBrushes();
         activeModuleGroup.showElementBrushes();
       } else {
-        activeModuleGroup.createLevelCutBrushes(clippingBrush);
+        activeModuleGroup.createClippedBrushes(clippingBrush);
         activeModuleGroup.showClippedBrushes();
       }
 

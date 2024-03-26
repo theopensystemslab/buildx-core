@@ -30,7 +30,7 @@ export class GridGroup extends Group {
 
     this.traverse((node) => {
       if (isModuleGroup(node)) {
-        node.createLevelCutBrushes(clippingBrush);
+        node.createClippedBrushes(clippingBrush);
       }
     });
   }

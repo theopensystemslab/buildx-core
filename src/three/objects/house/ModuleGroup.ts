@@ -32,19 +32,7 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  createLevelCutBrushes(clippingBrush: Brush) {
-    this.destroyClippedBrushes();
-
-    clippingBrush.scale.setZ(this.scale.z);
-    clippingBrush.position.setZ(this.position.z);
-    clippingBrush.updateMatrixWorld();
-
-    // const zInvertedMatrix = new Matrix4().makeTranslation(
-    //   0,
-    //   0,
-    //   -this.position.z
-    // );
-
+  createClippedBrushes(clippingBrush: Brush) {
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {

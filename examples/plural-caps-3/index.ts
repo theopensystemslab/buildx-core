@@ -44,7 +44,7 @@ pipe(
       // Spacebar or Enter key
       if (event.key === "x" || event.key === "X") {
         if (s) {
-          moduleGroup.createLevelCutBrushes(clippingBrush);
+          moduleGroup.createClippedBrushes(clippingBrush);
           moduleGroup.showClippedBrushes();
         } else {
           moduleGroup.destroyClippedBrushes();

@@ -24,21 +24,15 @@ pipe(
   TO.map((rowGroup) => {
     addObjectToScene(rowGroup);
 
-    const rowLength = rowGroup.userData.length;
-    const rowWidth = (rowGroup.children[0] as ModuleGroup).userData.width;
-
-    const CLIPPING_BRUSH_HEIGHT = 10;
+    const { length: rowLength, height: rowHeight } = rowGroup.userData;
+    const { width: rowWidth } = (rowGroup.children[0] as ModuleGroup).userData;
 
     const clippingBrush = new Brush(
-      new BoxGeometry(rowWidth * 1.2, CLIPPING_BRUSH_HEIGHT, rowLength * 1.2),
+      new BoxGeometry(rowWidth / 2, rowHeight / 2, rowLength / 2),
       new MeshBasicMaterial({ color: "white", side: DoubleSide })
     );
-    clippingBrush.position.set(
-      0,
-      CLIPPING_BRUSH_HEIGHT / 2 + 1.3,
-      rowLength / 2
-    );
-    clippingBrush.visible = false;
+    clippingBrush.position.set(rowWidth / 4, rowHeight, (rowLength / 4) * 3);
+    clippingBrush.scale.setScalar(1.1);
     clippingBrush.updateMatrixWorld();
 
     addObjectToScene(clippingBrush);
