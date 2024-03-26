@@ -43,7 +43,7 @@ pipe(
       // Spacebar or Enter key
       if (event.key === "x" || event.key === "X") {
         if (s) {
-          rowGroup.createLevelCutBrushes(clippingBrush);
+          rowGroup.createClippedBrushes(clippingBrush);
           rowGroup.showClippedBrushes();
         } else {
           rowGroup.destroyClippedBrushes();

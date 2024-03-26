@@ -25,13 +25,11 @@ export class GridGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  createLevelCutBrushes(clippingBrush: Brush) {
+  createClippedBrushes(clippingBrush: Brush) {
     this.destroyClippedBrushes();
 
-    this.traverse((node) => {
-      if (isModuleGroup(node)) {
-        node.createClippedBrushes(clippingBrush);
-      }
+    this.children.filter(isModuleGroup).forEach((moduleGroup) => {
+      moduleGroup.createClippedBrushes(clippingBrush);
     });
   }
 
