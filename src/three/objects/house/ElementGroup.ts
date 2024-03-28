@@ -45,20 +45,20 @@ export class ElementBrush extends Brush {
   }
 }
 
-export const isClippedBrush = (node: Object3D): node is ClippedBrush =>
-  node.userData?.type === UserDataTypeEnum.Enum.ClippedBrush;
+export const isClippedBrush = (node: Object3D): node is ClippedElementBrush =>
+  node.userData?.type === UserDataTypeEnum.Enum.ClippedElementBrush;
 
 type ClippedBrushUserData = {
-  type: typeof UserDataTypeEnum.Enum.ClippedBrush;
+  type: typeof UserDataTypeEnum.Enum.ClippedElementBrush;
 };
 
-export class ClippedBrush extends Brush {
+export class ClippedElementBrush extends Brush {
   userData: ClippedBrushUserData;
 
   constructor(...args: ConstructorParameters<typeof Brush>) {
     super(...args);
     this.userData = {
-      type: UserDataTypeEnum.Enum.ClippedBrush,
+      type: UserDataTypeEnum.Enum.ClippedElementBrush,
     };
   }
 }

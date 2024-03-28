@@ -53,6 +53,7 @@ const rowGroupTaskOption = ({
                         elements,
                         materials
                       ),
+                      endColumn: false,
                     })
                   )
                 )

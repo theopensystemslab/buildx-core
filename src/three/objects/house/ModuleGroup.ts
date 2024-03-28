@@ -6,7 +6,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import createElementGroup, {
-  ClippedBrush,
+  ClippedElementBrush,
   isClippedBrush,
   isElementBrush,
 } from "./ElementGroup";
@@ -37,7 +37,7 @@ export class ModuleGroup extends Group {
 
     this.traverse((node) => {
       if (isElementBrush(node)) {
-        const clippedBrush = new ClippedBrush();
+        const clippedBrush = new ClippedElementBrush();
         node.parent?.add(clippedBrush);
 
         node.updateMatrixWorld();
@@ -83,6 +83,7 @@ const createModuleGroup = ({
   gridGroupIndex,
   buildModule,
   z,
+  flip,
   getIfcGeometries,
   getBuildElement,
   getInitialThreeMaterial,
@@ -90,15 +91,9 @@ const createModuleGroup = ({
   gridGroupIndex: number;
   buildModule: BuildModule;
   z: number;
+  flip: boolean;
 }): T.Task<ModuleGroup> => {
-  const {
-    systemId,
-    speckleBranchUrl,
-    structuredDna: { positionType },
-    length: moduleLength,
-  } = buildModule;
-
-  const flip = gridGroupIndex !== 0 && positionType === "END";
+  const { systemId, speckleBranchUrl, length: moduleLength } = buildModule;
 
   const moduleGroupUserData: ModuleGroupUserData = {
     ...buildModule,

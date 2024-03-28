@@ -1,4 +1,8 @@
-import { dnasToModules, modulesToMatrix } from "@/layouts/ops";
+import {
+  createColumnLayout,
+  dnasToModules,
+  modulesToMatrix,
+} from "@/layouts/ops";
 import {
   elementsTask,
   houseTypesTask,
@@ -7,21 +11,15 @@ import {
 } from "@/tasks/airtables";
 import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
 import { getModelGeometriesTask } from "@/tasks/models";
-import createModuleGroup from "@/three/objects/house/ModuleGroup";
-import { A, O, T, TO } from "@/utils/functions";
+import { createColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
+import { A, T, TO } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 
-const moduleGroupTaskOption = ({
+const columnLayoutTaskOption = ({
   houseTypeIndex,
-  columnIndex,
-  levelIndex,
-  gridGroupIndex,
 }: {
   houseTypeIndex: number;
-  columnIndex: number;
-  levelIndex: number;
-  gridGroupIndex: number;
 }) =>
   pipe(
     sequenceT(T.ApplicativePar)(
@@ -41,31 +39,27 @@ const moduleGroupTaskOption = ({
             dnas,
             dnasToModules({ systemId, buildModules }),
             modulesToMatrix,
-            A.lookup(columnIndex),
-            O.chain(A.lookup(levelIndex)),
-            O.chain(A.lookup(gridGroupIndex)),
-            TO.fromOption,
-            TO.chain((buildModule) =>
+            createColumnLayout,
+            (layout) =>
               pipe(
-                createModuleGroup({
+                createColumnLayoutGroup({
+                  layout,
+                  dnas,
+                  systemId,
                   getBuildElement: getBuildElement(elements),
                   getIfcGeometries: getModelGeometriesTask,
                   getInitialThreeMaterial: getInitialThreeMaterial(
                     elements,
                     materials
                   ),
-                  gridGroupIndex: 0,
-                  buildModule: buildModule,
-                  z: 0,
-                  flip: true,
+                  vanillaColumnGetter: () => T.of(undefined as any),
                 }),
                 TO.fromTask
               )
-            )
           )
         )
       )
     )
   );
 
-export default moduleGroupTaskOption;
+export default columnLayoutTaskOption;

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const UserDataTypeEnum = z.enum([
   // "HouseTransformsGroup",
   // "HouseTransformsHandlesGroup",
-  // "HouseLayoutGroup",
+  "ColumnLayoutGroup",
   "ColumnGroup",
   // // layout group handles go in start/end column groups
   // //   this is a special case for stretch Z handles
@@ -11,7 +11,7 @@ export const UserDataTypeEnum = z.enum([
   "ModuleGroup",
   "ElementGroup",
   "ElementBrush",
-  "ClippedBrush",
+  "ClippedElementBrush",
   // "ElementMesh",
   // "StretchHandleGroup",
   // "StretchHandleMesh",

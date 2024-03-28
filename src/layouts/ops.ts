@@ -309,3 +309,16 @@ export const positionColumns = A.reduceWithIndex(
 
 export const createColumnLayout = (matrix: BuildModule[][][]): ColumnLayout =>
   pipe(matrix, A.map(createColumn), positionColumns);
+
+export const columnLayoutToLevelTypes = (columnLayout: ColumnLayout) =>
+  pipe(
+    columnLayout,
+    A.head,
+    O.map(({ positionedRows }) =>
+      pipe(
+        positionedRows,
+        A.map(({ levelType }) => levelType)
+      )
+    ),
+    O.getOrElse((): string[] => [])
+  );

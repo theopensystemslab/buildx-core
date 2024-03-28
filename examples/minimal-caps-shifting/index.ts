@@ -46,6 +46,7 @@ pipe(
             ),
             gridGroupIndex: 0,
             z: 0,
+            flip: true,
           })();
 
           if (activeModuleGroup) {

@@ -66,8 +66,10 @@ export const createGridGroup = ({
   positionedModules,
   levelIndex,
   y,
+  endColumn,
   ...defaultGetters
-}: DefaultGetters & PositionedRow): T.Task<GridGroup> =>
+}: DefaultGetters &
+  PositionedRow & { endColumn: boolean }): T.Task<GridGroup> =>
   pipe(
     positionedModules,
     A.traverse(T.ApplicativeSeq)(({ module, moduleIndex: gridGroupIndex, z }) =>
@@ -75,6 +77,7 @@ export const createGridGroup = ({
         buildModule: module,
         gridGroupIndex,
         z,
+        flip: endColumn,
         ...defaultGetters,
       })
     ),

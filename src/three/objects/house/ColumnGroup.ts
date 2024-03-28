@@ -29,13 +29,11 @@ export const createColumnGroup =
     startColumn = false,
     endColumn = false,
     ...defaultGetters
-  }: // houseTransformsGroup,
-  DefaultGetters & {
+  }: DefaultGetters & {
     positionedRows: PositionedRow[];
     columnIndex: number;
     startColumn?: boolean;
     endColumn?: boolean;
-    // houseTransformsGroup: HouseTransformsGroup;
   }): T.Task<ColumnGroup> =>
   async () => {
     const gridGroups = await (async function () {
@@ -45,6 +43,7 @@ export const createColumnGroup =
         const gridGroup = await createGridGroup({
           ...defaultGetters,
           ...positionedRow,
+          endColumn,
         })();
         gridGroups.push(gridGroup);
       }
@@ -65,42 +64,3 @@ export const createColumnGroup =
 
     return columnGroup as ColumnGroup;
   };
-
-// export const createColumnGroups = ({
-//   systemId,
-//   houseId,
-//   houseLayout,
-//   houseTransformsGroup,
-// }: {
-//   systemId: string;
-//   houseId: string;
-//   houseTransformsGroup: HouseTransformsGroup;
-//   houseLayout: ColumnLayout;
-// }): T.Task<ColumnGroup[]> =>
-//   pipe(
-//     houseLayout,
-//     A.traverseWithIndex(T.ApplicativeSeq)(
-//       (i, { positionedRows, z, columnIndex }) => {
-//         const startColumn = i === 0;
-//         const endColumn = i === houseLayout.length - 1;
-
-//         const task = createColumnGroup({
-//           systemId,
-//           houseId,
-//           positionedRows,
-//           startColumn,
-//           endColumn,
-//           columnIndex,
-//           houseTransformsGroup,
-//         });
-
-//         return pipe(
-//           task,
-//           T.map(columnGroup => {
-//             columnGroup.position.set(0, 0, z);
-//             return columnGroup;
-//           })
-//         );
-//       }
-//     )
-//   );
