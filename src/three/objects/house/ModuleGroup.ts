@@ -5,7 +5,8 @@ import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
-import createElementGroup, {
+import {
+  createElementGroup,
   ClippedElementBrush,
   isClippedBrush,
   isElementBrush,
@@ -79,7 +80,7 @@ export class ModuleGroup extends Group {
   }
 }
 
-const createModuleGroup = ({
+export const createModuleGroup = ({
   gridGroupIndex,
   buildModule,
   z,
@@ -144,5 +145,3 @@ const createModuleGroup = ({
     })
   );
 };
-
-export default createModuleGroup;

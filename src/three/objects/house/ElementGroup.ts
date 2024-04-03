@@ -63,7 +63,7 @@ export class ClippedElementBrush extends Brush {
   }
 }
 
-const createElementGroup = ({
+export const createElementGroup = ({
   ifcTag,
   geometry,
   material,
@@ -87,5 +87,3 @@ const createElementGroup = ({
 
   return elementGroup;
 };
-
-export default createElementGroup;

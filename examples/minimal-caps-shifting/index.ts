@@ -2,7 +2,8 @@ import { createBasicScene } from "@/index";
 import { elementsTask, materialsTask, modulesTask } from "@/tasks/airtables";
 import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
 import { getModelGeometriesTask } from "@/tasks/models";
-import createModuleGroup, {
+import {
+  createModuleGroup,
   ModuleGroup,
 } from "@/three/objects/house/ModuleGroup";
 import { A, O, T } from "@/utils/functions";
