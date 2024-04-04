@@ -1,9 +1,9 @@
-import { A } from "@/utils/functions";
+import { A, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { filter, map } from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
-import { systemFromId } from "./system";
+import { allSystemIds, systemFromId } from "./systems";
 import airtable from "@/utils/airtable";
 
 const modulesByHouseTypeSelector: QueryParams<any> = {
@@ -71,8 +71,10 @@ export const houseTypeParser = z
       lastModified: new Date(last_modified).getTime(),
     })
   );
-export const houseTypesQuery = async ({ systemIds }: { systemIds: string[] }) =>
-  pipe(
+export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
+  const { systemIds = allSystemIds } = input ?? {};
+
+  return pipe(
     systemIds,
     A.map(async (systemId) => {
       const system = systemFromId(systemId);
@@ -118,5 +120,17 @@ export const houseTypesQuery = async ({ systemIds }: { systemIds: string[] }) =>
 
     (ps) => Promise.all(ps).then(A.flatten)
   );
+};
 
 export type HouseType = z.infer<typeof houseTypeParser> & { systemId: string };
+
+export const remoteHouseTypesTE: TE.TaskEither<Error, HouseType[]> =
+  TE.tryCatch(
+    () => houseTypesQuery(),
+    (reason) =>
+      new Error(
+        `Failed to fetch elements: ${
+          reason instanceof Error ? reason.message : String(reason)
+        }`
+      )
+  );

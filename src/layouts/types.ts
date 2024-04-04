@@ -1,4 +1,4 @@
-import { BuildModule } from "@/systemsData/modules";
+import { BuildModule } from "@/build-systems/modules";
 
 export type PositionedBuildModule = {
   module: BuildModule;

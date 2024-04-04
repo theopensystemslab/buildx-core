@@ -1,12 +1,12 @@
+import { cachedModulesTE } from "@/build-systems/cache";
 import { applyPlanarProjectionUVs } from "@/three/utils/applyPlanarProjectionUVs";
-import { A, O, R, T } from "@/utils/functions";
+import { A, O, R, T, TE } from "@/utils/functions";
 import getSpeckleObject from "@/utils/speckle/getSpeckleObject";
 import speckleIfcParser from "@/utils/speckle/speckleIfcParser";
 import { pipe } from "fp-ts/lib/function";
 import { produce } from "immer";
 import { BufferGeometry, NormalBufferAttributes } from "three";
 import { mergeBufferGeometries } from "three-stdlib";
-import { modulesTask } from "./airtables";
 
 export const getModelGeometriesTask =
   (
@@ -34,17 +34,21 @@ export const getModelGeometriesTask =
   };
 
 const modelsTask = pipe(
-  modulesTask,
-  T.chain((buildModules) =>
+  cachedModulesTE,
+  TE.chain((buildModules) =>
     pipe(
       buildModules,
-      A.traverse(T.ApplicativePar)(({ speckleBranchUrl }) => {
+      A.traverse(TE.ApplicativePar)(({ speckleBranchUrl }) => {
         return pipe(
           getModelGeometriesTask(speckleBranchUrl),
-          T.map((geoms) => [speckleBranchUrl, geoms] as const)
+          TE.fromTask<
+            Record<string, BufferGeometry<NormalBufferAttributes>>,
+            Error
+          >,
+          TE.map((geoms) => [speckleBranchUrl, geoms] as const)
         );
       }),
-      T.map((models) => ({
+      TE.map((models) => ({
         models: models.reduce(
           (
             acc: Record<

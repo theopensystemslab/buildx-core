@@ -1,4 +1,4 @@
-import { BuildElement } from "@/systemsData/elements";
+import { BuildElement } from "@/build-systems/elements";
 import {
   BufferGeometry,
   Group,

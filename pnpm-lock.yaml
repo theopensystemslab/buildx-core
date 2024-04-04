@@ -26,6 +26,9 @@ devDependencies:
   dat.gui:
     specifier: ^0.7.9
     version: 0.7.9
+  dexie:
+    specifier: ^4.0.1
+    version: 4.0.1
   fp-ts:
     specifier: ^2.16.3
     version: 2.16.3
@@ -1133,6 +1136,10 @@ packages:
         optional: true
     dependencies:
       ms: 2.1.2
+    dev: true
+
+  /dexie@4.0.1:
+    resolution: {integrity: sha512-wSNn+TcCh+DuE2pdg058K3MhxA4g+IiZlW7yGz4cMd/t3z2rJXZcV3HDxZljbrICU2Iq0qY4UHnbolTMK/+bcA==}
     dev: true
 
   /draco3d@1.5.7:

@@ -20,6 +20,7 @@
     "airtable": "^0.12.2",
     "camera-controls": "^2.8.3",
     "dat.gui": "^0.7.9",
+    "dexie": "^4.0.1",
     "fp-ts": "^2.16.3",
     "fp-ts-std": "^0.18.0",
     "glob": "^10.3.10",

@@ -10,17 +10,13 @@ import {
   dnasToModules,
   modulesToMatrix,
 } from "@/layouts/ops";
-import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
 import { createColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
-import { A, T, TE, TO } from "@/utils/functions";
+import { A, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
+import { getInitialThreeMaterial } from "./defaultory";
 
-const columnLayoutTaskOption = ({
-  houseTypeIndex,
-}: {
-  houseTypeIndex: number;
-}) =>
+const columnLayoutTE = ({ houseTypeIndex }: { houseTypeIndex: number }) =>
   pipe(
     sequenceT(TE.ApplicativePar)(
       cachedHouseTypesTE,
@@ -28,13 +24,14 @@ const columnLayoutTaskOption = ({
       cachedElementsTE,
       cachedMaterialsTE
     ),
-    TO.fromTaskEither,
-    TO.chain(([houseTypes, buildModules, elements, materials]) =>
+    TE.flatMap(([houseTypes, buildModules, elements, materials]) =>
       pipe(
         houseTypes,
         A.lookup(houseTypeIndex),
-        TO.fromOption,
-        TO.chain(({ systemId, dnas }) =>
+        TE.fromOption(() =>
+          Error(`no house type at index ${houseTypeIndex} on ${houseTypes}`)
+        ),
+        TE.flatMap(({ systemId, dnas }) =>
           pipe(
             dnas,
             dnasToModules({ systemId, buildModules }),
@@ -43,18 +40,24 @@ const columnLayoutTaskOption = ({
             (layout) =>
               pipe(
                 createColumnLayoutGroup({
+                  systemId,
                   layout,
                   dnas,
-                  systemId,
-                  getBuildElement: getBuildElement(elements),
+                  getBuildElement: ({ systemId, ifcTag }) =>
+                    pipe(
+                      elements,
+                      A.findFirst(
+                        (x) => x.systemId === systemId && x.ifcTag === ifcTag
+                      ),
+                      TE.fromOption(() => Error("no element!"))
+                    ),
                   getBuildModel: cachedModelTE,
+                  vanillaColumnGetter: () => TE.of(undefined as any),
                   getInitialThreeMaterial: getInitialThreeMaterial(
                     elements,
                     materials
                   ),
-                  vanillaColumnGetter: () => T.of(undefined as any),
-                }),
-                TO.fromTask
+                })
               )
           )
         )
@@ -62,4 +65,4 @@ const columnLayoutTaskOption = ({
     )
   );
 
-export default columnLayoutTaskOption;
+export default columnLayoutTE;

@@ -1,12 +1,12 @@
+import { cachedElementsTE } from "@/build-systems/cache";
 import { createBasicScene } from "@/index";
 import columnLayoutTaskOption from "@/tasks/columnLayoutTaskOption";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
-import { T, TO } from "@/utils/functions";
+import { TE, TO } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { AxesHelper, BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
 import { Brush } from "three-bvh-csg";
 import gui from "./gui";
-import { elementsTask } from "@/tasks/airtables";
 
 const { addObjectToScene, render } = createBasicScene({
   outliner: (object) => {
@@ -73,8 +73,8 @@ pipe(
 )();
 
 pipe(
-  elementsTask,
-  T.map((elements) => {
+  cachedElementsTE,
+  TE.map((elements) => {
     gui({ elements });
   })
 )();

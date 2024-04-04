@@ -1,33 +1,36 @@
-import { BuildElement } from "@/systemsData/elements";
-import { O, R, T } from "@/utils/functions";
+import {
+  cachedElementsTE,
+  cachedHouseTypesTE,
+  cachedMaterialsTE,
+} from "@/build-systems/cache";
+import { BuildElement } from "@/build-systems/remote/elements";
+import { BuildMaterial } from "@/build-systems/remote/materials";
+import { BuildModel } from "@/build-systems/remote/models";
+import { O, R, T, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { BufferGeometry, Material } from "three";
+import { Material } from "three";
 import { getThreeMaterial } from "../three/materials/getThreeMaterial";
-import { elementsTask, houseTypesTask, materialsTask } from "./airtables";
 import modelsTask from "./models";
-import { BuildMaterial } from "@/systemsData/materials";
 
 export type DefaultGetters = {
-  getIfcGeometries: (
-    speckleBranchUrl: string
-  ) => T.Task<Record<string, BufferGeometry>>;
+  getBuildModel: (speckleBranchUrl: string) => TE.TaskEither<Error, BuildModel>;
   getBuildElement: (x: {
     systemId: string;
     ifcTag: string;
-  }) => T.Task<BuildElement>;
+  }) => TE.TaskEither<Error, BuildElement>;
   getInitialThreeMaterial: (x: {
     systemId: string;
     ifcTag: string;
-  }) => T.Task<Material>;
+  }) => TE.TaskEither<Error, Material>;
 };
 
 // Use sequenceT to run the tasks concurrently
-const allTasks = sequenceT(T.ApplicativePar)(
-  elementsTask,
-  materialsTask,
+const allTasks = sequenceT(TE.ApplicativePar)(
+  cachedElementsTE,
+  cachedMaterialsTE,
   modelsTask,
-  houseTypesTask
+  cachedHouseTypesTE
 );
 
 export const getBuildElement = (allElements: BuildElement[]) => {
@@ -38,7 +41,7 @@ export const getBuildElement = (allElements: BuildElement[]) => {
 
     if (typeof element === "undefined") throw new Error("no element");
 
-    return T.of(element);
+    return TE.of(element);
   };
 };
 
@@ -47,7 +50,7 @@ export const getInitialThreeMaterial =
   ({ systemId, ifcTag }: { systemId: string; ifcTag: string }) => {
     return pipe(
       getBuildElement(allElements)({ systemId, ifcTag }),
-      T.map((buildElement) => {
+      TE.map((buildElement) => {
         const defaultMaterialSpec = buildElement.defaultMaterial;
         const buildMaterial = allMaterials.find(
           (m) =>
@@ -64,7 +67,7 @@ export const getInitialThreeMaterial =
 
 const defaultoryTask = pipe(
   allTasks,
-  T.map(([elements, materials, { models, buildModules }, houseTypes]) => {
+  TE.map(([elements, materials, { models, buildModules }, houseTypes]) => {
     const getBuildElement = ({
       systemId,
       ifcTag,

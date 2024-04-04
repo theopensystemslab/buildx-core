@@ -1,12 +1,12 @@
 import { PositionedRow } from "@/layouts/types";
 import { DefaultGetters } from "@/tasks/defaultory";
-import { A, T } from "@/utils/functions";
+import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { Brush, Evaluator } from "three-bvh-csg";
+import { UserDataTypeEnum } from "../types";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
 import { createModuleGroup, isModuleGroup } from "./ModuleGroup";
-import { UserDataTypeEnum } from "../types";
 
 export type GridGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.GridGroup;
@@ -68,20 +68,23 @@ export const createGridGroup = ({
   y,
   endColumn,
   ...defaultGetters
-}: DefaultGetters &
-  PositionedRow & { endColumn: boolean }): T.Task<GridGroup> =>
+}: DefaultGetters & PositionedRow & { endColumn: boolean }): TE.TaskEither<
+  Error,
+  GridGroup
+> =>
   pipe(
     positionedModules,
-    A.traverse(T.ApplicativeSeq)(({ module, moduleIndex: gridGroupIndex, z }) =>
-      createModuleGroup({
-        buildModule: module,
-        gridGroupIndex,
-        z,
-        flip: endColumn,
-        ...defaultGetters,
-      })
+    A.traverse(TE.ApplicativeSeq)(
+      ({ module, moduleIndex: gridGroupIndex, z }) =>
+        createModuleGroup({
+          buildModule: module,
+          gridGroupIndex,
+          z,
+          flip: endColumn,
+          ...defaultGetters,
+        })
     ),
-    T.map((moduleGroups) => {
+    TE.map((moduleGroups) => {
       const gridGroup = new GridGroup({
         type: UserDataTypeEnum.Enum.GridGroup,
         levelIndex,

@@ -30,7 +30,8 @@ const getSpeckleObject = async (speckleBranchUrl: string) => {
     streamId,
   });
 
-  const objectId = data.stream.branch.commits.items[0].referencedObject;
+  const objectId =
+    data.stream.branch.commits.itelementsTaskems[0].referencedObject;
 
   const loader = new ObjectLoader({
     serverUrl: "https://speckle.xyz",

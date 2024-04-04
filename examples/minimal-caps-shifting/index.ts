@@ -1,12 +1,16 @@
-import { createBasicScene } from "@/index";
-import { elementsTask, materialsTask, modulesTask } from "@/tasks/airtables";
-import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
-import { getModelGeometriesTask } from "@/tasks/models";
 import {
-  createModuleGroup,
+  cachedElementsTE,
+  cachedMaterialsTE,
+  cachedModelTE,
+  cachedModulesTE,
+} from "@/build-systems/cache";
+import { createBasicScene } from "@/index";
+import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
+import {
   ModuleGroup,
+  createModuleGroup,
 } from "@/three/objects/house/ModuleGroup";
-import { A, O, T } from "@/utils/functions";
+import { A, O, TE } from "@/utils/functions";
 import { GUI } from "dat.gui";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
@@ -28,8 +32,12 @@ const gui = new GUI();
 let activeModuleGroup: ModuleGroup | null = null;
 
 pipe(
-  sequenceT(T.ApplicativePar)(modulesTask, elementsTask, materialsTask),
-  T.map(([allModules, allElements, allMaterials]) => {
+  sequenceT(TE.ApplicativePar)(
+    cachedModulesTE,
+    cachedElementsTE,
+    cachedMaterialsTE
+  ),
+  TE.map(([allModules, allElements, allMaterials]) => {
     // module processor
     const processModule = async (selectedDna: string) => {
       pipe(
@@ -39,8 +47,7 @@ pipe(
           const nextModuleGroup = await createModuleGroup({
             buildModule,
             getBuildElement: getBuildElement(allElements),
-            getIfcGeometries: () =>
-              getModelGeometriesTask(buildModule.speckleBranchUrl),
+            getBuildModel: cachedModelTE,
             getInitialThreeMaterial: getInitialThreeMaterial(
               allElements,
               allMaterials

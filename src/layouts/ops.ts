@@ -1,4 +1,4 @@
-import { BuildModule } from "@/systemsData/modules";
+import { BuildModule } from "@/build-systems/modules";
 import { A, O } from "@/utils/functions";
 import { roundp } from "@/utils/math";
 import { transpose } from "fp-ts-std/Array";

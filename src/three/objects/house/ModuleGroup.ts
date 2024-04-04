@@ -1,17 +1,17 @@
-import { BuildModule } from "@/systemsData/modules";
+import { BuildModule } from "@/build-systems/remote/modules";
 import { DefaultGetters } from "@/tasks/defaultory";
-import { A, T } from "@/utils/functions";
+import { A, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
+import { UserDataTypeEnum } from "../types";
 import {
-  createElementGroup,
   ClippedElementBrush,
+  createElementGroup,
   isClippedBrush,
   isElementBrush,
 } from "./ElementGroup";
-import { UserDataTypeEnum } from "../types";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
@@ -85,7 +85,7 @@ export const createModuleGroup = ({
   buildModule,
   z,
   flip,
-  getIfcGeometries,
+  getBuildModel,
   getBuildElement,
   getInitialThreeMaterial,
 }: DefaultGetters & {
@@ -93,7 +93,7 @@ export const createModuleGroup = ({
   buildModule: BuildModule;
   z: number;
   flip: boolean;
-}): T.Task<ModuleGroup> => {
+}): TE.TaskEither<Error, ModuleGroup> => {
   const { systemId, speckleBranchUrl, length: moduleLength } = buildModule;
 
   const moduleGroupUserData: ModuleGroupUserData = {
@@ -111,18 +111,18 @@ export const createModuleGroup = ({
   moduleGroup.scale.setZ(flip ? 1 : -1);
   moduleGroup.position.setZ(flip ? z + moduleLength / 2 : z - moduleLength / 2);
 
-  const elementGroupTask = pipe(
-    getIfcGeometries(speckleBranchUrl),
-    T.chain((modelGeometries) =>
-      pipe(
-        Object.entries(modelGeometries),
-        A.traverse(T.ApplicativeSeq)(([ifcTag, geometry]) =>
+  const elementGroupTE = pipe(
+    getBuildModel(speckleBranchUrl),
+    TE.flatMap(({ geometries }) => {
+      return pipe(
+        Object.entries(geometries),
+        A.traverse(TE.ApplicativeSeq)(([ifcTag, geometry]) =>
           pipe(
-            sequenceT(T.ApplicativePar)(
+            sequenceT(TE.ApplicativePar)(
               getBuildElement({ systemId, ifcTag }),
               getInitialThreeMaterial({ systemId, ifcTag })
             ),
-            T.map(([element, material]) =>
+            TE.map(([element, material]) =>
               createElementGroup({
                 systemId,
                 ifcTag,
@@ -133,13 +133,13 @@ export const createModuleGroup = ({
             )
           )
         )
-      )
-    )
+      );
+    })
   );
 
   return pipe(
-    elementGroupTask,
-    T.map((elementGroups) => {
+    elementGroupTE,
+    TE.map((elementGroups) => {
       moduleGroup.add(...elementGroups);
       return moduleGroup;
     })

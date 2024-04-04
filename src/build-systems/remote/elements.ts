@@ -1,9 +1,9 @@
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
-import { A } from "@/utils/functions";
+import { A, T, TE } from "@/utils/functions";
 import { materialsQuery } from "./materials";
 import airtable from "@/utils/airtable";
-import { systemFromId } from "./system";
+import { allSystemIds, systemFromId } from "./systems";
 
 export type BuildElement = {
   id: string;
@@ -22,14 +22,14 @@ export const elementParser = z.object({
     element_code: z
       .string()
       .min(1)
-      .transform(s => s.trim()),
+      .transform((s) => s.trim()),
     ifc4_variable: z.string().min(1),
     default_material: z.array(z.string().min(1)).optional(),
     element_category: z.string().min(1),
     last_modified: z
       .string()
       .refine(
-        value => {
+        (value) => {
           // Attempt to parse the value as a date and check that it's valid
           const date = new Date(value);
           return !isNaN(date.getTime());
@@ -39,16 +39,18 @@ export const elementParser = z.object({
           message: "Invalid date string",
         }
       )
-      .transform(x => new Date(x).getTime()),
+      .transform((x) => new Date(x).getTime()),
   }),
 });
 
-export const elementsQuery = async ({ systemIds }: { systemIds: string[] }) => {
+export const elementsQuery = async (input?: { systemIds: string[] }) => {
+  const { systemIds = allSystemIds } = input ?? {};
+
   const materials = await materialsQuery({ systemIds });
 
   return pipe(
     systemIds,
-    A.map(systemId =>
+    A.map((systemId) =>
       pipe(
         airtable
           .base(systemFromId(systemId)?.airtableId ?? "")
@@ -78,7 +80,7 @@ export const elementsQuery = async ({ systemIds }: { systemIds: string[] }) => {
                     optionalMaterials[0]?.specification ||
                     "";
                   const materialOptions = optionalMaterials.map(
-                    material => material.specification
+                    (material) => material.specification
                   );
 
                   return {
@@ -97,6 +99,17 @@ export const elementsQuery = async ({ systemIds }: { systemIds: string[] }) => {
           )
       )
     ),
-    ps => Promise.all(ps).then(A.flatten)
+    (ps) => Promise.all(ps).then(A.flatten)
   );
 };
+
+export const remoteElementsTE: TE.TaskEither<Error, BuildElement[]> =
+  TE.tryCatch(
+    () => elementsQuery(),
+    (reason) =>
+      new Error(
+        `Failed to fetch elements: ${
+          reason instanceof Error ? reason.message : String(reason)
+        }`
+      )
+  );

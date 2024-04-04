@@ -1,16 +1,16 @@
-import { Box3, Group } from "three";
-import { UserDataTypeEnum } from "../types";
-import { Column, ColumnLayout } from "@/layouts/types";
-import { OBB } from "three-stdlib";
-import { A, O, T, someOrError } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
-import { createColumnGroup } from "./ColumnGroup";
-import { DefaultGetters } from "@/tasks/defaultory";
 import { columnLayoutToLevelTypes } from "@/layouts/ops";
+import { Column, ColumnLayout } from "@/layouts/types";
 import { VanillaColumnsKey } from "@/layouts/vanillaColumns";
+import { DefaultGetters } from "@/tasks/defaultory";
+import { A, O, TE, someOrError } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
+import { Box3, Group } from "three";
 import { Brush } from "three-bvh-csg";
-import { isModuleGroup } from "./ModuleGroup";
+import { OBB } from "three-stdlib";
+import { UserDataTypeEnum } from "../types";
+import { createColumnGroup } from "./ColumnGroup";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
+import { isModuleGroup } from "./ModuleGroup";
 
 export type ColumnLayoutGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
@@ -85,33 +85,31 @@ export const createColumnLayoutGroup = ({
   systemId: string;
   dnas: string[];
   layout: ColumnLayout;
-  vanillaColumnGetter: (key: VanillaColumnsKey) => T.Task<Column>;
+  vanillaColumnGetter: (key: VanillaColumnsKey) => TE.TaskEither<Error, Column>;
 }) =>
   pipe(
     layout,
-    A.traverseWithIndex(T.ApplicativeSeq)(
+    A.traverseWithIndex(TE.ApplicativeSeq)(
       (i, { positionedRows, z, columnIndex }) => {
         const startColumn = i === 0;
         const endColumn = i === layout.length - 1;
 
-        const task = createColumnGroup({
-          positionedRows,
-          startColumn,
-          endColumn,
-          columnIndex,
-          ...defaultGetters,
-        });
-
         return pipe(
-          task,
-          T.map((columnGroup) => {
+          createColumnGroup({
+            positionedRows,
+            startColumn,
+            endColumn,
+            columnIndex,
+            ...defaultGetters,
+          }),
+          TE.map((columnGroup) => {
             columnGroup.position.set(0, 0, z);
             return columnGroup;
           })
         );
       }
     ),
-    T.chain((columnGroups) => {
+    TE.flatMap((columnGroups) => {
       const firstColumn = pipe(
         layout,
         A.head,
@@ -144,7 +142,7 @@ export const createColumnLayoutGroup = ({
 
       return pipe(
         vanillaColumnGetter({ systemId, sectionType, levelTypes }),
-        T.map((vanillaColumn) => {
+        TE.map((vanillaColumn) => {
           const userData: ColumnLayoutGroupUserData = {
             type: UserDataTypeEnum.Enum.ColumnLayoutGroup,
             dnas,
