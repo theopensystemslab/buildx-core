@@ -1,4 +1,3 @@
-import { BuildModule } from "@/build-systems/modules";
 import { A, O } from "@/utils/functions";
 import { roundp } from "@/utils/math";
 import { transpose } from "fp-ts-std/Array";
@@ -12,6 +11,7 @@ import {
   PositionedRow,
   Row,
 } from "./types";
+import { BuildModule } from "@/build-systems/remote/modules";
 
 export const createPositionedModules = (
   module: BuildModule,

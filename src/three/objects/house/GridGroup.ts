@@ -5,7 +5,7 @@ import { Group } from "three";
 import { Brush, Evaluator } from "three-bvh-csg";
 import { UserDataTypeEnum } from "../types";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
-import { createModuleGroup, isModuleGroup } from "./ModuleGroup";
+import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
 
 export type GridGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.GridGroup;
@@ -61,12 +61,16 @@ export class GridGroup extends Group {
   }
 }
 
-export const createGridGroup = ({
+export const defaultGridGroupCreator = ({
   positionedModules,
   levelIndex,
   y,
   endColumn,
-}: PositionedRow & { endColumn: boolean }): TE.TaskEither<Error, GridGroup> =>
+  createModuleGroup = defaultModuleGroupCreator,
+}: PositionedRow & {
+  endColumn: boolean;
+  createModuleGroup?: typeof defaultModuleGroupCreator;
+}): TE.TaskEither<Error, GridGroup> =>
   pipe(
     positionedModules,
     A.traverse(TE.ApplicativeSeq)(

@@ -1,10 +1,12 @@
 "use client";
+import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
+import { ThreeMaterial } from "@/three/materials/types";
 import Dexie from "dexie";
+import { sequenceT } from "fp-ts/lib/Apply";
 import { flow, pipe } from "fp-ts/lib/function";
 import {
   BufferGeometry,
   BufferGeometryLoader,
-  Material,
   NormalBufferAttributes,
 } from "three";
 import { A, E, O, R, TE, runUntilFirstSuccess } from "../utils/functions";
@@ -13,9 +15,6 @@ import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
 import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
-import { sequenceT } from "fp-ts/lib/Apply";
-import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
-import { ThreeMaterial } from "@/three/materials/types";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 

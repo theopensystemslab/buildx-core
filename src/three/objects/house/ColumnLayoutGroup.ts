@@ -7,9 +7,9 @@ import { Box3, Group } from "three";
 import { Brush } from "three-bvh-csg";
 import { OBB } from "three-stdlib";
 import { UserDataTypeEnum } from "../types";
-import { createColumnGroup } from "./ColumnGroup";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
 import { isModuleGroup } from "./ModuleGroup";
+import { defaultColumnGroupCreator } from "./ColumnGroup";
 
 export type ColumnLayoutGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
@@ -79,10 +79,12 @@ export const createColumnLayoutGroup = ({
   dnas,
   layout,
   vanillaColumnGetter = () => TE.of(undefined as any),
+  createColumnGroup = defaultColumnGroupCreator,
 }: {
   systemId: string;
   dnas: string[];
   layout: ColumnLayout;
+  createColumnGroup?: typeof defaultColumnGroupCreator;
   vanillaColumnGetter?: (
     key: VanillaColumnsKey
   ) => TE.TaskEither<Error, Column>;

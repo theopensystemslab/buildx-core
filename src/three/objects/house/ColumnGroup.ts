@@ -3,7 +3,7 @@ import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { UserDataTypeEnum } from "../types";
-import { createGridGroup } from "./GridGroup";
+import { defaultGridGroupCreator } from "./GridGroup";
 
 export type ColumnGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnGroup;
@@ -22,16 +22,18 @@ export class ColumnGroup extends Group {
   }
 }
 
-export const createColumnGroup = ({
+export const defaultColumnGroupCreator = ({
   positionedRows,
   columnIndex,
   startColumn = false,
   endColumn = false,
+  createGridGroup = defaultGridGroupCreator,
 }: {
   positionedRows: PositionedRow[];
   columnIndex: number;
   startColumn?: boolean;
   endColumn?: boolean;
+  createGridGroup?: typeof defaultGridGroupCreator;
 }): TE.TaskEither<Error, ColumnGroup> =>
   pipe(
     positionedRows,

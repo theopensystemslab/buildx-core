@@ -5,7 +5,7 @@ import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { AxesHelper } from "three";
 
-const { addObjectToScene, render } = createBasicScene({
+const { addObjectToScene } = createBasicScene({
   outliner: (object) => {
     return object.parent && isModuleGroup(object.parent)
       ? object.parent.children
@@ -14,27 +14,6 @@ const { addObjectToScene, render } = createBasicScene({
 });
 
 addObjectToScene(new AxesHelper());
-
-// pipe(
-//   sequenceT(TE.ApplicativePar)(
-//     cachedHouseTypesTE,
-//     cachedModulesTE,
-//     cachedElementsTE,
-//     cachedMaterialsTE
-//   ),
-//   TE.map(([houseTypes, modules, elements, materials]) => {
-//     console.log({ houseTypes, modules, elements, materials });
-
-//     pipe(
-//       modules,
-//       A.head,
-//       TE.fromOption(() => Error("how dare u")),
-//       TE.flatMap(({ speckleBranchUrl }) => cachedModelTE(speckleBranchUrl))
-//     )().then((yo) => {
-//       console.log({ yo });
-//     });
-//   })
-// )();
 
 pipe(
   columnLayoutTE({ houseTypeIndex: 1 }),

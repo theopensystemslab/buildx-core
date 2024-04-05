@@ -1,8 +1,8 @@
 import { cachedElementsTE } from "@/build-systems/cache";
 import { createBasicScene } from "@/index";
-import columnLayoutTaskOption from "@/tasks/columnLayoutTaskOption";
+import columnLayoutTE from "@/tasks/columnLayoutTE";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
-import { TE, TO } from "@/utils/functions";
+import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { AxesHelper, BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
 import { Brush } from "three-bvh-csg";
@@ -19,10 +19,10 @@ const { addObjectToScene, render } = createBasicScene({
 addObjectToScene(new AxesHelper());
 
 pipe(
-  columnLayoutTaskOption({
+  columnLayoutTE({
     houseTypeIndex: 1,
   }),
-  TO.map((columnLayoutGroup) => {
+  TE.map((columnLayoutGroup) => {
     addObjectToScene(columnLayoutGroup);
 
     const {

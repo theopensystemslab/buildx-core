@@ -1,8 +1,8 @@
+import airtable from "@/utils/airtable";
+import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
-import { A, T, TE } from "@/utils/functions";
 import { materialsQuery } from "./materials";
-import airtable from "@/utils/airtable";
 import { allSystemIds, systemFromId } from "./systems";
 
 export type BuildElement = {

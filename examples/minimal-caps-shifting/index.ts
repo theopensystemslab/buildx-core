@@ -1,18 +1,12 @@
-import {
-  cachedElementsTE,
-  cachedMaterialsTE,
-  getCachedModelTE,
-  cachedModulesTE,
-} from "@/build-systems/cache";
+import { cachedModulesTE } from "@/build-systems/cache";
+import { allSystemIds } from "@/build-systems/remote/systems";
 import { createBasicScene } from "@/index";
-import { getBuildElement, getInitialThreeMaterial } from "@/tasks/defaultory";
 import {
   ModuleGroup,
-  createModuleGroup,
+  defaultModuleGroupCreator,
 } from "@/three/objects/house/ModuleGroup";
-import { A, O, TE } from "@/utils/functions";
+import { A, TE } from "@/utils/functions";
 import { GUI } from "dat.gui";
-import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import {
   AxesHelper,
@@ -31,41 +25,40 @@ const gui = new GUI();
 
 let activeModuleGroup: ModuleGroup | null = null;
 
+const systemId = allSystemIds[0];
+
 pipe(
-  sequenceT(TE.ApplicativePar)(
-    cachedModulesTE,
-    cachedElementsTE,
-    cachedMaterialsTE
-  ),
-  TE.map(([allModules, allElements, allMaterials]) => {
+  cachedModulesTE,
+  TE.map((allModules) => {
     // module processor
-    const processModule = async (selectedDna: string) => {
+    const processModule = (selectedDna: string) =>
       pipe(
         allModules,
-        A.findFirst(({ dna }) => dna === selectedDna),
-        O.map(async (buildModule) => {
-          const nextModuleGroup = await createModuleGroup({
-            buildModule,
-            getBuildElement: getBuildElement(allElements),
-            getBuildModel: getCachedModelTE,
-            getInitialThreeMaterial: getInitialThreeMaterial(
-              allElements,
-              allMaterials
-            ),
-            gridGroupIndex: 0,
-            z: 0,
-            flip: true,
-          })();
+        A.findFirst((x) => x.systemId === systemId && x.dna === selectedDna),
+        TE.fromOption(() =>
+          Error(`BuildModule ${selectedDna} not found in ${systemId}`)
+        ),
+        TE.flatMap((buildModule) =>
+          pipe(
+            defaultModuleGroupCreator({
+              buildModule,
+              gridGroupIndex: 0,
+              z: 0,
+              flip: true,
+            }),
+            TE.map((nextModuleGroup) => {
+              if (activeModuleGroup) {
+                scene.remove(activeModuleGroup);
+                activeModuleGroup = null;
+              }
+              addObjectToScene(nextModuleGroup);
+              activeModuleGroup = nextModuleGroup;
 
-          if (activeModuleGroup) {
-            scene.remove(activeModuleGroup);
-            activeModuleGroup = null;
-          }
-          addObjectToScene(nextModuleGroup);
-          activeModuleGroup = nextModuleGroup;
-        })
-      );
-    };
+              return nextModuleGroup;
+            })
+          )
+        )
+      )();
 
     // GUI setup
     const settings = {

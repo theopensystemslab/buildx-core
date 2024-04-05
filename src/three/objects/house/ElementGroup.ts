@@ -58,7 +58,7 @@ export class ClippedElementBrush extends Brush {
   }
 }
 
-export const createElementGroup = ({
+export const defaultElementGroupCreator = ({
   ifcTag,
   geometry,
   threeMaterial,

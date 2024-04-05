@@ -10,7 +10,7 @@ import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import { UserDataTypeEnum } from "../types";
 import {
   ClippedElementBrush,
-  createElementGroup,
+  defaultElementGroupCreator,
   isClippedBrush,
   isElementBrush,
 } from "./ElementGroup";
@@ -82,7 +82,7 @@ export class ModuleGroup extends Group {
   }
 }
 
-export const createModuleGroup = ({
+export const defaultModuleGroupCreator = ({
   gridGroupIndex,
   buildModule,
   z,
@@ -133,7 +133,7 @@ export const createModuleGroup = ({
                 ),
                 TE.fromEither,
                 TE.map(({ element, threeMaterial }) =>
-                  createElementGroup({
+                  defaultElementGroupCreator({
                     systemId,
                     ifcTag,
                     geometry,
