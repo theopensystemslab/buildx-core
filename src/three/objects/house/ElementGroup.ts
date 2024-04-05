@@ -9,16 +9,18 @@ export const isElementGroup = (node: Object3D): node is ElementGroup =>
 
 export type ElementGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ElementGroup;
-  ifcTag: string;
-  category: string;
 };
 
 export class ElementGroup extends Group {
   userData: ElementGroupUserData;
+  element: BuildElement;
 
-  constructor(userData: ElementGroupUserData) {
+  constructor(element: BuildElement) {
     super();
-    this.userData = userData;
+    this.userData = {
+      type: UserDataTypeEnum.Enum.ElementGroup,
+    };
+    this.element = element;
   }
 }
 
@@ -59,26 +61,16 @@ export class ClippedElementBrush extends Brush {
 }
 
 export const defaultElementGroupCreator = ({
-  ifcTag,
   geometry,
   threeMaterial,
   element,
 }: {
-  systemId: string;
-  ifcTag: string;
   geometry: BufferGeometry<NormalBufferAttributes>;
   threeMaterial: ThreeMaterial;
   element: BuildElement;
 }): ElementGroup => {
   const elementBrush = new ElementBrush(geometry, threeMaterial);
-
-  const elementGroup = new ElementGroup({
-    type: UserDataTypeEnum.Enum.ElementGroup,
-    ifcTag,
-    category: element.category,
-  });
-
+  const elementGroup = new ElementGroup(element);
   elementGroup.add(elementBrush);
-
   return elementGroup;
 };

@@ -4,8 +4,11 @@ import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { AxesHelper } from "three";
+import gui from "./gui";
+import ElementsManager from "@/three/managers/ElementsManager";
+import CutsManager from "@/three/managers/CutsManager";
 
-const { addObjectToScene } = createBasicScene({
+const { addObjectToScene, render } = createBasicScene({
   outliner: (object) => {
     return object.parent && isModuleGroup(object.parent)
       ? object.parent.children
@@ -19,5 +22,20 @@ pipe(
   columnLayoutTE({ houseTypeIndex: 1 }),
   TE.map((columnLayoutGroup) => {
     addObjectToScene(columnLayoutGroup);
+
+    const elementsManager = new ElementsManager(columnLayoutGroup);
+    const cutsManager = new CutsManager(
+      columnLayoutGroup,
+      columnLayoutGroup.obb
+    );
+
+    // addObjectToScene(cutsManager.zCutBrush);
+    console.log(cutsManager.zCutBrush);
+
+    gui({
+      elementsManager,
+      cutsManager,
+      render,
+    });
   })
 )();

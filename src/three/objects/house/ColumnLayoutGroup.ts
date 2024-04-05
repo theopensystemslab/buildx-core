@@ -3,7 +3,7 @@ import { Column, ColumnLayout } from "@/layouts/types";
 import { VanillaColumnsKey } from "@/layouts/vanillaColumns";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group } from "three";
+import { Box3, Group, Vector3 } from "three";
 import { Brush } from "three-bvh-csg";
 import { OBB } from "three-stdlib";
 import { UserDataTypeEnum } from "../types";
@@ -17,9 +17,9 @@ export type ColumnLayoutGroupUserData = {
   layout: ColumnLayout;
   vanillaColumn: Column;
   levelTypes: string[];
-  height: number;
-  length: number;
   width: number;
+  height: number;
+  depth: number;
   sectionType: string;
 };
 
@@ -31,8 +31,12 @@ class ColumnLayoutGroup extends Group {
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
     this.userData = userData;
+    const { width, height, depth } = userData;
     this.aabb = new Box3();
-    this.obb = new OBB();
+    this.obb = new OBB(
+      new Vector3(),
+      new Vector3(width / 2, height / 2, depth / 2)
+    );
   }
 
   createClippedBrushes(clippingBrush: Brush) {
@@ -152,7 +156,7 @@ export const createColumnLayoutGroup = ({
             levelTypes,
             width,
             height,
-            length,
+            depth: length,
             vanillaColumn,
           };
 

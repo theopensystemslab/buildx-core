@@ -134,8 +134,6 @@ export const defaultModuleGroupCreator = ({
                 TE.fromEither,
                 TE.map(({ element, threeMaterial }) =>
                   defaultElementGroupCreator({
-                    systemId,
-                    ifcTag,
                     geometry,
                     threeMaterial: threeMaterial,
                     element,

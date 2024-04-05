@@ -26,7 +26,7 @@ pipe(
     addObjectToScene(columnLayoutGroup);
 
     const {
-      length: layoutLength,
+      depth: layoutLength,
       height: layoutHeight,
       width: layoutWidth,
     } = columnLayoutGroup.userData;

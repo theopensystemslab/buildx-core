@@ -176,7 +176,6 @@ export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
   pipe(
     sequenceT(TE.ApplicativePar)(cachedElementsTE, cachedMaterialsTE),
     TE.map(([elements, materials]): MaterialGetters => {
-      console.log({ elements, materials });
       const getElement = (systemId: string, ifcTag: string) =>
         pipe(
           elements,
