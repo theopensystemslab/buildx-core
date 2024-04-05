@@ -1,5 +1,4 @@
 import { PositionedRow } from "@/layouts/types";
-import { DefaultGetters } from "@/tasks/defaultory";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
@@ -67,11 +66,7 @@ export const createGridGroup = ({
   levelIndex,
   y,
   endColumn,
-  ...defaultGetters
-}: DefaultGetters & PositionedRow & { endColumn: boolean }): TE.TaskEither<
-  Error,
-  GridGroup
-> =>
+}: PositionedRow & { endColumn: boolean }): TE.TaskEither<Error, GridGroup> =>
   pipe(
     positionedModules,
     A.traverse(TE.ApplicativeSeq)(
@@ -81,7 +76,6 @@ export const createGridGroup = ({
           gridGroupIndex,
           z,
           flip: endColumn,
-          ...defaultGetters,
         })
     ),
     TE.map((moduleGroups) => {

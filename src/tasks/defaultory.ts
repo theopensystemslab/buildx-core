@@ -13,17 +13,17 @@ import { Material } from "three";
 import { getThreeMaterial } from "../three/materials/getThreeMaterial";
 import modelsTask from "./models";
 
-export type DefaultGetters = {
-  getBuildModel: (speckleBranchUrl: string) => TE.TaskEither<Error, BuildModel>;
-  getBuildElement: (x: {
-    systemId: string;
-    ifcTag: string;
-  }) => TE.TaskEither<Error, BuildElement>;
-  getInitialThreeMaterial: (x: {
-    systemId: string;
-    ifcTag: string;
-  }) => TE.TaskEither<Error, Material>;
-};
+// export type DefaultGetters = {
+//   getBuildModel: (speckleBranchUrl: string) => TE.TaskEither<Error, BuildModel>;
+//   getBuildElement: (x: {
+//     systemId: string;
+//     ifcTag: string;
+//   }) => TE.TaskEither<Error, BuildElement>;
+//   getInitialThreeMaterial: (x: {
+//     systemId: string;
+//     ifcTag: string;
+//   }) => TE.TaskEither<Error, Material>;
+// };
 
 // Use sequenceT to run the tasks concurrently
 const allTasks = sequenceT(TE.ApplicativePar)(

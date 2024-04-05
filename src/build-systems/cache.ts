@@ -4,14 +4,18 @@ import { flow, pipe } from "fp-ts/lib/function";
 import {
   BufferGeometry,
   BufferGeometryLoader,
+  Material,
   NormalBufferAttributes,
 } from "three";
-import { A, O, R, TE, runUntilFirstSuccess } from "../utils/functions";
+import { A, E, O, R, TE, runUntilFirstSuccess } from "../utils/functions";
 import { BuildElement, remoteElementsTE } from "./remote/elements";
 import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
 import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
+import { sequenceT } from "fp-ts/lib/Apply";
+import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
+import { ThreeMaterial } from "@/three/materials/types";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -94,6 +98,21 @@ export const cachedElementsTE = runUntilFirstSuccess([
   ),
 ]);
 
+export const elementGetterTE = pipe(
+  cachedElementsTE,
+  TE.map(
+    (elements) =>
+      ({ systemId, ifcTag }: { systemId: string; ifcTag: string }) =>
+        pipe(
+          elements,
+          A.findFirst<BuildElement>(
+            (x) => x.systemId === systemId && x.ifcTag === ifcTag
+          ),
+          E.fromOption(() => Error(`no ${ifcTag} element found in ${systemId}`))
+        )
+  )
+);
+
 export const localModulesTE: TE.TaskEither<Error, BuildModule[]> = TE.tryCatch(
   () =>
     buildSystemsCache.modules.toArray().then((modules) => {
@@ -138,6 +157,61 @@ export const cachedMaterialsTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+type MaterialGetters = {
+  getElement: (
+    systemId: string,
+    ifcTag: string
+  ) => E.Either<Error, BuildElement>;
+  getMaterial: (
+    systemId: string,
+    specification: string
+  ) => E.Either<Error, BuildMaterial>;
+  getInitialThreeMaterial: (
+    systemId: string,
+    ifcTag: string
+  ) => E.Either<Error, ThreeMaterial>;
+};
+
+export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
+  pipe(
+    sequenceT(TE.ApplicativePar)(cachedElementsTE, cachedMaterialsTE),
+    TE.map(([elements, materials]): MaterialGetters => {
+      console.log({ elements, materials });
+      const getElement = (systemId: string, ifcTag: string) =>
+        pipe(
+          elements,
+          A.findFirst((x) => x.systemId === systemId && x.ifcTag === ifcTag),
+          E.fromOption(() =>
+            Error(`no element for ${ifcTag} found in ${systemId}`)
+          )
+        );
+
+      const getMaterial = (systemId: string, specification: string) =>
+        pipe(
+          materials,
+          A.findFirst(
+            (m) => m.systemId === systemId && m.specification === specification
+          ),
+          E.fromOption(() =>
+            Error(`no material for ${specification} in ${systemId}`)
+          )
+        );
+
+      const getInitialThreeMaterial = flow(
+        getElement,
+        E.chain(({ systemId, defaultMaterial: specification }) =>
+          pipe(getMaterial(systemId, specification), E.map(getThreeMaterial))
+        )
+      );
+
+      return {
+        getElement,
+        getMaterial,
+        getInitialThreeMaterial,
+      };
+    })
+  );
 
 export const localHouseTypesTE: TE.TaskEither<Error, HouseType[]> = TE.tryCatch(
   () =>
@@ -194,7 +268,7 @@ export const localModelTE = (
   );
 };
 
-export const cachedModelTE = (speckleBranchUrl: string) => {
+export const getCachedModelTE = (speckleBranchUrl: string) => {
   return runUntilFirstSuccess([
     localModelTE(speckleBranchUrl),
     pipe(

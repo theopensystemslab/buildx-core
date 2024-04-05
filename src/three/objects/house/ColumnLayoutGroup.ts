@@ -1,7 +1,6 @@
 import { columnLayoutToLevelTypes } from "@/layouts/ops";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { VanillaColumnsKey } from "@/layouts/vanillaColumns";
-import { DefaultGetters } from "@/tasks/defaultory";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group } from "three";
@@ -79,13 +78,14 @@ export const createColumnLayoutGroup = ({
   systemId,
   dnas,
   layout,
-  vanillaColumnGetter,
-  ...defaultGetters
-}: DefaultGetters & {
+  vanillaColumnGetter = () => TE.of(undefined as any),
+}: {
   systemId: string;
   dnas: string[];
   layout: ColumnLayout;
-  vanillaColumnGetter: (key: VanillaColumnsKey) => TE.TaskEither<Error, Column>;
+  vanillaColumnGetter?: (
+    key: VanillaColumnsKey
+  ) => TE.TaskEither<Error, Column>;
 }) =>
   pipe(
     layout,
@@ -100,7 +100,6 @@ export const createColumnLayoutGroup = ({
             startColumn,
             endColumn,
             columnIndex,
-            ...defaultGetters,
           }),
           TE.map((columnGroup) => {
             columnGroup.position.set(0, 0, z);

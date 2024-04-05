@@ -2,7 +2,6 @@ import {
   cachedElementsTE,
   cachedHouseTypesTE,
   cachedMaterialsTE,
-  cachedModelTE,
   cachedModulesTE,
 } from "@/build-systems/cache";
 import {
@@ -14,7 +13,6 @@ import { createColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup
 import { A, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { getInitialThreeMaterial } from "./defaultory";
 
 const columnLayoutTE = ({ houseTypeIndex }: { houseTypeIndex: number }) =>
   pipe(
@@ -24,7 +22,7 @@ const columnLayoutTE = ({ houseTypeIndex }: { houseTypeIndex: number }) =>
       cachedElementsTE,
       cachedMaterialsTE
     ),
-    TE.flatMap(([houseTypes, buildModules, elements, materials]) =>
+    TE.flatMap(([houseTypes, buildModules]) =>
       pipe(
         houseTypes,
         A.lookup(houseTypeIndex),
@@ -43,20 +41,6 @@ const columnLayoutTE = ({ houseTypeIndex }: { houseTypeIndex: number }) =>
                   systemId,
                   layout,
                   dnas,
-                  getBuildElement: ({ systemId, ifcTag }) =>
-                    pipe(
-                      elements,
-                      A.findFirst(
-                        (x) => x.systemId === systemId && x.ifcTag === ifcTag
-                      ),
-                      TE.fromOption(() => Error("no element!"))
-                    ),
-                  getBuildModel: cachedModelTE,
-                  vanillaColumnGetter: () => TE.of(undefined as any),
-                  getInitialThreeMaterial: getInitialThreeMaterial(
-                    elements,
-                    materials
-                  ),
                 })
               )
           )

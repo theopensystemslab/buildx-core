@@ -1,15 +1,7 @@
-import {
-  cachedElementsTE,
-  cachedHouseTypesTE,
-  cachedMaterialsTE,
-  cachedModelTE,
-  cachedModulesTE,
-} from "@/build-systems/cache";
 import { createBasicScene } from "@/index";
 import columnLayoutTE from "@/tasks/columnLayoutTE";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
-import { A, TE } from "@/utils/functions";
-import { sequenceT } from "fp-ts/lib/Apply";
+import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { AxesHelper } from "three";
 

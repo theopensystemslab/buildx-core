@@ -2,7 +2,7 @@ import {
   cachedElementsTE,
   cachedHouseTypesTE,
   cachedMaterialsTE,
-  cachedModelTE,
+  getCachedModelTE,
   cachedModulesTE,
 } from "@/build-systems/cache";
 import {
@@ -47,7 +47,7 @@ const columnLayoutTaskOption = ({
                   dnas,
                   systemId,
                   getBuildElement: getBuildElement(elements),
-                  getBuildModel: cachedModelTE,
+                  getBuildModel: getCachedModelTE,
                   getInitialThreeMaterial: getInitialThreeMaterial(
                     elements,
                     materials

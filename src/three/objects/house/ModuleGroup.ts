@@ -1,7 +1,9 @@
+import {
+  defaultMaterialGettersTE,
+  getCachedModelTE,
+} from "@/build-systems/cache";
 import { BuildModule } from "@/build-systems/remote/modules";
-import { DefaultGetters } from "@/tasks/defaultory";
-import { A, TE } from "@/utils/functions";
-import { sequenceT } from "fp-ts/lib/Apply";
+import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
@@ -85,14 +87,15 @@ export const createModuleGroup = ({
   buildModule,
   z,
   flip,
-  getBuildModel,
-  getBuildElement,
-  getInitialThreeMaterial,
-}: DefaultGetters & {
+  getBuildModelTE = getCachedModelTE,
+  materialGettersTE = defaultMaterialGettersTE,
+}: {
   gridGroupIndex: number;
   buildModule: BuildModule;
   z: number;
   flip: boolean;
+  getBuildModelTE?: typeof getCachedModelTE;
+  materialGettersTE?: typeof defaultMaterialGettersTE;
 }): TE.TaskEither<Error, ModuleGroup> => {
   const { systemId, speckleBranchUrl, length: moduleLength } = buildModule;
 
@@ -111,34 +114,43 @@ export const createModuleGroup = ({
   moduleGroup.scale.setZ(flip ? 1 : -1);
   moduleGroup.position.setZ(flip ? z + moduleLength / 2 : z - moduleLength / 2);
 
-  const elementGroupTE = pipe(
-    getBuildModel(speckleBranchUrl),
-    TE.flatMap(({ geometries }) => {
-      return pipe(
+  const elementGroupsTE = pipe(
+    getBuildModelTE(speckleBranchUrl),
+    TE.flatMap(({ geometries }) =>
+      pipe(
         Object.entries(geometries),
         A.traverse(TE.ApplicativeSeq)(([ifcTag, geometry]) =>
           pipe(
-            sequenceT(TE.ApplicativePar)(
-              getBuildElement({ systemId, ifcTag }),
-              getInitialThreeMaterial({ systemId, ifcTag })
-            ),
-            TE.map(([element, material]) =>
-              createElementGroup({
-                systemId,
-                ifcTag,
-                geometry,
-                material,
-                element,
-              })
+            materialGettersTE,
+            TE.flatMap(({ getElement, getInitialThreeMaterial }) =>
+              pipe(
+                getElement(systemId, ifcTag),
+                E.chain((element) =>
+                  pipe(
+                    getInitialThreeMaterial(systemId, ifcTag),
+                    E.map((threeMaterial) => ({ element, threeMaterial }))
+                  )
+                ),
+                TE.fromEither,
+                TE.map(({ element, threeMaterial }) =>
+                  createElementGroup({
+                    systemId,
+                    ifcTag,
+                    geometry,
+                    threeMaterial: threeMaterial,
+                    element,
+                  })
+                )
+              )
             )
           )
         )
-      );
-    })
+      )
+    )
   );
 
   return pipe(
-    elementGroupTE,
+    elementGroupsTE,
     TE.map((elementGroups) => {
       moduleGroup.add(...elementGroups);
       return moduleGroup;

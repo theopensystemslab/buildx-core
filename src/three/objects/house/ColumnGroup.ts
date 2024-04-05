@@ -1,5 +1,4 @@
 import { PositionedRow } from "@/layouts/types";
-import { DefaultGetters } from "@/tasks/defaultory";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
@@ -28,8 +27,7 @@ export const createColumnGroup = ({
   columnIndex,
   startColumn = false,
   endColumn = false,
-  ...defaultGetters
-}: DefaultGetters & {
+}: {
   positionedRows: PositionedRow[];
   columnIndex: number;
   startColumn?: boolean;
@@ -39,7 +37,6 @@ export const createColumnGroup = ({
     positionedRows,
     A.traverse(TE.ApplicativeSeq)((positionedRow) =>
       createGridGroup({
-        ...defaultGetters,
         ...positionedRow,
         endColumn,
       })

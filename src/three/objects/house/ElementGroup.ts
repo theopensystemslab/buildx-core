@@ -1,11 +1,6 @@
-import { BuildElement } from "@/build-systems/elements";
-import {
-  BufferGeometry,
-  Group,
-  Material,
-  NormalBufferAttributes,
-  Object3D,
-} from "three";
+import { BuildElement } from "@/build-systems/remote/elements";
+import { ThreeMaterial } from "@/three/materials/types";
+import { BufferGeometry, Group, NormalBufferAttributes, Object3D } from "three";
 import { Brush } from "three-bvh-csg";
 import { UserDataTypeEnum } from "../types";
 
@@ -66,16 +61,16 @@ export class ClippedElementBrush extends Brush {
 export const createElementGroup = ({
   ifcTag,
   geometry,
-  material,
+  threeMaterial,
   element,
 }: {
   systemId: string;
   ifcTag: string;
   geometry: BufferGeometry<NormalBufferAttributes>;
-  material: Material;
+  threeMaterial: ThreeMaterial;
   element: BuildElement;
 }): ElementGroup => {
-  const elementBrush = new ElementBrush(geometry, material);
+  const elementBrush = new ElementBrush(geometry, threeMaterial);
 
   const elementGroup = new ElementGroup({
     type: UserDataTypeEnum.Enum.ElementGroup,

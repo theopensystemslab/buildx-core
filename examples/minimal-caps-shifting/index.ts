@@ -1,7 +1,7 @@
 import {
   cachedElementsTE,
   cachedMaterialsTE,
-  cachedModelTE,
+  getCachedModelTE,
   cachedModulesTE,
 } from "@/build-systems/cache";
 import { createBasicScene } from "@/index";
@@ -47,7 +47,7 @@ pipe(
           const nextModuleGroup = await createModuleGroup({
             buildModule,
             getBuildElement: getBuildElement(allElements),
-            getBuildModel: cachedModelTE,
+            getBuildModel: getCachedModelTE,
             getInitialThreeMaterial: getInitialThreeMaterial(
               allElements,
               allMaterials
