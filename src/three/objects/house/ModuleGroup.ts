@@ -35,7 +35,7 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  createClippedBrushes(clippingBrush: Brush) {
+  createClippedBrushes = (clippingBrush: Brush) => {
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
@@ -52,7 +52,7 @@ export class ModuleGroup extends Group {
         clippedBrush.updateMatrixWorld();
       }
     });
-  }
+  };
 
   showClippedBrushes() {
     this.traverse((node) => {

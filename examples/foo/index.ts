@@ -29,9 +29,6 @@ pipe(
       columnLayoutGroup.obb
     );
 
-    // addObjectToScene(cutsManager.zCutBrush);
-    console.log(cutsManager.zCutBrush);
-
     gui({
       elementsManager,
       cutsManager,

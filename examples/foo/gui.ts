@@ -79,8 +79,10 @@ const gui = ({
       gui
         .add(cutsState, "verticalCutX")
         .name("Vertical Cut X")
-        .onChange((_value) => {
-          // elementsManager.setVerticalCutX(value);
+        .onChange((value) => {
+          cutsManager.clipWidth = value;
+          cutsManager.setClippingBrush();
+          cutsManager.updateElementBrushes();
           render();
         });
 
@@ -89,10 +91,10 @@ const gui = ({
         .add(cutsState, "verticalCutZ")
         .name("Vertical Cut Z")
         .onChange((value) => {
-          cutsManager.setVerticalCutZ(value);
-          // elementsManager.setVerticalCutZ(value);
+          cutsManager.clipDepth = value;
+          cutsManager.setClippingBrush();
+          cutsManager.updateElementBrushes();
           render();
-          console.log(`cut z ${value}`);
         });
     })
   )();
