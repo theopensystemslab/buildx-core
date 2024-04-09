@@ -5,6 +5,7 @@ import ElementsManager from "@/three/managers/ElementsManager";
 import { A, TE } from "@/utils/functions";
 import { GUI } from "dat.gui";
 import { flow, pipe } from "fp-ts/lib/function";
+import { Scene } from "three";
 
 const elementsToCategories = A.reduce([], (b: string[], a: BuildElement) =>
   b.includes(a.category) ? b : [...b, a.category]
@@ -24,10 +25,12 @@ const gui = ({
   elementsManager,
   cutsManager,
   render,
+  scene,
 }: {
   elementsManager: ElementsManager;
   cutsManager: CutsManager;
   render: () => void;
+  scene: Scene;
 }) => {
   pipe(
     cachedElementsTE,
@@ -81,8 +84,16 @@ const gui = ({
         .name("Vertical Cut X")
         .onChange((value) => {
           cutsManager.clipWidth = value;
-          cutsManager.setClippingBrush();
-          cutsManager.updateElementBrushes();
+          cutsManager.updateClippingBrush();
+          // cutsManager.debugClippingBrush(scene, value);
+          if (value) {
+            cutsManager.updateClippedBrushes();
+            cutsManager.showClippedBrushes();
+          } else {
+            cutsManager.destroyClippedBrushes();
+            cutsManager.showElementBrushes();
+          }
+          // cutsManager.setClippingBrush();
           render();
         });
 
@@ -91,10 +102,10 @@ const gui = ({
         .add(cutsState, "verticalCutZ")
         .name("Vertical Cut Z")
         .onChange((value) => {
-          cutsManager.clipDepth = value;
-          cutsManager.setClippingBrush();
-          cutsManager.updateElementBrushes();
-          render();
+          // cutsManager.clipDepth = value;
+          // cutsManager.setClippingBrush();
+          // cutsManager.updateClippedBrushes();
+          // render();
         });
     })
   )();
