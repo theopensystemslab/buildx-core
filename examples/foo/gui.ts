@@ -38,7 +38,7 @@ const gui = ({
       const elementCategories: Record<string, boolean> =
         initCategories(elements);
 
-      const gui = new GUI();
+      const gui = new GUI({ hideable: false });
 
       const elementCategoriesFolder = gui.addFolder("Element Categories");
 
@@ -73,40 +73,58 @@ const gui = ({
 
       elementCategoriesFolder.open();
 
-      // Vertical cut X
-      const cutsState = {
-        verticalCutX: false,
-        verticalCutZ: false,
-      };
-
-      gui
-        .add(cutsState, "verticalCutX")
-        .name("Vertical Cut X")
-        .onChange((value) => {
-          cutsManager.clipWidth = value;
-          cutsManager.updateClippingBrush();
-          // cutsManager.debugClippingBrush(scene, value);
-          if (value) {
-            cutsManager.updateClippedBrushes();
-            cutsManager.showClippedBrushes();
-          } else {
+      window.addEventListener("keydown", (event) => {
+        switch (event.key) {
+          case "d":
             cutsManager.destroyClippedBrushes();
+            break;
+          case "c":
+            cutsManager.createClippedBrushes();
+            break;
+          case "s":
+            cutsManager.showClippedBrushes();
+            break;
+          case "h":
             cutsManager.showElementBrushes();
-          }
-          // cutsManager.setClippingBrush();
-          render();
-        });
+            break;
+        }
+        render();
+      });
 
-      // Vertical cut Z
-      gui
-        .add(cutsState, "verticalCutZ")
-        .name("Vertical Cut Z")
-        .onChange((value) => {
-          // cutsManager.clipDepth = value;
-          // cutsManager.setClippingBrush();
-          // cutsManager.updateClippedBrushes();
-          // render();
-        });
+      // // Vertical cut X
+      // const cutsState = {
+      //   verticalCutX: false,
+      //   verticalCutZ: false,
+      // };
+
+      // gui
+      //   .add(cutsState, "verticalCutX")
+      //   .name("Vertical Cut X")
+      //   .onChange((value) => {
+      //     cutsManager.clipWidth = value;
+      //     cutsManager.updateClippingBrush();
+      //     // cutsManager.debugClippingBrush(scene, value);
+      //     if (value) {
+      //       cutsManager.updateClippedBrushes();
+      //       cutsManager.showClippedBrushes();
+      //     } else {
+      //       cutsManager.destroyClippedBrushes();
+      //       cutsManager.showElementBrushes();
+      //     }
+      //     // cutsManager.setClippingBrush();
+      //     render();
+      //   });
+
+      // // Vertical cut Z
+      // gui
+      //   .add(cutsState, "verticalCutZ")
+      //   .name("Vertical Cut Z")
+      //   .onChange((value) => {
+      //     // cutsManager.clipDepth = value;
+      //     // cutsManager.setClippingBrush();
+      //     // cutsManager.updateClippedBrushes();
+      //     // render();
+      //   });
     })
   )();
 };

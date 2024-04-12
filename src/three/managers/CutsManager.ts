@@ -3,7 +3,6 @@ import {
   DoubleSide,
   Group,
   MeshBasicMaterial,
-  Object3D,
   Scene,
 } from "three";
 import { Brush } from "three-bvh-csg";
@@ -26,7 +25,7 @@ class CutsManager {
     this.clippingBrush = this.createClippingBrush();
   }
 
-  createClippingBrush = () => {
+  createClippingBrush() {
     const { clipWidth, clipHeight, clipDepth } = this;
     const { halfSize } = this.rootGroup.obb;
 
@@ -49,57 +48,40 @@ class CutsManager {
     clippingBrush.updateMatrixWorld();
 
     return clippingBrush;
-  };
+  }
 
-  updateClippingBrush = () => {
+  updateClippingBrush() {
     if (this.clippingBrush.parent) {
       this.clippingBrush.removeFromParent();
     }
     this.clippingBrush = this.createClippingBrush();
-  };
+  }
 
-  updateClippedBrushes = () => {
+  updateClippedBrushes() {
     if (this.clipWidth || this.clipHeight !== null || this.clipDepth) {
       this.createClippedBrushes();
     } else {
       this.destroyClippedBrushes();
     }
-  };
+  }
 
-  // createZCutBrush = (): Brush => {
-  //   const { halfSize } = this.obb;
-  //   const clippingBrush = new Brush(
-  //     new BoxGeometry(halfSize.x * 4, halfSize.y * 4, halfSize.z),
-  //     new MeshBasicMaterial({
-  //       color: "white",
-  //       side: DoubleSide,
-  //       transparent: true,
-  //       opacity: 0.5,
-  //     })
-  //   );
-  //   clippingBrush.position.set(0, halfSize.y * 2, (halfSize.z / 2) * 3);
-  //   clippingBrush.scale.setScalar(1.1);
-  //   clippingBrush.updateMatrixWorld();
-  //   return clippingBrush;
-  // };
-
-  destroyClippedBrushes = () => {
+  destroyClippedBrushes() {
     this.rootGroup.traverse((node) => {
       if (isClippedBrush(node)) {
         node.removeFromParent();
       }
     });
-  };
+  }
 
-  debugClippingBrush = (scene: Scene, visible: boolean) => {
+  debugClippingBrush(scene: Scene, visible: boolean) {
     console.log("wat");
     if (visible && !scene.children.includes(this.clippingBrush))
       scene.add(this.clippingBrush);
     else if (!visible && scene.children.includes(this.clippingBrush))
       scene.remove(this.clippingBrush);
-  };
+  }
 
-  createClippedBrushes = () => {
+  createClippedBrushes() {
     this.destroyClippedBrushes();
 
     this.rootGroup.traverse((node) => {
@@ -107,9 +89,9 @@ class CutsManager {
         node.createClippedBrushes(this.clippingBrush);
       }
     });
-  };
+  }
 
-  showClippedBrushes = () => {
+  showClippedBrushes() {
     this.rootGroup.traverse((node) => {
       if (isElementBrush(node)) {
         node.visible = false;
@@ -117,7 +99,7 @@ class CutsManager {
         node.visible = true;
       }
     });
-  };
+  }
 
   showElementBrushes() {
     this.rootGroup.traverse((node) => {
@@ -128,26 +110,6 @@ class CutsManager {
       }
     });
   }
-
-  // setVerticalCutX = (visible: boolean) => {
-  //   // Logic to handle the vertical cut along the x-axis
-  //   console.log("Vertical cut X:", visible);
-  //   this.setClippingBrush();
-  //   this.createClippedBrushes();
-  // };
-
-  // setVerticalCutZ = (visible: boolean) => {
-  //   // Logic to handle the vertical cut along the z-axis
-  //   console.log("Vertical cut Z:", visible);
-
-  //   this.createClippedBrushes();
-
-  //   if (visible) {
-  //     this.showClippedBrushes();
-  //   } else {
-  //     this.showElementBrushes();
-  //   }
-  // };
 }
 
 export default CutsManager;
