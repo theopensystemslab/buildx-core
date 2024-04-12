@@ -1,10 +1,10 @@
 {
-  "name": "lib-buildx",
+  "name": "@opensystemslab/buildx-core",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "main": "dist/lib-buildx.js",
-  "types": "dist/lib-buildx.d.ts",
+  "main": "dist/buildx-core.js",
+  "types": "dist/buildx-core.d.ts",
   "scripts": {
     "clean": "rimraf dist",
     "dev": "vite",

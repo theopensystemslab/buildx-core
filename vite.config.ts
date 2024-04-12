@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
             entry: resolve(__dirname, "src/index.ts"),
             name: "BuildX",
             formats: ["es"],
-            fileName: "lib-buildx",
+            fileName: "buildx-core",
           },
           rollupOptions: {
             output: {
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
             entry: resolve(__dirname, "src/index.ts"),
             name: "BuildX",
             formats: ["es"],
-            fileName: "lib-buildx",
+            fileName: "buildx-core",
           },
           rollupOptions: {
             external: (id: string) => !id.startsWith(".") && !isAbsolute(id),
