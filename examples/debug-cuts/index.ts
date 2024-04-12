@@ -13,7 +13,10 @@ import { AxesHelper } from "three";
 
 const gui = new GUI({ hideable: false });
 
+// Create folders for better organization
+const houseTypeFolder = gui.addFolder("House Type");
 let elementCategoriesFolder: GUI | null = null;
+let cutsFolder: GUI | null = null; // Folder for cut modes
 
 const { addObjectToScene, render, scene } = createBasicScene({
   outliner: (object) => {
@@ -25,37 +28,34 @@ const { addObjectToScene, render, scene } = createBasicScene({
 
 addObjectToScene(new AxesHelper());
 
-const elementsToCategories = A.reduce([], (b: string[], a: BuildElement) =>
-  b.includes(a.category) ? b : [...b, a.category]
+const initCategories = flow(
+  A.reduce([], (b: string[], a: BuildElement) =>
+    b.includes(a.category) ? b : [...b, a.category]
+  ),
+  A.reduce({}, (b: Record<string, boolean>, a: string) => ({ ...b, [a]: true }))
 );
-
-const categoriesToOptions = A.reduce(
-  {},
-  (b: Record<string, boolean>, a: string) => ({
-    ...b,
-    [a]: true,
-  })
-);
-
-const initCategories = flow(elementsToCategories, categoriesToOptions);
 
 pipe(
   cachedHouseTypesTE,
   TE.map((houseTypes) => {
     const options = houseTypes.map((x) => x.name);
-
     const go = (houseTypeName: string) => {
       scene.children.forEach((x) => {
         if (x instanceof ColumnLayoutGroup) {
           scene.remove(x);
         }
       });
-
       if (elementCategoriesFolder !== null) {
         elementCategoriesFolder.__controllers.forEach((controller) => {
           elementCategoriesFolder?.remove(controller);
         });
         gui.removeFolder(elementCategoriesFolder);
+      }
+      if (cutsFolder !== null) {
+        cutsFolder.__controllers.forEach((controller) => {
+          cutsFolder?.remove(controller);
+        });
+        gui.removeFolder(cutsFolder);
       }
 
       pipe(
@@ -66,16 +66,13 @@ pipe(
             columnLayoutTE(houseType),
             TE.map((columnLayoutGroup) => {
               addObjectToScene(columnLayoutGroup);
-
               const elementsManager = new ElementsManager(columnLayoutGroup);
               const cutsManager = new CutsManager(columnLayoutGroup);
-
               pipe(
                 cachedElementsTE,
                 TE.map((elements) => {
-                  // Create a new folder for this invocation of `go`
                   elementCategoriesFolder = gui.addFolder("Element Categories");
-
+                  cutsFolder = gui.addFolder("Cuts"); // Initialize the Cuts folder
                   const elementCategories: Record<string, boolean> =
                     initCategories(elements);
 
@@ -108,29 +105,39 @@ pipe(
                       render();
                     },
                   };
+
                   elementCategoriesFolder?.add(masterToggle, "Toggle All");
 
-                  elementCategoriesFolder?.open();
+                  cutsFolder
+                    ?.add(
+                      {
+                        cutMode: "No Cut",
+                      },
+                      "cutMode",
+                      ["No Cut", "X-cut", "Z-cut"]
+                    )
+                    .onChange((value) => {
+                      switch (value) {
+                        case "X-cut":
+                          cutsManager.setClippingBrushX();
+                          cutsManager.createClippedBrushes();
+                          cutsManager.showClippedBrushes();
+                          break;
+                        case "Z-cut":
+                          cutsManager.setClippingBrushZ();
+                          cutsManager.createClippedBrushes();
+                          cutsManager.showClippedBrushes();
+                          break;
+                        default:
+                          cutsManager.destroyClippedBrushes();
+                          cutsManager.showElementBrushes();
+                          break;
+                      }
+                      render();
+                    });
 
-                  window.addEventListener("keydown", (event) => {
-                    switch (event.key) {
-                      case "d":
-                        cutsManager.destroyClippedBrushes();
-                        cutsManager.showElementBrushes();
-                        break;
-                      case "x":
-                        cutsManager.setClippingBrushX();
-                        cutsManager.createClippedBrushes();
-                        cutsManager.showClippedBrushes();
-                        break;
-                      case "z":
-                        cutsManager.setClippingBrushZ();
-                        cutsManager.createClippedBrushes();
-                        cutsManager.showClippedBrushes();
-                        break;
-                    }
-                    render();
-                  });
+                  elementCategoriesFolder?.open();
+                  cutsFolder?.open();
                 })
               )();
             })
@@ -139,7 +146,11 @@ pipe(
       );
     };
 
-    gui.add({ name: houseTypes[0].name }, "name", options).onChange(go);
+    // Add the house type selection to its own folder
+    houseTypeFolder
+      .add({ name: houseTypes[0].name }, "name", options)
+      .onChange(go);
+    houseTypeFolder.open();
 
     go(houseTypes[0].name);
   })
