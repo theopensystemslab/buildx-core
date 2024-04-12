@@ -10,6 +10,8 @@ import { OBB } from "three-stdlib";
 import { isClippedBrush, isElementBrush } from "../objects/house/ElementGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
 
+const C = 2;
+
 class CutsManager {
   rootGroup: Group & { obb: OBB };
   clippingBrush: Brush;
@@ -22,20 +24,44 @@ class CutsManager {
     this.clipWidth = false;
     this.clipDepth = false;
     this.clipHeight = null;
-    this.clippingBrush = this.createClippingBrush();
+    this.clippingBrush = new Brush();
   }
 
-  createClippingBrush() {
-    const { clipWidth, clipHeight, clipDepth } = this;
+  // createClippingBrush() {
+  //   const { clipWidth, clipHeight, clipDepth } = this;
+  //   const { halfSize } = this.rootGroup.obb;
+
+  //   const width = clipWidth ? halfSize.x : halfSize.x * 2;
+  //   const height = halfSize.y * 4;
+  //   const depth = clipDepth ? halfSize.z : halfSize.z * 2;
+
+  //   const x = clipWidth ? halfSize.x / 2 : 0;
+  //   const y = clipHeight !== null ? 0 : halfSize.y;
+  //   const z = clipDepth ? (halfSize.z / 2) * 3 : halfSize.z;
+
+  //   const clippingBrush = new Brush(
+  //     new BoxGeometry(width, height, depth),
+  //     new MeshBasicMaterial({
+  //       color: "white",
+  //       side: DoubleSide,
+  //     })
+  //   );
+  //   clippingBrush.position.set(x, y, z);
+  //   clippingBrush.updateMatrixWorld();
+
+  //   return clippingBrush;
+  // }
+
+  setClippingBrushX() {
     const { halfSize } = this.rootGroup.obb;
 
-    const width = clipWidth ? halfSize.x : halfSize.x * 2;
-    const height = halfSize.y * 4;
-    const depth = clipDepth ? halfSize.z : halfSize.z * 2;
+    const width = halfSize.x + C;
+    const height = halfSize.y * 2 + C;
+    const depth = halfSize.z * 2 + C;
 
-    const x = clipWidth ? halfSize.x / 2 : 0;
-    const y = clipHeight !== null ? 0 : halfSize.y;
-    const z = clipDepth ? (halfSize.z / 2) * 3 : halfSize.z;
+    const x = width / 2;
+    const y = halfSize.y;
+    const z = halfSize.z;
 
     const clippingBrush = new Brush(
       new BoxGeometry(width, height, depth),
@@ -47,14 +73,31 @@ class CutsManager {
     clippingBrush.position.set(x, y, z);
     clippingBrush.updateMatrixWorld();
 
-    return clippingBrush;
+    this.clippingBrush = clippingBrush;
   }
 
-  updateClippingBrush() {
-    if (this.clippingBrush.parent) {
-      this.clippingBrush.removeFromParent();
-    }
-    this.clippingBrush = this.createClippingBrush();
+  setClippingBrushZ() {
+    const { halfSize } = this.rootGroup.obb;
+
+    const width = halfSize.x * 2 + C;
+    const height = halfSize.y * 2 + C;
+    const depth = halfSize.z + C;
+
+    const x = 0;
+    const y = halfSize.y;
+    const z = depth / 2 + halfSize.z;
+
+    const clippingBrush = new Brush(
+      new BoxGeometry(width, height, depth),
+      new MeshBasicMaterial({
+        color: "white",
+        // side: DoubleSide,
+      })
+    );
+    clippingBrush.position.set(x, y, z);
+    clippingBrush.updateMatrixWorld();
+
+    this.clippingBrush = clippingBrush;
   }
 
   updateClippedBrushes() {

@@ -77,15 +77,17 @@ const gui = ({
         switch (event.key) {
           case "d":
             cutsManager.destroyClippedBrushes();
+            cutsManager.showElementBrushes();
             break;
-          case "c":
+          case "x":
+            cutsManager.setClippingBrushX();
             cutsManager.createClippedBrushes();
-            break;
-          case "s":
             cutsManager.showClippedBrushes();
             break;
-          case "h":
-            cutsManager.showElementBrushes();
+          case "z":
+            cutsManager.setClippingBrushZ();
+            cutsManager.createClippedBrushes();
+            cutsManager.showClippedBrushes();
             break;
         }
         render();
