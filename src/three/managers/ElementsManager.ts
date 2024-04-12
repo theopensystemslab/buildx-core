@@ -19,7 +19,6 @@ class ElementsManager {
   setCategoryVisibility(category: string, visible: boolean) {
     this.rootGroup.traverse((node) => {
       if (isElementGroup(node) && node.element.category === category) {
-        console.log(node, visible);
         node.visible = visible;
       }
     });

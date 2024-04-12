@@ -117,7 +117,6 @@ class CutsManager {
   }
 
   debugClippingBrush(scene: Scene, visible: boolean) {
-    console.log("wat");
     if (visible && !scene.children.includes(this.clippingBrush))
       scene.add(this.clippingBrush);
     else if (!visible && scene.children.includes(this.clippingBrush))

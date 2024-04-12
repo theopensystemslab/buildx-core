@@ -23,7 +23,7 @@ export type ColumnLayoutGroupUserData = {
   sectionType: string;
 };
 
-class ColumnLayoutGroup extends Group {
+export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;

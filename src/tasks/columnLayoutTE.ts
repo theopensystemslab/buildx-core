@@ -1,50 +1,31 @@
-import {
-  cachedElementsTE,
-  cachedHouseTypesTE,
-  cachedMaterialsTE,
-  cachedModulesTE,
-} from "@/build-systems/cache";
+import { cachedModulesTE } from "@/build-systems/cache";
+import { HouseType } from "@/build-systems/remote/houseTypes";
 import {
   createColumnLayout,
   dnasToModules,
   modulesToMatrix,
 } from "@/layouts/ops";
 import { createColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
-import { A, TE } from "@/utils/functions";
-import { sequenceT } from "fp-ts/lib/Apply";
+import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 
-const columnLayoutTE = ({ houseTypeIndex }: { houseTypeIndex: number }) =>
+const columnLayoutTE = ({ systemId, dnas }: HouseType) =>
   pipe(
-    sequenceT(TE.ApplicativePar)(
-      cachedHouseTypesTE,
-      cachedModulesTE,
-      cachedElementsTE,
-      cachedMaterialsTE
-    ),
-    TE.flatMap(([houseTypes, buildModules]) =>
+    cachedModulesTE,
+    TE.flatMap((buildModules) =>
       pipe(
-        houseTypes,
-        A.lookup(houseTypeIndex),
-        TE.fromOption(() =>
-          Error(`no house type at index ${houseTypeIndex} on ${houseTypes}`)
-        ),
-        TE.flatMap(({ systemId, dnas }) =>
+        dnas,
+        dnasToModules({ systemId, buildModules }),
+        modulesToMatrix,
+        createColumnLayout,
+        (layout) =>
           pipe(
-            dnas,
-            dnasToModules({ systemId, buildModules }),
-            modulesToMatrix,
-            createColumnLayout,
-            (layout) =>
-              pipe(
-                createColumnLayoutGroup({
-                  systemId,
-                  layout,
-                  dnas,
-                })
-              )
+            createColumnLayoutGroup({
+              systemId,
+              layout,
+              dnas,
+            })
           )
-        )
       )
     )
   );

@@ -41,7 +41,6 @@ export class ModuleGroup extends Group {
     this.traverse((node) => {
       if (isElementBrush(node)) {
         const clippedBrush = new ClippedElementBrush();
-        console.log(node, node.parent);
         node.parent?.add(clippedBrush);
 
         node.updateMatrixWorld();
