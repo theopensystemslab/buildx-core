@@ -48,7 +48,7 @@ export const mapToOption =
 export const reduceToOption: <A, B>(
   b: O.Option<B>,
   f: (i: number, b: O.Option<B>, a: A) => O.Option<B>
-) => (fa: Array<A>) => O.Option<B> = (b, f) => fa => {
+) => (fa: Array<A>) => O.Option<B> = (b, f) => (fa) => {
   const len = fa.length;
   let out = b;
   for (let i = 0; i < len; i++) {
@@ -109,7 +109,7 @@ export const objComp = (
 export const capitalizeFirstLetters = (str: string): string =>
   str
     .split(" ")
-    .map(x => x.charAt(0).toUpperCase())
+    .map((x) => x.charAt(0).toUpperCase())
     .join("");
 
 export const clearRecord = (obj: Record<string, unknown>) => {
@@ -131,7 +131,7 @@ export const unwrapSome = <A>(
 export const headTail = <T>(xs: T[]) =>
   pipe(
     xs,
-    A.partitionWithIndex(i => i === 0 || i === xs.length - 1),
+    A.partitionWithIndex((i) => i === 0 || i === xs.length - 1),
     ({ left: middle, right: [start, end] }) => ({
       start,
       end,
@@ -161,7 +161,7 @@ export function compareProps<T extends Record<string, unknown>>(
   props?: (keyof T)[]
 ): boolean {
   const keysToCompare = props || (Object.keys(obj1) as (keyof T)[]);
-  return keysToCompare.every(prop => obj1[prop] === obj2[prop]);
+  return keysToCompare.every((prop) => obj1[prop] === obj2[prop]);
 }
 
 export function debounce<T extends (...args: unknown[]) => unknown>(
@@ -181,3 +181,22 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
     if (callNow) fn(...args);
   };
 }
+
+// Helper to run tasks until one succeeds
+export const runUntilFirstSuccess = <E, A>(
+  tasks: Array<TE.TaskEither<E, A>>
+): TE.TaskEither<E, A> =>
+  tasks.reduce(
+    (acc, task) =>
+      pipe(
+        acc,
+        TE.fold(
+          () => task, // If previous failed, run current task
+          () => acc // If previous succeeded, skip to result
+        )
+      ),
+    TE.tryCatch(
+      () => Promise.reject(),
+      () => undefined as any
+    ) // Initial failed TaskEither for reduce
+  );

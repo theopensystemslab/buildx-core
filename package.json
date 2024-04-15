@@ -1,15 +1,24 @@
 {
-  "name": "lib-buildx",
-  "private": true,
+  "name": "@opensystemslab/buildx-core",
   "version": "0.1.0",
   "type": "module",
-  "main": "dist/lib-buildx.js",
-  "types": "dist/lib-buildx.d.ts",
+  "main": "dist/buildx-core.js",
+  "types": "dist/buildx-core.d.ts",
   "scripts": {
     "clean": "rimraf dist",
     "dev": "vite",
     "build": "npm run clean && tsc && vite build",
+    "build-examples": "npm run clean && tsc && vite build --mode examples",
     "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theopensystemslab/buildx-core.git"
+  },
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/theopensystemslab/buildx-core",
+  "bugs": {
+    "url": "https://github.com/theopensystemslab/buildx-core/issues"
   },
   "devDependencies": {
     "@speckle/objectloader": "^2.18.10",
@@ -19,13 +28,16 @@
     "airtable": "^0.12.2",
     "camera-controls": "^2.8.3",
     "dat.gui": "^0.7.9",
+    "dexie": "^4.0.1",
     "fp-ts": "^2.16.3",
+    "fp-ts-std": "^0.18.0",
+    "glob": "^10.3.10",
     "graphql-request": "^6.1.0",
     "immer": "^10.0.4",
     "rimraf": "^5.0.5",
     "three": "^0.162.0",
     "three-bvh-csg": "^0.0.16",
-    "three-mesh-bvh": "^0.7.3",
+    "three-mesh-bvh": "^0.7.1",
     "three-stdlib": "^2.29.5",
     "typescript": "^5.4.2",
     "vite": "^5.1.6",
@@ -33,6 +45,6 @@
     "zod": "^3.22.4"
   },
   "peerDependencies": {
-    "three": ">=0.162.0"
+    "three": ">=0.153.0"
   }
 }

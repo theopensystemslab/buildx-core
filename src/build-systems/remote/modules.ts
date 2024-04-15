@@ -1,9 +1,9 @@
-import { A } from "@/utils/functions";
+import airtable from "@/utils/airtable";
+import { A, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
-import { systemFromId } from "./system";
-import airtable from "@/utils/airtable";
+import { allSystemIds, systemFromId } from "./systems";
 // import { useAllWindowTypes } from "../../app/db/systems";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +85,7 @@ export const moduleParser = z
         .optional(),
       description: z.string().default(""),
       last_modified: z.string().refine(
-        value => {
+        (value) => {
           // Attempt to parse the value as a date and check that it's valid
           const date = new Date(value);
           return !isNaN(date.getTime());
@@ -156,10 +156,12 @@ export const moduleParser = z
 
 export type BuildModule = { systemId: string } & z.infer<typeof moduleParser>;
 
-export const modulesQuery = ({ systemIds }: { systemIds: string[] }) => {
+export const modulesQuery = (input?: { systemIds: string[] }) => {
+  const { systemIds = allSystemIds } = input ?? {};
+
   return pipe(
     systemIds,
-    A.map(systemId =>
+    A.map((systemId) =>
       pipe(
         airtable
           .base(systemFromId(systemId)?.airtableId ?? "")
@@ -167,13 +169,27 @@ export const modulesQuery = ({ systemIds }: { systemIds: string[] }) => {
           .select(moduleSelector)
           .all()
           .then(
-            z.array(moduleParser.transform(xs => ({ ...xs, systemId }))).parse
+            z.array(moduleParser.transform((xs) => ({ ...xs, systemId }))).parse
           )
       )
     ),
-    ps => Promise.all(ps).then(A.flatten)
+    (ps) => Promise.all(ps).then(A.flatten)
   );
 };
+
+export const remoteModulesTE: TE.TaskEither<Error, BuildModule[]> = TE.tryCatch(
+  () => modulesQuery(),
+  (reason) =>
+    new Error(
+      `Failed to fetch elements: ${
+        reason instanceof Error ? reason.message : String(reason)
+      }`
+    )
+);
+
+// async () => {
+//   const speckleObject = await getSpeckleObject(speckleBranchUrl);
+// };
 
 // export const useGetModuleWindowTypes = () => {
 //   const windowTypes = useAllWindowTypes();
