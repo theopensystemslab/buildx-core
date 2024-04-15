@@ -1,6 +1,5 @@
 import ObjectLoader from "@speckle/objectloader";
 import { gql, request } from "graphql-request";
-import fetch from "cross-fetch";
 
 const extractStreamId = (urlString: string) => {
   const url = new URL(urlString);
@@ -31,7 +30,8 @@ const getSpeckleObject = async (speckleBranchUrl: string) => {
     streamId,
   });
 
-  const objectId = data.stream.branch.commits.items[0].referencedObject;
+  const objectId =
+    data.stream.branch.commits.itelementsTaskems[0].referencedObject;
 
   const loader = new ObjectLoader({
     serverUrl: "https://speckle.xyz",
@@ -43,7 +43,6 @@ const getSpeckleObject = async (speckleBranchUrl: string) => {
       customLogger: () => {},
       customWarner: () => {},
       fullyTraverseArrays: undefined,
-      fetch,
     },
   });
 

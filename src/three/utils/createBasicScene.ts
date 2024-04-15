@@ -1,4 +1,6 @@
+import { A, O } from "@/utils/functions";
 import CameraControls from "camera-controls";
+import { pipe } from "fp-ts/lib/function";
 import {
   AmbientLight,
   Box3,
@@ -17,6 +19,7 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 
 const subsetOfTHREE = {
   Vector2,
@@ -40,6 +43,7 @@ interface BasicSceneComponents {
   cameraControls: CameraControls;
   addObjectToScene: (object: Object3D) => void;
   render: () => void;
+  outlinePass: OutlinePass;
 }
 
 const defaultParams = {
@@ -59,14 +63,27 @@ const defaultParams = {
 function createBasicScene({
   canvas = defaultParams.canvas,
   camera = defaultParams.camera,
+  outliner,
 }: {
   canvas?: HTMLCanvasElement;
   camera?: PerspectiveCamera | OrthographicCamera;
+  outliner?: (object: Object3D) => Object3D[];
 } = defaultParams): BasicSceneComponents {
   const scene = new Scene();
 
   const renderer = new WebGLRenderer({ canvas });
   renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
+
+  const outlinePass = new OutlinePass(
+    new Vector2(window.innerWidth, window.innerHeight),
+    scene,
+    camera
+  );
+  composer.addPass(outlinePass);
 
   const light = new AmbientLight(0xffffff); // Add ambient light
   scene.add(light);
@@ -75,7 +92,8 @@ function createBasicScene({
   const clock = new Clock();
 
   const render = (): void => {
-    renderer.render(scene, camera);
+    composer.render();
+    // renderer.render(scene, camera);
   };
 
   // Efficient rendering on camera or scene update
@@ -109,7 +127,12 @@ function createBasicScene({
     }
 
     camera.updateProjectionMatrix();
+
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    renderPass.setSize(window.innerWidth, window.innerHeight);
+    outlinePass.setSize(window.innerWidth, window.innerHeight);
+
     render(); // Ensure scene is re-rendered after resize
   });
 
@@ -119,7 +142,56 @@ function createBasicScene({
     render(); // Explicitly render scene after adding object
   };
 
-  return { scene, camera, renderer, cameraControls, addObjectToScene, render };
+  if (outliner) {
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+
+    const raycaster = new Raycaster();
+
+    const mouse = new Vector2();
+
+    function onPointerMove(event: any) {
+      if (event.isPrimary === false) return;
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      checkIntersection();
+    }
+
+    function checkIntersection() {
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObject(scene, true);
+
+      pipe(
+        intersects,
+        A.head,
+        O.match(
+          () => {
+            outlinePass.selectedObjects = [];
+          },
+          (intersect) => {
+            const object = intersect.object;
+            if (outliner) {
+              outlinePass.selectedObjects = outliner(object);
+            }
+          }
+        )
+      );
+
+      render();
+    }
+  }
+
+  return {
+    scene,
+    camera,
+    renderer,
+    cameraControls,
+    addObjectToScene,
+    render,
+    outlinePass,
+  };
 }
 
 export default createBasicScene;

@@ -1,15 +1,18 @@
 import { z } from "zod";
 
 export const UserDataTypeEnum = z.enum([
-  // "HouseTransformsGroup",
+  "TransformsGroup",
   // "HouseTransformsHandlesGroup",
-  // "HouseLayoutGroup",
+  "ColumnLayoutGroup",
   "ColumnGroup",
   // // layout group handles go in start/end column groups
   // //   this is a special case for stretch Z handles
   "GridGroup",
   "ModuleGroup",
-  "ElementMesh",
+  "ElementGroup",
+  "ElementBrush",
+  "ClippedElementBrush",
+  // "ElementMesh",
   // "StretchHandleGroup",
   // "StretchHandleMesh",
   // "RotateHandlesGroup",
@@ -18,8 +21,8 @@ export const UserDataTypeEnum = z.enum([
 
 export type UserDataTypeEnum = z.infer<typeof UserDataTypeEnum>;
 
-export type ElementMeshUserData = {
-  type: typeof UserDataTypeEnum.Enum.ElementMesh;
+export type ElementGroupUserData = {
+  type: typeof UserDataTypeEnum.Enum.ElementGroup;
   ifcTag: string;
   category: string;
 };

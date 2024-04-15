@@ -7,7 +7,7 @@ interface RetryConfig {
 }
 
 const defaultRetryConfig: RetryConfig = {
-  retryCount: 3,
+  retryCount: 5,
   initialDelayMillis: 500,
   backOffFactor: 2,
 };
