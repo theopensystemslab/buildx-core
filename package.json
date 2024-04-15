@@ -1,6 +1,5 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "private": true,
   "version": "0.1.0",
   "type": "module",
   "main": "dist/buildx-core.js",
@@ -11,6 +10,15 @@
     "build": "npm run clean && tsc && vite build",
     "build-examples": "npm run clean && tsc && vite build --mode examples",
     "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theopensystemslab/buildx-core.git"
+  },
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/theopensystemslab/buildx-core",
+  "bugs": {
+    "url": "https://github.com/theopensystemslab/buildx-core/issues"
   },
   "devDependencies": {
     "@speckle/objectloader": "^2.18.10",
@@ -37,6 +45,6 @@
     "zod": "^3.22.4"
   },
   "peerDependencies": {
-    "three": ">=0.162.0"
+    "three": ">=0.153.0"
   }
 }

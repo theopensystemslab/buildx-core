@@ -3,7 +3,10 @@ import { globSync } from "glob";
 import { isAbsolute, resolve } from "path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
+import packageJson from "./package.json";
 import { A, O, R } from "./src/utils/functions";
+
+const peerDeps = Object.keys(packageJson.peerDependencies);
 
 // Convert matched paths to an object expected by Rollup input option
 const inputEntries = pipe(
@@ -55,6 +58,7 @@ export default defineConfig(({ mode }) => {
     case "library":
     default: {
       return {
+        mode: "production",
         base: "./",
         build: {
           lib: {
@@ -64,7 +68,9 @@ export default defineConfig(({ mode }) => {
             fileName: "buildx-core",
           },
           rollupOptions: {
-            external: (id: string) => !id.startsWith(".") && !isAbsolute(id),
+            external: (id: string) =>
+              id === "three" ||
+              (!id.startsWith("@") && !id.startsWith(".") && !isAbsolute(id)),
             output: {
               preserveModules: true,
             },
