@@ -1,6 +1,7 @@
 import {
   AmbientLight,
   Group,
+  Matrix3,
   ObjectLoader,
   OrthographicCamera,
   Scene,
@@ -40,10 +41,15 @@ self.onmessage = function ({
   const object = objectLoader.parse(objectJson);
   objectsGroup.add(object);
 
+  console.log(center, halfSize);
+
+  // @ts-ignore
+  const rotMat = new Matrix3(...rotation.elements);
+
   const obb = new OBB(
     new Vector3(center.x, center.y, center.z),
     new Vector3(halfSize.x, halfSize.y, halfSize.z),
-    rotation
+    rotMat
   );
 
   adjustCameraToAndFrameOBB(obb, camera);

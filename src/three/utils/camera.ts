@@ -17,7 +17,6 @@ export const adjustCameraToAndFrameOBB = (
   aspectRatio: number = 1 // Default aspect ratio set to 1 for a square HUD
 ): void => {
   const halfSize = obb.halfSize;
-  console.log({ halfSize });
   const distance = halfSize.length() * 2; // Distance is a function of the OBB's size
   const padding = halfSize.length() * scalePadding; // Padding scaled based on the OBB's size
 
