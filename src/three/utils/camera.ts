@@ -11,14 +11,13 @@ import { OBB } from "three-stdlib";
 export const adjustCameraToAndFrameOBB = (
   obb: OBB,
   camera: OrthographicCamera,
-  upwardsAngleDeg: number,
-  sideAngleDeg: number,
+  upwardsAngleDeg: number = 45,
+  sideAngleDeg: number = 45,
   scalePadding: number = 1, // Default scalePadding value
-  aspectRatio: number = typeof window !== "undefined"
-    ? window.innerWidth / window.innerHeight
-    : 1 // Default aspect ratio set to 1 for a square HUD
+  aspectRatio: number = 1 // Default aspect ratio set to 1 for a square HUD
 ): void => {
   const halfSize = obb.halfSize;
+  console.log({ halfSize });
   const distance = halfSize.length() * 2; // Distance is a function of the OBB's size
   const padding = halfSize.length() * scalePadding; // Padding scaled based on the OBB's size
 

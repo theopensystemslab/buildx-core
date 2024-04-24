@@ -25,6 +25,7 @@ const inputEntries = pipe(
 export default defineConfig(({ mode }) => {
   switch (mode) {
     case "examples": {
+      console.log("examples");
       return {
         base: "./",
         build: {
@@ -57,6 +58,7 @@ export default defineConfig(({ mode }) => {
     }
     case "library":
     default: {
+      console.log("library");
       return {
         mode: "production",
         base: "./",
