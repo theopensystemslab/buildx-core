@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "npm run clean && tsc && vite build",
     "build-examples": "npm run clean && tsc && vite build --mode examples",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -24,7 +25,7 @@
     "@speckle/objectloader": "^2.18.10",
     "@types/dat.gui": "^0.7.12",
     "@types/node": "^20.11.26",
-    "@types/three": "^0.153.0",
+    "@types/three": "^0.163.0",
     "airtable": "^0.12.2",
     "camera-controls": "^2.8.3",
     "dat.gui": "^0.7.9",

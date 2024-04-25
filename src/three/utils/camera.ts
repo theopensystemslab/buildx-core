@@ -8,9 +8,9 @@ import {
 } from "three";
 import { OBB } from "three-stdlib";
 
-export const adjustCameraToAndFrameOBB = (
-  obb: OBB,
+export const cameraFrameOBB = (
   camera: OrthographicCamera,
+  obb: OBB,
   upwardsAngleDeg: number = 45,
   sideAngleDeg: number = 45,
   scalePadding: number = 1, // Default scalePadding value
@@ -74,4 +74,36 @@ export const adjustCameraToAndFrameOBB = (
 
   // Update the camera projection matrix
   camera.updateProjectionMatrix();
+};
+
+export const cameraFrameOBB2 = (
+  camera: OrthographicCamera,
+  obb: OBB,
+  aspectRatio: number = 1
+) => {
+  const obbCenter = obb.center.clone();
+
+  camera.position.set(obbCenter.x + 1, obbCenter.y + 1, obbCenter.z - 1);
+
+  camera.lookAt(obbCenter);
+
+  const obbSize = obb.halfSize.clone().multiplyScalar(2); // Ensure your OBB structure has a method to compute its size
+  const maxDimension = Math.max(obbSize.x, obbSize.y, obbSize.z);
+
+  // Step 3: Adjust camera to frame the OBB
+  const distance = maxDimension * 1.5; // Multiplier adjusts the distance to ensure the OBB is framed well
+  const direction = new Vector3()
+    .subVectors(camera.position, obbCenter)
+    .normalize();
+  camera.position.copy(obbCenter).add(direction.multiplyScalar(distance));
+
+  // Update camera frustum
+  camera.left = -maxDimension * aspectRatio;
+  camera.right = maxDimension * aspectRatio;
+  camera.top = maxDimension;
+  camera.bottom = -maxDimension;
+  camera.near = 0.01; // Assuming these values are suitable, adjust if needed
+  camera.far = 1000; // Make sure this is enough to cover the scene
+
+  camera.updateProjectionMatrix(); // Important to apply changes
 };

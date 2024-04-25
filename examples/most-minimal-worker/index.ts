@@ -21,7 +21,12 @@ const objectJson = obbMesh.toJSON();
 addObjectToScene(obbMesh);
 
 window.addEventListener("click", () => {
-  snapshotWorker.postMessage({ objectJson, obb });
+  const { halfSize } = obb;
+
+  snapshotWorker.postMessage({
+    objectJson,
+    halfSize: halfSize.toArray(),
+  });
 });
 
 snapshotWorker.onmessage = (ev) => {
