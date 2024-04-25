@@ -24,6 +24,7 @@ const camera = new OrthographicCamera();
 const renderer = new WebGLRenderer({ canvas: offscreenCanvas });
 
 renderer.setSize(width, height, false);
+renderer.setClearColor(0xffffff);
 
 const objectLoader = new ObjectLoader();
 
