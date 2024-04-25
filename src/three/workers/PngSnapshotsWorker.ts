@@ -49,8 +49,9 @@ const positionCamera = (camera: OrthographicCamera, maxDim: number) => {
 };
 
 self.onmessage = function ({
-  data: { objectJson, halfSize },
+  data: { houseId, objectJson, halfSize },
 }: MessageEvent<{
+  houseId: string;
   objectJson: any;
   halfSize: number[];
 }>) {
@@ -66,9 +67,7 @@ self.onmessage = function ({
   renderer.render(scene, camera);
 
   offscreenCanvas.convertToBlob().then(function (blob) {
-    const blobURL = URL.createObjectURL(blob);
-
-    self.postMessage({ type: "canvasImage", blobURL: blobURL });
+    self.postMessage({ houseId, blob });
 
     objectsGroup.clear();
   });
