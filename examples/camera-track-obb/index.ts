@@ -1,6 +1,8 @@
-import { adjustCameraToAndFrameOBB, createBasicScene } from "@/index";
+import { createBasicScene } from "@/index";
 import GroundCircle from "@/three/objects/GroundCircle";
 import OBBMesh from "@/three/objects/OBBMesh";
+import { cameraFrameOBB2 } from "@/three/utils/camera";
+import { PngSnapshotsWorker } from "@/three/workers";
 import { PI, floor, random } from "@/utils/math";
 import { GUI } from "dat.gui";
 import {
@@ -13,6 +15,8 @@ import {
   Vector3,
 } from "three";
 import { OBB } from "three-stdlib";
+
+const snapshotWorker = new PngSnapshotsWorker();
 
 const { addObjectToScene, scene, renderer, camera } = createBasicScene();
 
@@ -162,12 +166,19 @@ function randomizeOBB() {
   return new OBB(position, halfSize, rotation);
 }
 
-window.addEventListener("keydown", event => {
+window.addEventListener("keydown", (event) => {
   if (event.key === " " || event.key === "Enter") {
     // Spacebar or Enter key
     const newOBB = randomizeOBB();
     obbMesh.updateOBB(newOBB); // Assuming obbMesh is your instance of OBBMesh
 
-    adjustCameraToAndFrameOBB(obbMesh.userData.obb, orthoCamera, 45, 45);
+    cameraFrameOBB2(orthoCamera, obbMesh.userData.obb);
+
+    snapshotWorker.postMessage({
+      objectJson: obbMesh.toJSON(),
+      halfSize: obbMesh.userData.obb.halfSize.toArray(),
+    });
   }
 });
+
+snapshotWorker.onmessage = ({ data }) => console.log(data);

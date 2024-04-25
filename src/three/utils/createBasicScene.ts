@@ -47,7 +47,7 @@ interface BasicSceneComponents {
 }
 
 const defaultParams = {
-  canvas: document.querySelector("#canvas") as HTMLCanvasElement,
+  canvas: document?.querySelector("#canvas") as HTMLCanvasElement,
   camera: (() => {
     const camera = new PerspectiveCamera(
       75,
@@ -85,7 +85,7 @@ function createBasicScene({
   );
   composer.addPass(outlinePass);
 
-  const light = new AmbientLight(0xffffff); // Add ambient light
+  const light = new AmbientLight(0xffffff);
   scene.add(light);
 
   const cameraControls = new CameraControls(camera, canvas);
