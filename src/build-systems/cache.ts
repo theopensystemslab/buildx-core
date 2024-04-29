@@ -1,4 +1,3 @@
-"use client";
 import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
 import { ThreeMaterial } from "@/three/materials/types";
 import Dexie from "dexie";
