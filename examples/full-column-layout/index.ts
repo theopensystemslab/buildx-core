@@ -1,6 +1,6 @@
 import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { createBasicScene } from "@/index";
-import columnLayoutTE from "@/tasks/columnLayoutTE";
+import columnLayoutGroupTE from "@/tasks/columnLayoutTE";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -24,7 +24,7 @@ pipe(
     flow(
       A.lookup(1),
       TE.fromOption(() => new Error(`no houseTypeIndex 1`)),
-      TE.flatMap(columnLayoutTE)
+      TE.flatMap(columnLayoutGroupTE)
     )
   ),
   TE.map((columnLayoutGroup) => {

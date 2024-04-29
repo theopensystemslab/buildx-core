@@ -3,6 +3,7 @@ import { globSync } from "glob";
 import { isAbsolute, resolve } from "path";
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
+import react from "@vitejs/plugin-react";
 import packageJson from "./package.json";
 import { A, O, R } from "./src/utils/functions";
 
@@ -43,7 +44,10 @@ export default defineConfig(({ mode }) => {
             },
           },
         },
-        plugins: [dts({ rollupTypes: true })],
+        plugins: [
+          dts({ rollupTypes: true }),
+          react({ include: /\.(mdx|jsx|tsx)$/ }),
+        ],
         resolve: {
           alias: [
             { find: "@", replacement: resolve(__dirname, "src") },
@@ -69,14 +73,17 @@ export default defineConfig(({ mode }) => {
           },
           rollupOptions: {
             external: (id: string) =>
-              id === "three" ||
+              peerDeps.includes(id) ||
               (!id.startsWith("@") && !id.startsWith(".") && !isAbsolute(id)),
             output: {
               preserveModules: true,
             },
           },
         },
-        plugins: [dts({ rollupTypes: true })],
+        plugins: [
+          dts({ rollupTypes: true }),
+          react({ include: /\.(mdx|jsx|tsx)$/ }),
+        ],
         resolve: {
           alias: [
             { find: "@", replacement: resolve(__dirname, "src") },

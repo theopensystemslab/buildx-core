@@ -15,6 +15,7 @@ import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
 import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
+import { fetchImageAsBlob } from "@/utils/airtable";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -23,9 +24,15 @@ export type CachedBuildModel = {
   geometries: any;
 };
 
+type BlobbedImage<T> = Omit<T, "imageUrl"> & {
+  imageBlob: Blob;
+};
+
+type CachedHouseType = BlobbedImage<HouseType>;
+
 class BuildSystemsCache extends Dexie {
   modules: Dexie.Table<BuildModule, string>;
-  houseTypes: Dexie.Table<HouseType, string>;
+  houseTypes: Dexie.Table<CachedHouseType, string>;
   elements: Dexie.Table<BuildElement, string>;
   materials: Dexie.Table<BuildMaterial, string>;
   models: Dexie.Table<CachedBuildModel, string>;
@@ -211,27 +218,44 @@ export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
     })
   );
 
-export const localHouseTypesTE: TE.TaskEither<Error, HouseType[]> = TE.tryCatch(
-  () =>
-    buildSystemsCache.houseTypes.toArray().then((houseTypes) => {
-      if (A.isEmpty(houseTypes)) {
-        throw new Error("No house types found in cache");
-      }
-      return houseTypes;
-    }),
-  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
-);
+export const localHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.houseTypes.toArray().then((houseTypes) => {
+        if (A.isEmpty(houseTypes)) {
+          throw new Error("No house types found in cache");
+        }
+        return houseTypes;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
 
-export const cachedHouseTypesTE = runUntilFirstSuccess([
-  localHouseTypesTE,
-  pipe(
-    remoteHouseTypesTE,
-    TE.map((houseTypes) => {
-      buildSystemsCache.houseTypes.bulkPut(houseTypes);
-      return houseTypes;
-    })
-  ),
-]);
+export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
+  runUntilFirstSuccess([
+    localHouseTypesTE,
+    pipe(
+      remoteHouseTypesTE,
+      TE.chain((remoteHouseTypes) =>
+        pipe(
+          remoteHouseTypes,
+          A.traverse(TE.ApplicativePar)(({ imageUrl, ...houseType }) =>
+            pipe(
+              TE.tryCatch(
+                () => fetchImageAsBlob(imageUrl),
+                (reason) =>
+                  reason instanceof Error ? reason : new Error(String(reason))
+              ),
+              TE.map((imageBlob) => ({ ...houseType, imageBlob }))
+            )
+          ),
+          TE.map((houseTypes) => {
+            buildSystemsCache.houseTypes.bulkPut(houseTypes);
+            return houseTypes;
+          })
+        )
+      )
+    ),
+  ]);
 
 export const localModelTE = (
   speckleBranchUrl: string
