@@ -1,27 +1,32 @@
+import { BuildModule } from "@/build-systems/remote/modules";
 import { PositionedRow } from "@/layouts/types";
+import { getVanillaModule } from "@/tasks/vanilla";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { Brush, Evaluator } from "three-bvh-csg";
-import { UserDataTypeEnum } from "../types";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
 import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
 
 export type GridGroupUserData = {
-  type: typeof UserDataTypeEnum.Enum.GridGroup;
   levelIndex: number;
-  length: number;
+  depth: number;
   height: number;
 };
 
 export class GridGroup extends Group {
   userData: GridGroupUserData;
   evaluator: Evaluator;
+  vanillaModule: BuildModule;
 
-  constructor(userData: GridGroupUserData) {
+  constructor({
+    vanillaModule,
+    ...userData
+  }: GridGroupUserData & { vanillaModule: BuildModule }) {
     super();
     this.userData = userData;
     this.evaluator = new Evaluator();
+    this.vanillaModule = vanillaModule;
   }
 
   createClippedBrushes(clippingBrush: Brush) {
@@ -82,15 +87,37 @@ export const defaultGridGroupCreator = ({
           flip: endColumn,
         })
     ),
-    TE.map((moduleGroups) => {
-      const gridGroup = new GridGroup({
-        type: UserDataTypeEnum.Enum.GridGroup,
-        levelIndex,
-        length: moduleGroups.reduce((acc, v) => acc + v.userData.length, 0),
-        height: positionedModules[0].module.height,
-      });
-      gridGroup.add(...moduleGroups);
-      gridGroup.position.setY(y);
-      return gridGroup;
-    })
+    TE.chain((moduleGroups) =>
+      pipe(
+        moduleGroups,
+        A.head,
+        TE.fromOption(() => Error(`no moduleGroups in createGridGroup`)),
+        TE.chain(
+          ({
+            userData: {
+              systemId,
+              structuredDna: { sectionType, positionType, levelType, gridType },
+            },
+          }) =>
+            getVanillaModule({
+              systemId,
+              sectionType,
+              positionType,
+              levelType,
+              gridType,
+            })
+        ),
+        TE.map((vanillaModule) => {
+          const gridGroup = new GridGroup({
+            levelIndex,
+            depth: moduleGroups.reduce((acc, v) => acc + v.userData.length, 0),
+            height: positionedModules[0].module.height,
+            vanillaModule,
+          });
+          gridGroup.add(...moduleGroups);
+          gridGroup.position.setY(y);
+          return gridGroup;
+        })
+      )
+    )
   );
