@@ -1,6 +1,6 @@
 import { Group } from "three";
 
-class LayoutsManager {
+class TransformsManager {
   root: Group;
 
   constructor(root: Group) {
@@ -8,4 +8,4 @@ class LayoutsManager {
   }
 }
 
-export default LayoutsManager;
+export default TransformsManager;
