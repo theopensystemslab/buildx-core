@@ -23,11 +23,11 @@ export type CachedBuildModel = {
   geometries: any;
 };
 
-type BlobbedImage<T> = Omit<T, "imageUrl"> & {
+export type BlobbedImage<T> = Omit<T, "imageUrl"> & {
   imageBlob: Blob;
 };
 
-type CachedHouseType = BlobbedImage<HouseType>;
+export type CachedHouseType = BlobbedImage<HouseType>;
 
 class BuildSystemsCache extends Dexie {
   modules: Dexie.Table<BuildModule, string>;
@@ -45,7 +45,7 @@ class BuildSystemsCache extends Dexie {
   // settings: Dexie.Table<SystemSettings, string>
 
   constructor() {
-    super("SystemsDatabase");
+    super("BuildSystemsDatabase");
     this.version(1).stores({
       modules: "[systemId+dna]",
       houseTypes: "id",
