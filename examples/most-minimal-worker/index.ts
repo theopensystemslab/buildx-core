@@ -2,9 +2,9 @@ import { createBasicScene } from "@/index";
 import OBBMesh from "@/three/objects/OBBMesh";
 import { Matrix3, Matrix4, Vector3 } from "three";
 import { OBB } from "three-stdlib";
-import SnapshotWorker from "./SnapshotWorker?worker";
+import PngSnapshotsWorker from "@/three/workers/PngSnapshotsWorker?worker";
 
-const snapshotWorker = new SnapshotWorker();
+const snapshotWorker = new PngSnapshotsWorker();
 
 const { addObjectToScene } = createBasicScene();
 
