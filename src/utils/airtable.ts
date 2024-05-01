@@ -12,3 +12,13 @@ Airtable.configure({ apiKey });
 const airtable = new Airtable();
 
 export default airtable;
+
+// Utility function to fetch an image URL and convert it to a Blob
+export const fetchImageAsBlob = (url: string): Promise<Blob> => {
+  return fetch(url).then((response) => {
+    if (!response.ok) {
+      throw new Error("Failed to fetch the image");
+    }
+    return response.blob();
+  });
+};
