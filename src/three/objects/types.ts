@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const UserDataTypeEnum = z.enum([
-  "TransformsGroup",
+  "HouseGroup",
+  // "TransformsGroup",
   // "HouseTransformsHandlesGroup",
   "ColumnLayoutGroup",
   "ColumnGroup",

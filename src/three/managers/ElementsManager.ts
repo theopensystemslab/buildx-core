@@ -2,14 +2,14 @@ import { Group } from "three";
 import { isElementGroup } from "../objects/house/ElementGroup";
 
 class ElementsManager {
-  rootGroup: Group;
+  root: Group;
 
-  constructor(rootGroup: Group) {
-    this.rootGroup = rootGroup;
+  constructor(root: Group) {
+    this.root = root;
   }
 
   setAllElementsVisibility(visible: boolean) {
-    this.rootGroup.traverse((node) => {
+    this.root.traverse((node) => {
       if (isElementGroup(node)) {
         node.visible = visible;
       }
@@ -17,7 +17,7 @@ class ElementsManager {
   }
 
   setCategoryVisibility(category: string, visible: boolean) {
-    this.rootGroup.traverse((node) => {
+    this.root.traverse((node) => {
       if (isElementGroup(node) && node.element.category === category) {
         node.visible = visible;
       }

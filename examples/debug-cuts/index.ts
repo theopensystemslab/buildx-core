@@ -2,8 +2,6 @@ import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
 import columnLayoutGroupTE from "@/tasks/columnLayoutTE";
-import CutsManager from "@/three/managers/CutsManager";
-import ElementsManager from "@/three/managers/ElementsManager";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
@@ -65,9 +63,10 @@ pipe(
           pipe(
             columnLayoutGroupTE(houseType),
             TE.map((columnLayoutGroup) => {
+              const { cutsManager, elementsManager } = columnLayoutGroup;
+
               addObjectToScene(columnLayoutGroup);
-              const elementsManager = new ElementsManager(columnLayoutGroup);
-              const cutsManager = new CutsManager(columnLayoutGroup);
+
               pipe(
                 cachedElementsTE,
                 TE.map((elements) => {
@@ -114,12 +113,17 @@ pipe(
                         cutMode: "No Cut",
                       },
                       "cutMode",
-                      ["No Cut", "X-cut", "Z-cut"]
+                      ["No Cut", "X-cut", "Y-cut", "Z-cut"]
                     )
                     .onChange((value) => {
                       switch (value) {
                         case "X-cut":
                           cutsManager.setClippingBrushX();
+                          cutsManager.createClippedBrushes();
+                          cutsManager.showClippedBrushes();
+                          break;
+                        case "Y-cut":
+                          cutsManager.setClippingBrushY(1);
                           cutsManager.createClippedBrushes();
                           cutsManager.showClippedBrushes();
                           break;
