@@ -13,14 +13,14 @@ import { isModuleGroup } from "../objects/house/ModuleGroup";
 const C = 2;
 
 class CutsManager {
-  rootGroup: Group & { obb: OBB };
+  root: Group & { obb: OBB };
   clippingBrush: Brush;
   clipWidth: boolean;
   clipDepth: boolean;
   clipHeight: number | null;
 
-  constructor(rootGroup: Group & { obb: OBB }) {
-    this.rootGroup = rootGroup;
+  constructor(root: Group & { obb: OBB }) {
+    this.root = root;
     this.clipWidth = false;
     this.clipDepth = false;
     this.clipHeight = null;
@@ -53,7 +53,7 @@ class CutsManager {
   // }
 
   setClippingBrushX() {
-    const { halfSize } = this.rootGroup.obb;
+    const { halfSize } = this.root.obb;
 
     const width = halfSize.x + C;
     const height = halfSize.y * 2 + C;
@@ -77,7 +77,7 @@ class CutsManager {
   }
 
   setClippingBrushZ() {
-    const { halfSize } = this.rootGroup.obb;
+    const { halfSize } = this.root.obb;
 
     const width = halfSize.x * 2 + C;
     const height = halfSize.y * 2 + C;
@@ -109,7 +109,7 @@ class CutsManager {
   }
 
   destroyClippedBrushes() {
-    this.rootGroup.traverse((node) => {
+    this.root.traverse((node) => {
       if (isClippedBrush(node)) {
         node.removeFromParent();
       }
@@ -126,7 +126,7 @@ class CutsManager {
   createClippedBrushes() {
     this.destroyClippedBrushes();
 
-    this.rootGroup.traverse((node) => {
+    this.root.traverse((node) => {
       if (isModuleGroup(node)) {
         node.createClippedBrushes(this.clippingBrush);
       }
@@ -134,7 +134,7 @@ class CutsManager {
   }
 
   showClippedBrushes() {
-    this.rootGroup.traverse((node) => {
+    this.root.traverse((node) => {
       if (isElementBrush(node)) {
         node.visible = false;
       } else if (isClippedBrush(node)) {
@@ -144,7 +144,7 @@ class CutsManager {
   }
 
   showElementBrushes() {
-    this.rootGroup.traverse((node) => {
+    this.root.traverse((node) => {
       if (isElementBrush(node)) {
         node.visible = true;
       } else if (isClippedBrush(node)) {
