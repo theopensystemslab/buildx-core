@@ -10,7 +10,7 @@ import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
 
 export type GridGroupUserData = {
   levelIndex: number;
-  length: number;
+  depth: number;
   height: number;
 };
 
@@ -110,7 +110,7 @@ export const defaultGridGroupCreator = ({
         TE.map((vanillaModule) => {
           const gridGroup = new GridGroup({
             levelIndex,
-            length: moduleGroups.reduce((acc, v) => acc + v.userData.length, 0),
+            depth: moduleGroups.reduce((acc, v) => acc + v.userData.length, 0),
             height: positionedModules[0].module.height,
             vanillaModule,
           });

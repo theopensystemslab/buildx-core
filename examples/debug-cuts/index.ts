@@ -114,12 +114,17 @@ pipe(
                         cutMode: "No Cut",
                       },
                       "cutMode",
-                      ["No Cut", "X-cut", "Z-cut"]
+                      ["No Cut", "X-cut", "Y-cut", "Z-cut"]
                     )
                     .onChange((value) => {
                       switch (value) {
                         case "X-cut":
                           cutsManager.setClippingBrushX();
+                          cutsManager.createClippedBrushes();
+                          cutsManager.showClippedBrushes();
+                          break;
+                        case "Y-cut":
+                          cutsManager.setClippingBrushY(1);
                           cutsManager.createClippedBrushes();
                           cutsManager.showClippedBrushes();
                           break;

@@ -1,21 +1,20 @@
 import { columnLayoutToLevelTypes } from "@/layouts/ops";
 import { Column, ColumnLayout } from "@/layouts/types";
-import { VanillaColumnsKey } from "@/layouts/vanillaColumns";
+import { createVanillaColumn } from "@/tasks/vanilla";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group, Vector3 } from "three";
 import { Brush } from "three-bvh-csg";
 import { OBB } from "three-stdlib";
 import { UserDataTypeEnum } from "../types";
+import { defaultColumnGroupCreator } from "./ColumnGroup";
 import { isClippedBrush, isElementBrush } from "./ElementGroup";
 import { isModuleGroup } from "./ModuleGroup";
-import { defaultColumnGroupCreator } from "./ColumnGroup";
 
 export type ColumnLayoutGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
   dnas: string[]; // houseTransformsGroup: HouseTransformsGroup;
   layout: ColumnLayout;
-  vanillaColumn: Column;
   levelTypes: string[];
   width: number;
   height: number;
@@ -27,9 +26,14 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
+  vanillaColumn: Column;
 
-  constructor(userData: ColumnLayoutGroupUserData) {
+  constructor({
+    vanillaColumn,
+    ...userData
+  }: ColumnLayoutGroupUserData & { vanillaColumn: Column }) {
     super();
+    this.vanillaColumn = vanillaColumn;
     this.userData = userData;
     const { width, height, depth } = userData;
     this.aabb = new Box3();
@@ -82,16 +86,12 @@ export const createColumnLayoutGroup = ({
   systemId,
   dnas,
   layout,
-  vanillaColumnGetter = () => TE.of(undefined as any),
   createColumnGroup = defaultColumnGroupCreator,
 }: {
   systemId: string;
   dnas: string[];
   layout: ColumnLayout;
   createColumnGroup?: typeof defaultColumnGroupCreator;
-  vanillaColumnGetter?: (
-    key: VanillaColumnsKey
-  ) => TE.TaskEither<Error, Column>;
 }) =>
   pipe(
     layout,
@@ -146,7 +146,11 @@ export const createColumnLayoutGroup = ({
       const levelTypes = columnLayoutToLevelTypes(layout);
 
       return pipe(
-        vanillaColumnGetter({ systemId, sectionType, levelTypes }),
+        createVanillaColumn({
+          systemId,
+          levelTypes,
+          sectionType,
+        }),
         TE.map((vanillaColumn) => {
           const userData: ColumnLayoutGroupUserData = {
             type: UserDataTypeEnum.Enum.ColumnLayoutGroup,
@@ -157,11 +161,15 @@ export const createColumnLayoutGroup = ({
             width,
             height,
             depth: length,
-            vanillaColumn,
           };
 
-          const columnLayoutGroup = new ColumnLayoutGroup(userData);
+          const columnLayoutGroup = new ColumnLayoutGroup({
+            vanillaColumn,
+            ...userData,
+          });
+
           columnLayoutGroup.add(...columnGroups);
+
           return columnLayoutGroup;
         })
       );

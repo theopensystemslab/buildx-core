@@ -24,14 +24,14 @@ pipe(
   TE.map((rowGroup) => {
     addObjectToScene(rowGroup);
 
-    const { length: rowLength, height: rowHeight } = rowGroup.userData;
+    const { depth: rowDepth, height: rowHeight } = rowGroup.userData;
     const { width: rowWidth } = (rowGroup.children[0] as ModuleGroup).userData;
 
     const clippingBrush = new Brush(
-      new BoxGeometry(rowWidth / 2, rowHeight / 2, rowLength / 2),
+      new BoxGeometry(rowWidth / 2, rowHeight / 2, rowDepth / 2),
       new MeshBasicMaterial({ color: "white", side: DoubleSide })
     );
-    clippingBrush.position.set(rowWidth / 4, rowHeight, (rowLength / 4) * 3);
+    clippingBrush.position.set(rowWidth / 4, rowHeight, (rowDepth / 4) * 3);
     clippingBrush.scale.setScalar(1.1);
     clippingBrush.updateMatrixWorld();
 
