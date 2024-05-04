@@ -4,12 +4,11 @@ import { createVanillaColumn } from "@/tasks/vanilla";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group, Vector3 } from "three";
-import { Brush } from "three-bvh-csg";
 import { OBB } from "three-stdlib";
 import { UserDataTypeEnum } from "../types";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
-import { isClippedBrush, isElementBrush } from "./ElementGroup";
-import { isModuleGroup } from "./ModuleGroup";
+import CutsManager from "@/three/managers/CutsManager";
+import ElementsManager from "@/three/managers/ElementsManager";
 
 export type ColumnLayoutGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
@@ -27,6 +26,8 @@ export class ColumnLayoutGroup extends Group {
   aabb: Box3;
   obb: OBB;
   vanillaColumn: Column;
+  cutsManager: CutsManager;
+  elementsManager: ElementsManager;
 
   constructor({
     vanillaColumn,
@@ -41,44 +42,8 @@ export class ColumnLayoutGroup extends Group {
       new Vector3(),
       new Vector3(width / 2, height / 2, depth / 2)
     );
-  }
-
-  createClippedBrushes(clippingBrush: Brush) {
-    this.destroyClippedBrushes();
-
-    this.traverse((node) => {
-      if (isModuleGroup(node)) {
-        node.createClippedBrushes(clippingBrush);
-      }
-    });
-  }
-
-  showClippedBrushes() {
-    this.traverse((node) => {
-      if (isElementBrush(node)) {
-        node.visible = false;
-      } else if (isClippedBrush(node)) {
-        node.visible = true;
-      }
-    });
-  }
-
-  destroyClippedBrushes() {
-    this.traverse((node) => {
-      if (isClippedBrush(node)) {
-        node.removeFromParent();
-      }
-    });
-  }
-
-  showElementBrushes() {
-    this.traverse((node) => {
-      if (isElementBrush(node)) {
-        node.visible = true;
-      } else if (isClippedBrush(node)) {
-        node.visible = false;
-      }
-    });
+    this.cutsManager = new CutsManager(this);
+    this.elementsManager = new ElementsManager(this);
   }
 }
 
