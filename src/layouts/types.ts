@@ -10,7 +10,7 @@ export type Row = {
   positionedModules: Array<PositionedBuildModule>;
   levelType: string;
   gridUnits: number;
-  rowLength: number;
+  rowDepth: number;
   // is this best here, or best in our scene graph?
   // vanillaModule: BuildModule;
 };
@@ -22,7 +22,7 @@ export type PositionedRow = Row & {
 
 export type Column = {
   positionedRows: Array<PositionedRow>;
-  columnLength: number;
+  columnDepth: number;
 };
 
 export type PositionedColumn = Column & {
