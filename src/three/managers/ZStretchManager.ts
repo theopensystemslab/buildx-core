@@ -1,23 +1,22 @@
 import { A, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { Group } from "three";
+import { BufferGeometry, Group, Line, LineBasicMaterial, Vector3 } from "three";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
-const DEFAULT_MAX_DEPTH = 50;
+const DEFAULT_MAX_DEPTH = 10;
 
-type FenceZ = {
-  z: number;
-  columnGroup: ColumnGroup;
-};
+const DEBUG = true;
+
+const lineMaterial = new LineBasicMaterial({ color: 0xff0000 }); // Red color for visibility
 
 class ZStretchManager {
   columnLayoutGroup: ColumnLayoutGroup;
-  fences: FenceZ[];
+  fences: number[];
   vanillaColumnsGroup: Group;
   vanillaColumnsGroupDepth: number;
   vanillaColumnGroups: ColumnGroup[];
@@ -107,6 +106,7 @@ class ZStretchManager {
           A.makeBy(maxMoreCols, function (i) {
             const c = templateVanillaColumnGroup.clone();
             c.position.setZ(i * vanillaColumnDepth);
+
             return c;
           })
         );
@@ -138,17 +138,53 @@ class ZStretchManager {
 
     const { startColumn, endColumn } = this.asyncData;
 
+    const debug = (startDepth: number) => {
+      const scene = this.columnLayoutGroup.parent!;
+
+      this.fences.forEach((fenceZ) => {
+        const points = [];
+        points.push(new Vector3(-10, 0, fenceZ + startDepth)); // Start point of the line
+        points.push(new Vector3(10, 0, fenceZ + startDepth)); // End point of the line
+
+        const geometry = new BufferGeometry().setFromPoints(points);
+        const line = new Line(geometry, lineMaterial);
+
+        scene.add(line);
+      });
+
+      console.log(this.fences);
+    };
+
     switch (direction) {
-      case 1:
-        this.vanillaColumnsGroup.position.setZ(
-          this.columnLayoutGroup.userData.depth - endColumn.userData.depth
+      case 1: {
+        const startDepth =
+          this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+
+        this.vanillaColumnsGroup.position.setZ(startDepth);
+
+        this.fences = this.vanillaColumnGroups.map(
+          (x) => x.position.z + x.userData.depth / 2
         );
+
+        if (DEBUG) debug(startDepth);
+
         break;
-      case -1:
-        this.vanillaColumnsGroup.position.setZ(
-          -this.vanillaColumnsGroupDepth + startColumn.userData.depth
+      }
+      case -1: {
+        const startDepth =
+          -this.vanillaColumnsGroupDepth + startColumn.userData.depth;
+
+        this.vanillaColumnsGroup.position.setZ(startDepth);
+
+        this.fences = this.vanillaColumnGroups.map(
+          (x) =>
+            startColumn.userData.depth / 2 + x.position.z - x.userData.depth / 2
         );
+
+        if (DEBUG) debug(startDepth);
+
         break;
+      }
       default:
         throw new Error(
           "direction other than 1 or -1 in ZStretchManager.first"

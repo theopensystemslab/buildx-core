@@ -72,7 +72,7 @@ pipe(
               columnLayoutGroup.updateOBB();
 
               const stretchParams = {
-                depth: 100,
+                depth: 0,
                 direction: 1,
               };
 
@@ -81,8 +81,8 @@ pipe(
               const depthController = stretchFolder.add(
                 stretchParams,
                 "depth",
-                0,
-                stretchParams.depth
+                stretchParams.depth,
+                50
               );
 
               depthController.listen();
