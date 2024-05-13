@@ -18,13 +18,18 @@ type FenceZ = {
 class ZStretchManager {
   columnLayoutGroup: ColumnLayoutGroup;
   fences: FenceZ[];
-  templateVanillaColumnGroup?: ColumnGroup;
   vanillaColumnsGroup: Group;
   vanillaColumnsGroupDepth: number;
   vanillaColumnGroups: ColumnGroup[];
+  asyncData?: {
+    templateVanillaColumnGroup: ColumnGroup;
+    startColumn: ColumnGroup;
+    endColumn: ColumnGroup;
+  };
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
     this.columnLayoutGroup = columnLayoutGroup;
+
     this.fences = [];
     this.vanillaColumnGroups = [];
     this.vanillaColumnsGroup = new Group();
@@ -38,12 +43,21 @@ class ZStretchManager {
   // hideDown() {}
   // saveState() {}
 
+  cleanup() {
+    this.columnLayoutGroup.remove(this.vanillaColumnsGroup);
+    this.vanillaColumnsGroup.clear();
+    this.vanillaColumnsGroupDepth = 0;
+  }
+
   async init() {
+    this.cleanup();
+
     const {
       userData: {
         vanillaColumn: { positionedRows },
         depth: layoutDepth,
       },
+      children,
     } = this.columnLayoutGroup;
 
     const templateVanillaColumnGroupCreator = defaultColumnGroupCreator({
@@ -51,10 +65,25 @@ class ZStretchManager {
       columnIndex: -1,
     });
 
+    const { startColumn, endColumn } = (function () {
+      const columns = children.filter(
+        (x): x is ColumnGroup => x instanceof ColumnGroup
+      );
+
+      const startColumn = columns[0];
+      const endColumn = columns[columns.length - 1];
+
+      return { startColumn, endColumn };
+    })();
+
     return pipe(
       templateVanillaColumnGroupCreator,
       TE.map((templateVanillaColumnGroup) => {
-        this.templateVanillaColumnGroup = templateVanillaColumnGroup;
+        this.asyncData = {
+          templateVanillaColumnGroup,
+          startColumn,
+          endColumn,
+        };
 
         const { depth: vanillaColumnDepth } =
           templateVanillaColumnGroup.userData;
@@ -105,23 +134,19 @@ class ZStretchManager {
   }
 
   first(direction: number) {
-    console.log("hello?");
+    if (!this.asyncData) return;
 
-    if (typeof this.templateVanillaColumnGroup === "undefined") return;
-
-    console.log(direction);
+    const { startColumn, endColumn } = this.asyncData;
 
     switch (direction) {
       case 1:
         this.vanillaColumnsGroup.position.setZ(
-          this.columnLayoutGroup.userData.depth -
-            this.templateVanillaColumnGroup.userData.depth
+          this.columnLayoutGroup.userData.depth - endColumn.userData.depth
         );
         break;
       case -1:
         this.vanillaColumnsGroup.position.setZ(
-          -this.vanillaColumnsGroupDepth +
-            this.templateVanillaColumnGroup.userData.depth
+          -this.vanillaColumnsGroupDepth + startColumn.userData.depth
         );
         break;
       default:
@@ -129,6 +154,14 @@ class ZStretchManager {
           "direction other than 1 or -1 in ZStretchManager.first"
         );
     }
+
+    this.columnLayoutGroup.children
+      .filter((x) => x instanceof ColumnGroup)
+      .forEach((child, index, children) => {
+        if (index === 0 || index === children.length - 1) {
+          child.visible = false;
+        }
+      });
   }
 
   stretch(depth: number, direction: number) {
