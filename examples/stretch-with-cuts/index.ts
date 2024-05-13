@@ -14,7 +14,8 @@ const gui = new GUI({ hideable: false });
 // Create folders for better organization
 const houseTypeFolder = gui.addFolder("House Type");
 let elementCategoriesFolder: GUI | null = null;
-let cutsFolder: GUI | null = null; // Folder for cut modes
+let cutsFolder: GUI | null = null;
+let stretchFolder: GUI | null = null;
 
 const { addObjectToScene, render, scene } = createBasicScene({
   outliner: (object) => {
@@ -37,6 +38,7 @@ pipe(
   cachedHouseTypesTE,
   TE.map((houseTypes) => {
     const options = houseTypes.map((x) => x.name);
+
     const go = (houseTypeName: string) => {
       scene.children.forEach((x) => {
         if (x instanceof ColumnLayoutGroup) {
@@ -68,6 +70,55 @@ pipe(
               addObjectToScene(columnLayoutGroup);
 
               columnLayoutGroup.updateOBB();
+
+              const stretchParams = {
+                depth: 100,
+                direction: 1,
+              };
+
+              stretchFolder = gui.addFolder("Stretch");
+
+              const depthController = stretchFolder.add(
+                stretchParams,
+                "depth",
+                0,
+                stretchParams.depth
+              );
+
+              depthController.listen();
+              depthController.onChange((depth) => {
+                stretchParams.depth = depth;
+
+                columnLayoutGroup.zStretchManager.stretch(
+                  stretchParams.depth,
+                  stretchParams.direction
+                );
+              });
+
+              stretchFolder
+                .add(stretchParams, "direction", { Positive: 1, Negative: -1 })
+                .name("Direction")
+                .listen()
+                .onChange((newDirection) => {
+                  stretchParams.direction = Number(newDirection);
+
+                  columnLayoutGroup.zStretchManager.stretch(
+                    stretchParams.depth,
+                    stretchParams.direction
+                  );
+                });
+
+              stretchFolder.open();
+
+              window.addEventListener("keydown", async (ev) => {
+                switch (ev.key) {
+                  case "s":
+                    await columnLayoutGroup.zStretchManager.init();
+                    columnLayoutGroup.zStretchManager.first(
+                      stretchParams.direction
+                    );
+                }
+              });
 
               pipe(
                 cachedElementsTE,

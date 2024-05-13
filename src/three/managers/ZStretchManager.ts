@@ -17,13 +17,11 @@ type FenceZ = {
 
 class ZStretchManager {
   columnLayoutGroup: ColumnLayoutGroup;
-  // templateVanillaColumnGroup?: ColumnGroup;
   fences: FenceZ[];
+  templateVanillaColumnGroup?: ColumnGroup;
   vanillaColumnsGroup: Group;
   vanillaColumnsGroupDepth: number;
   vanillaColumnGroups: ColumnGroup[];
-
-  // ref state kinda stuff here
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
     this.columnLayoutGroup = columnLayoutGroup;
@@ -40,7 +38,7 @@ class ZStretchManager {
   // hideDown() {}
   // saveState() {}
 
-  init() {
+  async init() {
     const {
       userData: {
         vanillaColumn: { positionedRows },
@@ -53,10 +51,10 @@ class ZStretchManager {
       columnIndex: -1,
     });
 
-    pipe(
+    return pipe(
       templateVanillaColumnGroupCreator,
       TE.map((templateVanillaColumnGroup) => {
-        // this.templateVanillaColumnGroup = templateVanillaColumnGroup;
+        this.templateVanillaColumnGroup = templateVanillaColumnGroup;
 
         const { depth: vanillaColumnDepth } =
           templateVanillaColumnGroup.userData;
@@ -97,25 +95,44 @@ class ZStretchManager {
         this.columnLayoutGroup.add(this.vanillaColumnsGroup);
 
         // this.vanillaColumnsGroup.position.setZ(-this.vanillaColumnsGroupDepth);
-        this.vanillaColumnsGroup.position.setZ(
-          this.columnLayoutGroup.userData.depth
-        );
-
-        // columnGroup.position.setZ(z)
+        // this.vanillaColumnsGroup.position.setZ(
+        //   this.columnLayoutGroup.userData.depth
+        // );
 
         // setInvisibleNoRaycast(columnGroup);
-        // layoutGroup.add(columnGroup);
       })
     )();
+  }
 
-    // maybe just make them all up and down here?
+  first(direction: number) {
+    console.log("hello?");
 
-    // what about side?
+    if (typeof this.templateVanillaColumnGroup === "undefined") return;
 
-    // maybe we can maxMore and multiply to
-    // create all the column groups
-    // and even add them to the scene invisibly
-    // and just move (position) them separately (e.g. on click)
+    console.log(direction);
+
+    switch (direction) {
+      case 1:
+        this.vanillaColumnsGroup.position.setZ(
+          this.columnLayoutGroup.userData.depth -
+            this.templateVanillaColumnGroup.userData.depth
+        );
+        break;
+      case -1:
+        this.vanillaColumnsGroup.position.setZ(
+          -this.vanillaColumnsGroupDepth +
+            this.templateVanillaColumnGroup.userData.depth
+        );
+        break;
+      default:
+        throw new Error(
+          "direction other than 1 or -1 in ZStretchManager.first"
+        );
+    }
+  }
+
+  stretch(depth: number, direction: number) {
+    console.log(depth, direction);
   }
 
   // foo() {
