@@ -12,21 +12,17 @@ export type GridGroupUserData = {
   levelIndex: number;
   depth: number;
   height: number;
+  vanillaModule: BuildModule;
 };
 
 export class GridGroup extends Group {
   userData: GridGroupUserData;
   evaluator: Evaluator;
-  vanillaModule: BuildModule;
 
-  constructor({
-    vanillaModule,
-    ...userData
-  }: GridGroupUserData & { vanillaModule: BuildModule }) {
+  constructor(userData: GridGroupUserData) {
     super();
     this.userData = userData;
     this.evaluator = new Evaluator();
-    this.vanillaModule = vanillaModule;
   }
 
   createClippedBrushes(clippingBrush: Brush) {

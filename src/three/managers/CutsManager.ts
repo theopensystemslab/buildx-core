@@ -77,7 +77,7 @@ class CutsManager {
 
         const width = halfSize.x * 2 + C;
         const height = halfSize.y * 2 + C;
-        const depth = halfSize.z * 2 + C;
+        const depth = 999; //  halfSize.z * 2 + C;
 
         const x = 0;
         const y = height / 2 + levelHeight;
