@@ -147,12 +147,12 @@ class ZStretchManager {
 
     switch (direction) {
       case 1: {
-        const startDepth =
-          this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+        const startDepth = endColumn.position.z - endColumn.userData.depth;
+        // this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
 
         this.vanillaColumnGroups.forEach((columnGroup, index) => {
           columnGroup.position.set(
-            this.columnLayoutGroup.userData.width,
+            0, // this.columnLayoutGroup.userData.width,
             0,
             startDepth +
               (index * columnGroup.userData.depth +
@@ -203,13 +203,16 @@ class ZStretchManager {
         );
     }
 
-    this.columnLayoutGroup.children
-      .filter((x) => x instanceof ColumnGroup)
-      .forEach((child, index, children) => {
-        if (index === 0 || index === children.length - 1) {
-          child.visible = false;
-        }
-      });
+    startColumn.visible = false;
+    endColumn.visible = false;
+
+    // this.columnLayoutGroup.children
+    //   .filter((x) => x instanceof ColumnGroup)
+    //   .forEach((child, index, children) => {
+    //     if (index === 0 || index === children.length - 1) {
+    //       child.visible = false;
+    //     }
+    //   });
   }
 
   stretch(depth: number, side: number) {
@@ -236,6 +239,25 @@ class ZStretchManager {
         })
       );
     }
+
+    if (side === 1 && direction === -1) {
+      pipe(
+        this.vanillaColumnGroups,
+        A.lookup(this.vanillaColumnIndex),
+        O.map((currentTarget) => {
+          console.log({ currentTarget });
+          const startDepth =
+            this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+
+          if (depth <= currentTarget.position.z - startDepth) {
+            this.vanillaColumnIndex--;
+            currentTarget.visible = false;
+          }
+        })
+      );
+    }
+
+    this.lastDepth = depth;
   }
 
   // foo() {
