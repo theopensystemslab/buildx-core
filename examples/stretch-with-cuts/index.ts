@@ -2,6 +2,7 @@ import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
 import columnLayoutGroupTE from "@/tasks/columnLayoutTE";
+import { DEFAULT_MAX_DEPTH } from "@/three/managers/ZStretchManager";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
@@ -82,7 +83,8 @@ pipe(
                 stretchParams,
                 "depth",
                 stretchParams.depth,
-                50
+                DEFAULT_MAX_DEPTH,
+                0.01
               );
 
               depthController.listen();
@@ -93,6 +95,7 @@ pipe(
                   stretchParams.depth,
                   stretchParams.direction
                 );
+                render();
               });
 
               stretchFolder

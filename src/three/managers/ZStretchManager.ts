@@ -1,14 +1,14 @@
-import { A, TE } from "@/utils/functions";
-import { floor } from "@/utils/math";
+import { A, O, TE } from "@/utils/functions";
+import { floor, sign } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { BufferGeometry, Group, Line, LineBasicMaterial, Vector3 } from "three";
+import { BufferGeometry, Line, LineBasicMaterial, Vector3 } from "three";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
-const DEFAULT_MAX_DEPTH = 10;
+export const DEFAULT_MAX_DEPTH = 10;
 
 const DEBUG = true;
 
@@ -16,10 +16,9 @@ const lineMaterial = new LineBasicMaterial({ color: 0xff0000 }); // Red color fo
 
 class ZStretchManager {
   columnLayoutGroup: ColumnLayoutGroup;
-  fences: number[];
-  vanillaColumnsGroup: Group;
-  vanillaColumnsGroupDepth: number;
   vanillaColumnGroups: ColumnGroup[];
+  vanillaColumnIndex: number;
+  lastDepth: number;
   asyncData?: {
     templateVanillaColumnGroup: ColumnGroup;
     startColumn: ColumnGroup;
@@ -28,11 +27,9 @@ class ZStretchManager {
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
     this.columnLayoutGroup = columnLayoutGroup;
-
-    this.fences = [];
     this.vanillaColumnGroups = [];
-    this.vanillaColumnsGroup = new Group();
-    this.vanillaColumnsGroupDepth = 0;
+    this.vanillaColumnIndex = -1;
+    this.lastDepth = 0;
   }
 
   // measureAndProcess() {}
@@ -43,9 +40,7 @@ class ZStretchManager {
   // saveState() {}
 
   cleanup() {
-    this.columnLayoutGroup.remove(this.vanillaColumnsGroup);
-    this.vanillaColumnsGroup.clear();
-    this.vanillaColumnsGroupDepth = 0;
+    this.columnLayoutGroup.remove(...this.vanillaColumnGroups);
   }
 
   async init() {
@@ -78,6 +73,8 @@ class ZStretchManager {
     return pipe(
       templateVanillaColumnGroupCreator,
       TE.map((templateVanillaColumnGroup) => {
+        templateVanillaColumnGroup.visible = false;
+
         this.asyncData = {
           templateVanillaColumnGroup,
           startColumn,
@@ -102,26 +99,18 @@ class ZStretchManager {
           (maxDepth - layoutDepth) / vanillaColumnDepth - 1
         );
 
-        const vanillaColumnGroups = pipe(
-          A.makeBy(maxMoreCols, function (i) {
-            const c = templateVanillaColumnGroup.clone();
-            c.position.setZ(i * vanillaColumnDepth);
-
-            return c;
-          })
+        this.vanillaColumnGroups = pipe(
+          A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
         );
 
-        this.vanillaColumnsGroupDepth = maxMoreCols * vanillaColumnDepth;
-
-        this.vanillaColumnGroups = vanillaColumnGroups;
-        this.vanillaColumnsGroup.add(...vanillaColumnGroups);
-        const { x: x0, y: y0, z: z0 } = this.columnLayoutGroup.position;
-        this.vanillaColumnsGroup.position.set(
-          x0 + this.columnLayoutGroup.userData.width,
-          y0,
-          z0
-        );
-        this.columnLayoutGroup.add(this.vanillaColumnsGroup);
+        // this.vanillaColumnsGroup.add(...this.vanillaColumnGroups);
+        // const { x: x0, y: y0, z: z0 } = this.columnLayoutGroup.position;
+        // this.vanillaColumnsGroup.position.set(
+        //   x0 + this.columnLayoutGroup.userData.width,
+        //   y0,
+        //   z0
+        // );
+        this.columnLayoutGroup.add(...this.vanillaColumnGroups);
 
         // this.vanillaColumnsGroup.position.setZ(-this.vanillaColumnsGroupDepth);
         // this.vanillaColumnsGroup.position.setZ(
@@ -138,21 +127,22 @@ class ZStretchManager {
 
     const { startColumn, endColumn } = this.asyncData;
 
-    const debug = (startDepth: number) => {
+    const debug = () => {
       const scene = this.columnLayoutGroup.parent!;
 
-      this.fences.forEach((fenceZ) => {
+      this.vanillaColumnGroups.forEach((columnGroup) => {
+        const z = columnGroup.position.z;
         const points = [];
-        points.push(new Vector3(-10, 0, fenceZ + startDepth)); // Start point of the line
-        points.push(new Vector3(10, 0, fenceZ + startDepth)); // End point of the line
+        points.push(new Vector3(-10, 0, z)); // Start point of the line
+        points.push(new Vector3(10, 0, z)); // End point of the line
 
         const geometry = new BufferGeometry().setFromPoints(points);
         const line = new Line(geometry, lineMaterial);
 
+        console.log(z);
+
         scene.add(line);
       });
-
-      console.log(this.fences);
     };
 
     switch (direction) {
@@ -160,28 +150,50 @@ class ZStretchManager {
         const startDepth =
           this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
 
-        this.vanillaColumnsGroup.position.setZ(startDepth);
+        this.vanillaColumnGroups.forEach((columnGroup, index) => {
+          columnGroup.position.set(
+            this.columnLayoutGroup.userData.width,
+            0,
+            startDepth +
+              (index * columnGroup.userData.depth +
+                columnGroup.userData.depth / 2)
+          );
+        });
 
-        this.fences = this.vanillaColumnGroups.map(
-          (x) => x.position.z + x.userData.depth / 2
-        );
+        // this.vanillaColumnsGroup.position.setZ(startDepth);
 
-        if (DEBUG) debug(startDepth);
+        // this.fences = this.vanillaColumnGroups.map(
+        //   (x) => x.position.z + x.userData.depth / 2
+        // );
+
+        if (DEBUG) debug();
 
         break;
       }
       case -1: {
-        const startDepth =
-          -this.vanillaColumnsGroupDepth + startColumn.userData.depth;
+        const startDepth = startColumn.userData.depth;
 
-        this.vanillaColumnsGroup.position.setZ(startDepth);
+        this.vanillaColumnGroups.forEach((columnGroup, index) => {
+          columnGroup.position.set(
+            this.columnLayoutGroup.userData.width,
+            0,
+            startDepth -
+              index * columnGroup.userData.depth -
+              columnGroup.userData.depth
+            // startDepth -
+            //   index * columnGroup.userData.depth -
+            //   columnGroup.userData.depth / 2
+          );
+        });
 
-        this.fences = this.vanillaColumnGroups.map(
-          (x) =>
-            startColumn.userData.depth / 2 + x.position.z - x.userData.depth / 2
-        );
+        // this.vanillaColumnsGroup.position.setZ(startDepth);
 
-        if (DEBUG) debug(startDepth);
+        // this.fences = this.vanillaColumnGroups.map(
+        //   (x) =>
+        //     startColumn.userData.depth / 2 + x.position.z - x.userData.depth / 2
+        // );
+
+        if (DEBUG) debug();
 
         break;
       }
@@ -200,8 +212,30 @@ class ZStretchManager {
       });
   }
 
-  stretch(depth: number, direction: number) {
-    console.log(depth, direction);
+  stretch(depth: number, side: number) {
+    if (!this.asyncData) return;
+
+    const {
+      // startColumn
+      endColumn,
+    } = this.asyncData;
+
+    const direction = sign(depth - this.lastDepth);
+
+    if (side === 1 && direction === 1) {
+      pipe(
+        this.vanillaColumnGroups,
+        A.lookup(this.vanillaColumnIndex + 1),
+        O.map((nextTarget) => {
+          const startDepth =
+            this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+          if (depth > nextTarget.position.z - startDepth) {
+            this.vanillaColumnIndex++;
+            nextTarget.visible = true;
+          }
+        })
+      );
+    }
   }
 
   // foo() {
