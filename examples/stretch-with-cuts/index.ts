@@ -65,7 +65,7 @@ pipe(
         O.map((houseType) => {
           pipe(
             columnLayoutGroupTE(houseType),
-            TE.map((columnLayoutGroup) => {
+            TE.map(async (columnLayoutGroup) => {
               const { cutsManager, elementsManager } = columnLayoutGroup;
 
               addObjectToScene(columnLayoutGroup);
@@ -113,15 +113,14 @@ pipe(
 
               stretchFolder.open();
 
-              window.addEventListener("keydown", async (ev) => {
-                switch (ev.key) {
-                  case "s":
-                    await columnLayoutGroup.zStretchManager.init();
-                    columnLayoutGroup.zStretchManager.first(
-                      stretchParams.direction
-                    );
-                }
-              });
+              await columnLayoutGroup.zStretchManager.init();
+              columnLayoutGroup.zStretchManager.first(stretchParams.direction);
+
+              // window.addEventListener("keydown", async (ev) => {
+              //   switch (ev.key) {
+              //     case "s":
+              //   }
+              // });
 
               pipe(
                 cachedElementsTE,

@@ -1,5 +1,5 @@
 import { A, O, TE } from "@/utils/functions";
-import { floor, sign } from "@/utils/math";
+import { floor, max, min, sign } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Vector3 } from "three";
 import {
@@ -10,7 +10,7 @@ import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
 export const DEFAULT_MAX_DEPTH = 10;
 
-const DEBUG = true;
+const DEBUG = false;
 
 const lineMaterial = new LineBasicMaterial({ color: 0xff0000 }); // Red color for visibility
 
@@ -19,10 +19,13 @@ class ZStretchManager {
   vanillaColumnGroups: ColumnGroup[];
   vanillaColumnIndex: number;
   lastDepth: number;
+  maxDepth: number;
   asyncData?: {
     templateVanillaColumnGroup: ColumnGroup;
     startColumn: ColumnGroup;
     endColumn: ColumnGroup;
+    initialStartColumnZ: number;
+    initialEndColumnZ: number;
   };
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
@@ -30,6 +33,7 @@ class ZStretchManager {
     this.vanillaColumnGroups = [];
     this.vanillaColumnIndex = -1;
     this.lastDepth = 0;
+    this.maxDepth = DEFAULT_MAX_DEPTH;
   }
 
   // measureAndProcess() {}
@@ -79,12 +83,14 @@ class ZStretchManager {
           templateVanillaColumnGroup,
           startColumn,
           endColumn,
+          initialStartColumnZ: startColumn.position.z,
+          initialEndColumnZ: endColumn.position.z,
         };
 
         const { depth: vanillaColumnDepth } =
           templateVanillaColumnGroup.userData;
 
-        const maxDepth = DEFAULT_MAX_DEPTH;
+        const maxDepth = this.maxDepth;
 
         // const maxLen = pipe(
         //   systemId,
@@ -203,8 +209,8 @@ class ZStretchManager {
         );
     }
 
-    startColumn.visible = false;
-    endColumn.visible = false;
+    // startColumn.visible = false;
+    // endColumn.visible = false;
 
     // this.columnLayoutGroup.children
     //   .filter((x) => x instanceof ColumnGroup)
@@ -221,9 +227,14 @@ class ZStretchManager {
     const {
       // startColumn
       endColumn,
+      initialEndColumnZ,
     } = this.asyncData;
 
     const direction = sign(depth - this.lastDepth);
+
+    endColumn.position.setZ(
+      max(initialEndColumnZ, min(initialEndColumnZ + depth, this.maxDepth))
+    );
 
     if (side === 1 && direction === 1) {
       pipe(
