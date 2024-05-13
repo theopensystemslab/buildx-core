@@ -45,18 +45,18 @@ export const createRow = (modules: BuildModule[]): Row => {
 
   let positionedModules: PositionedBuildModule[] = [],
     gridUnits = 0,
-    rowLength = 0;
+    rowDepth = 0;
 
   for (let i = 0; i < modules.length; i++) {
     gridUnits += modules[i].structuredDna.gridUnits;
-    rowLength += modules[i].length;
+    rowDepth += modules[i].length;
     positionedModules = createPositionedModules(modules[i], positionedModules);
   }
 
   return {
     positionedModules,
     gridUnits,
-    rowLength,
+    rowDepth,
     levelType,
   };
 };
@@ -271,7 +271,7 @@ export const createRowLayout = (rowsMatrix: BuildModule[][]): PositionedRow[] =>
 export const createColumn = (rows: BuildModule[][]): Column =>
   pipe(rows, createRowLayout, (positionedRows) => ({
     positionedRows,
-    columnLength: positionedRows[0].rowLength,
+    columnDepth: positionedRows[0].rowDepth,
   }));
 
 export const positionColumns = A.reduceWithIndex(
@@ -281,13 +281,13 @@ export const positionColumns = A.reduceWithIndex(
     acc: PositionedColumn[],
     { positionedRows }: Column
   ) => {
-    const columnLength = positionedRows[0].rowLength;
+    const columnDepth = positionedRows[0].rowDepth;
     if (columnIndex === 0) {
       return [
         {
           positionedRows,
           columnIndex,
-          columnLength,
+          columnDepth,
           z: 0,
         },
       ];
@@ -299,8 +299,8 @@ export const positionColumns = A.reduceWithIndex(
         {
           positionedRows,
           columnIndex,
-          columnLength,
-          z: roundp(last.z + last.columnLength),
+          columnDepth,
+          z: roundp(last.z + last.columnDepth),
         },
       ];
     }

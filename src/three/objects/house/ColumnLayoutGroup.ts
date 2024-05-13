@@ -1,49 +1,49 @@
 import { columnLayoutToLevelTypes } from "@/layouts/ops";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
+import CutsManager from "@/three/managers/CutsManager";
+import ElementsManager from "@/three/managers/ElementsManager";
+import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group, Vector3 } from "three";
+import { Box3, Group } from "three";
 import { OBB } from "three-stdlib";
 import { UserDataTypeEnum } from "../types";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
-import CutsManager from "@/three/managers/CutsManager";
-import ElementsManager from "@/three/managers/ElementsManager";
 
 export type ColumnLayoutGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
-  dnas: string[]; // houseTransformsGroup: HouseTransformsGroup;
+  dnas: string[];
   layout: ColumnLayout;
   levelTypes: string[];
   width: number;
   height: number;
   depth: number;
   sectionType: string;
+  vanillaColumn: Column;
 };
 
 export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
-  vanillaColumn: Column;
   cutsManager: CutsManager;
   elementsManager: ElementsManager;
+  zStretchManager: ZStretchManager2;
 
-  constructor({
-    vanillaColumn,
-    ...userData
-  }: ColumnLayoutGroupUserData & { vanillaColumn: Column }) {
+  constructor(userData: ColumnLayoutGroupUserData) {
     super();
-    this.vanillaColumn = vanillaColumn;
     this.userData = userData;
-    const { width, height, depth } = userData;
     this.aabb = new Box3();
-    this.obb = new OBB(
-      new Vector3(),
-      new Vector3(width / 2, height / 2, depth / 2)
-    );
+    this.obb = new OBB();
     this.cutsManager = new CutsManager(this);
     this.elementsManager = new ElementsManager(this);
+    this.zStretchManager = new ZStretchManager2(this);
+  }
+
+  updateOBB() {
+    const { width, height, depth } = this.userData;
+    this.obb.halfSize.set(width / 2, height / 2, depth / 2);
   }
 }
 
@@ -103,8 +103,8 @@ export const createColumnLayoutGroup = ({
         (acc, v) => acc + v.positionedModules[0].module.height,
         0
       );
-      const length = columnGroups.reduce(
-        (acc, columnGroup) => acc + columnGroup.userData.length,
+      const depth = columnGroups.reduce(
+        (acc, columnGroup) => acc + columnGroup.userData.depth,
         0
       );
 
@@ -125,13 +125,11 @@ export const createColumnLayoutGroup = ({
             levelTypes,
             width,
             height,
-            depth: length,
+            depth,
+            vanillaColumn,
           };
 
-          const columnLayoutGroup = new ColumnLayoutGroup({
-            vanillaColumn,
-            ...userData,
-          });
+          const columnLayoutGroup = new ColumnLayoutGroup(userData);
 
           columnLayoutGroup.add(...columnGroups);
 

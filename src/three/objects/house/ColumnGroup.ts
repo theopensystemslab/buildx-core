@@ -8,7 +8,7 @@ import { defaultGridGroupCreator } from "./GridGroup";
 export type ColumnGroupUserData = {
   type: typeof UserDataTypeEnum.Enum.ColumnGroup;
   columnIndex: number;
-  length: number;
+  depth: number;
   startColumn?: boolean;
   endColumn?: boolean;
 };
@@ -47,7 +47,7 @@ export const defaultColumnGroupCreator = ({
       const columnGroupUserData: ColumnGroupUserData = {
         type: UserDataTypeEnum.Enum.ColumnGroup,
         columnIndex,
-        length: positionedRows[0].rowLength,
+        depth: positionedRows[0].rowDepth,
         startColumn,
         endColumn,
       };
