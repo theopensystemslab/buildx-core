@@ -2,7 +2,6 @@ import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
 import columnLayoutGroupTE from "@/tasks/columnLayoutTE";
-import { DEFAULT_MAX_DEPTH } from "@/three/managers/ZStretchManager";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
@@ -74,7 +73,7 @@ pipe(
 
               const stretchParams = {
                 depth: 0,
-                direction: 1,
+                side: 1,
               };
 
               stretchFolder = gui.addFolder("Stretch");
@@ -82,8 +81,8 @@ pipe(
               const depthController = stretchFolder.add(
                 stretchParams,
                 "depth",
-                stretchParams.depth,
-                DEFAULT_MAX_DEPTH,
+                -5,
+                5,
                 0.01
               );
 
@@ -91,30 +90,32 @@ pipe(
               depthController.onChange((depth) => {
                 stretchParams.depth = depth;
 
-                columnLayoutGroup.zStretchManager.stretch(
+                columnLayoutGroup.zStretchManager.progress(
                   stretchParams.depth,
-                  stretchParams.direction
+                  stretchParams.side
                 );
+
                 render();
               });
 
               stretchFolder
-                .add(stretchParams, "direction", { Positive: 1, Negative: -1 })
-                .name("Direction")
+                .add(stretchParams, "side", { Positive: 1, Negative: -1 })
+                .name("Side")
                 .listen()
-                .onChange((newDirection) => {
-                  stretchParams.direction = Number(newDirection);
+                .onChange((v) => {
+                  stretchParams.side = Number(v);
 
-                  columnLayoutGroup.zStretchManager.stretch(
+                  columnLayoutGroup.zStretchManager.progress(
                     stretchParams.depth,
-                    stretchParams.direction
+                    stretchParams.side
                   );
                 });
 
               stretchFolder.open();
 
               await columnLayoutGroup.zStretchManager.init();
-              columnLayoutGroup.zStretchManager.first(stretchParams.direction);
+
+              columnLayoutGroup.zStretchManager.first(stretchParams.side);
 
               // window.addEventListener("keydown", async (ev) => {
               //   switch (ev.key) {

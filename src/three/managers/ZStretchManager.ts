@@ -1,5 +1,5 @@
 import { A, O, TE } from "@/utils/functions";
-import { floor, max, min, sign } from "@/utils/math";
+import { floor, sign } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Vector3 } from "three";
 import {
@@ -10,41 +10,39 @@ import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
 export const DEFAULT_MAX_DEPTH = 10;
 
-const DEBUG = false;
-
 const lineMaterial = new LineBasicMaterial({ color: 0xff0000 }); // Red color for visibility
 
 class ZStretchManager {
   columnLayoutGroup: ColumnLayoutGroup;
-  vanillaColumnGroups: ColumnGroup[];
-  vanillaColumnIndex: number;
-  lastDepth: number;
   maxDepth: number;
-  asyncData?: {
+  initData?: {
     templateVanillaColumnGroup: ColumnGroup;
     startColumn: ColumnGroup;
     endColumn: ColumnGroup;
+    vanillaColumnGroups: ColumnGroup[];
     initialStartColumnZ: number;
     initialEndColumnZ: number;
+  };
+  firstData?: {
+    allColumnGroups: ColumnGroup[];
+    startDepth: number;
+  };
+  progressData?: {
+    lastDepth: number;
+    columnIndex: number;
   };
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
     this.columnLayoutGroup = columnLayoutGroup;
-    this.vanillaColumnGroups = [];
-    this.vanillaColumnIndex = -1;
-    this.lastDepth = 0;
     this.maxDepth = DEFAULT_MAX_DEPTH;
   }
 
-  // measureAndProcess() {}
-  // showUp() {}
-  // showDown() {}
-  // hideUp() {}
-  // hideDown() {}
-  // saveState() {}
-
   cleanup() {
-    this.columnLayoutGroup.remove(...this.vanillaColumnGroups);
+    // remove all invisibles
+    const invisibleColumnGroups = this.columnLayoutGroup.children.filter(
+      (x) => x instanceof ColumnGroup && !x.visible
+    );
+    this.columnLayoutGroup.remove(...invisibleColumnGroups);
   }
 
   async init() {
@@ -79,14 +77,6 @@ class ZStretchManager {
       TE.map((templateVanillaColumnGroup) => {
         templateVanillaColumnGroup.visible = false;
 
-        this.asyncData = {
-          templateVanillaColumnGroup,
-          startColumn,
-          endColumn,
-          initialStartColumnZ: startColumn.position.z,
-          initialEndColumnZ: endColumn.position.z,
-        };
-
         const { depth: vanillaColumnDepth } =
           templateVanillaColumnGroup.userData;
 
@@ -105,66 +95,87 @@ class ZStretchManager {
           (maxDepth - layoutDepth) / vanillaColumnDepth - 1
         );
 
-        this.vanillaColumnGroups = pipe(
+        const vanillaColumnGroups = pipe(
           A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
         );
 
-        // this.vanillaColumnsGroup.add(...this.vanillaColumnGroups);
-        // const { x: x0, y: y0, z: z0 } = this.columnLayoutGroup.position;
-        // this.vanillaColumnsGroup.position.set(
-        //   x0 + this.columnLayoutGroup.userData.width,
-        //   y0,
-        //   z0
-        // );
-        this.columnLayoutGroup.add(...this.vanillaColumnGroups);
+        this.initData = {
+          templateVanillaColumnGroup,
+          startColumn,
+          endColumn,
+          initialStartColumnZ: startColumn.position.z,
+          initialEndColumnZ: endColumn.position.z,
+          vanillaColumnGroups,
+        };
 
-        // this.vanillaColumnsGroup.position.setZ(-this.vanillaColumnsGroupDepth);
-        // this.vanillaColumnsGroup.position.setZ(
-        //   this.columnLayoutGroup.userData.depth
-        // );
-
-        // setInvisibleNoRaycast(columnGroup);
+        this.columnLayoutGroup.add(...vanillaColumnGroups);
       })
     )();
   }
 
-  first(direction: number) {
-    if (!this.asyncData) return;
+  drawLineAt(z: number) {
+    const scene = this.columnLayoutGroup.parent!;
 
-    const { startColumn, endColumn } = this.asyncData;
+    const points = [];
+    points.push(new Vector3(-10, 0, z)); // Start point of the line
+    points.push(new Vector3(10, 0, z)); // End point of the line
 
-    const debug = () => {
-      const scene = this.columnLayoutGroup.parent!;
+    const geometry = new BufferGeometry().setFromPoints(points);
+    const line = new Line(geometry, lineMaterial);
 
-      this.vanillaColumnGroups.forEach((columnGroup) => {
-        const z = columnGroup.position.z;
-        const points = [];
-        points.push(new Vector3(-10, 0, z)); // Start point of the line
-        points.push(new Vector3(10, 0, z)); // End point of the line
+    scene.add(line);
+  }
 
-        const geometry = new BufferGeometry().setFromPoints(points);
-        const line = new Line(geometry, lineMaterial);
+  first(side: number) {
+    if (!this.initData) return;
 
-        console.log(z);
+    const { startColumn, endColumn, vanillaColumnGroups } = this.initData;
 
-        scene.add(line);
-      });
-    };
+    const midColumns: ColumnGroup[] = [];
 
-    switch (direction) {
+    const allColumnGroups =
+      side === 1
+        ? [startColumn, ...midColumns, ...vanillaColumnGroups, endColumn]
+        : [startColumn, ...vanillaColumnGroups, ...midColumns, endColumn];
+
+    // const TESTING_CONSTANT = 0.05;
+
+    switch (side) {
       case 1: {
-        const startDepth = endColumn.position.z - endColumn.userData.depth;
-        // this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+        const startDepth = endColumn.position.z; // - endColumn.userData.depth;
 
-        this.vanillaColumnGroups.forEach((columnGroup, index) => {
+        vanillaColumnGroups.forEach((columnGroup, index) => {
           columnGroup.position.set(
             0, // this.columnLayoutGroup.userData.width,
             0,
-            startDepth +
-              (index * columnGroup.userData.depth +
-                columnGroup.userData.depth / 2)
+            startDepth + index * columnGroup.userData.depth
+            // columnGroup.userData.depth / 2
           );
+          // columnGroup.visible = true;
+          // this.drawLineAt(columnGroup.position.z);
         });
+
+        this.firstData = {
+          allColumnGroups,
+          startDepth,
+        };
+
+        this.progressData = {
+          columnIndex: allColumnGroups.indexOf(
+            midColumns[midColumns.length - 1]
+          ), // allColumnGroups.length - 2,
+          lastDepth: 0,
+        };
+
+        // endColumn.visible = false;
+
+        // endColumn.position.z +=
+        //   vanillaColumnGroups.length * vanillaColumnGroups[0].userData.depth;
+
+        // endColumn.position.z += TESTING_CONSTANT;
+
+        // this.drawLineAt(endColumn.position.z);
+        // this.drawLineAt(endColumn.position.z + endColumn.userData.depth);
 
         // this.vanillaColumnsGroup.position.setZ(startDepth);
 
@@ -172,16 +183,14 @@ class ZStretchManager {
         //   (x) => x.position.z + x.userData.depth / 2
         // );
 
-        if (DEBUG) debug();
-
         break;
       }
       case -1: {
         const startDepth = startColumn.userData.depth;
 
-        this.vanillaColumnGroups.forEach((columnGroup, index) => {
+        vanillaColumnGroups.forEach((columnGroup, index) => {
           columnGroup.position.set(
-            this.columnLayoutGroup.userData.width,
+            0,
             0,
             startDepth -
               index * columnGroup.userData.depth -
@@ -190,7 +199,22 @@ class ZStretchManager {
             //   index * columnGroup.userData.depth -
             //   columnGroup.userData.depth / 2
           );
+
+          // columnGroup.visible = true;
+          // this.drawLineAt(columnGroup.position.z);
         });
+
+        this.firstData = {
+          allColumnGroups,
+          startDepth,
+        };
+
+        this.progressData = {
+          columnIndex: 1,
+          lastDepth: 0,
+        };
+
+        // startColumn.position.z -= 5;
 
         // this.vanillaColumnsGroup.position.setZ(startDepth);
 
@@ -198,8 +222,6 @@ class ZStretchManager {
         //   (x) =>
         //     startColumn.userData.depth / 2 + x.position.z - x.userData.depth / 2
         // );
-
-        if (DEBUG) debug();
 
         break;
       }
@@ -221,54 +243,69 @@ class ZStretchManager {
     //   });
   }
 
-  stretch(depth: number, side: number) {
-    if (!this.asyncData) return;
+  progress(depth: number, side: number) {
+    if (!this.initData || !this.firstData || !this.progressData) return;
 
     const {
       // startColumn
-      endColumn,
-      initialEndColumnZ,
-    } = this.asyncData;
+      initData: {
+        endColumn,
+        initialEndColumnZ,
+        startColumn,
+        initialStartColumnZ,
+      },
+      firstData: { allColumnGroups, startDepth },
+      progressData: { columnIndex, lastDepth },
+      // allColumnGroups
+    } = this;
 
-    const direction = sign(depth - this.lastDepth);
+    const direction = sign(depth - lastDepth) * side;
 
-    endColumn.position.setZ(
-      max(initialEndColumnZ, min(initialEndColumnZ + depth, this.maxDepth))
-    );
+    const [bookendColumn, initBookendZ] =
+      side === 1
+        ? [endColumn, initialEndColumnZ]
+        : [startColumn, initialStartColumnZ];
+
+    bookendColumn.position.setZ(initBookendZ + depth);
+
+    // return;
+
+    // endColumn.position.setZ(
+    //   max(initialEndColumnZ, min(initialEndColumnZ + depth, this.maxDepth))
+    // );
 
     if (side === 1 && direction === 1) {
       pipe(
-        this.vanillaColumnGroups,
-        A.lookup(this.vanillaColumnIndex + 1),
+        allColumnGroups,
+        A.lookup(columnIndex + 1),
         O.map((nextTarget) => {
-          const startDepth =
-            this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
-          if (depth > nextTarget.position.z - startDepth) {
-            this.vanillaColumnIndex++;
+          // const startDepth =
+          //   this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+          if (depth >= nextTarget.position.z - startDepth) {
+            this.progressData!.columnIndex++;
             nextTarget.visible = true;
           }
         })
       );
     }
 
-    if (side === 1 && direction === -1) {
-      pipe(
-        this.vanillaColumnGroups,
-        A.lookup(this.vanillaColumnIndex),
-        O.map((currentTarget) => {
-          console.log({ currentTarget });
-          const startDepth =
-            this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
+    // if (side === 1 && direction === -1) {
+    //   pipe(
+    //     this.vanillaColumnGroups,
+    //     A.lookup(this.vanillaColumnIndex),
+    //     O.map((currentTarget) => {
+    //       const startDepth =
+    //         this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
 
-          if (depth <= currentTarget.position.z - startDepth) {
-            this.vanillaColumnIndex--;
-            currentTarget.visible = false;
-          }
-        })
-      );
-    }
+    //       if (depth <= currentTarget.position.z - startDepth) {
+    //         this.vanillaColumnIndex--;
+    //         currentTarget.visible = false;
+    //       }
+    //     })
+    //   );
+    // }
 
-    this.lastDepth = depth;
+    this.progressData.lastDepth = depth;
   }
 
   // foo() {
