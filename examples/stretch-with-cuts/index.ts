@@ -90,7 +90,7 @@ pipe(
               depthController.onChange((depth) => {
                 stretchParams.depth = depth;
 
-                columnLayoutGroup.zStretchManager.progress(
+                columnLayoutGroup.zStretchManager.gestureProgress(
                   stretchParams.depth,
                   stretchParams.side
                 );
@@ -105,7 +105,7 @@ pipe(
                 .onChange((v) => {
                   stretchParams.side = Number(v);
 
-                  columnLayoutGroup.zStretchManager.progress(
+                  columnLayoutGroup.zStretchManager.gestureProgress(
                     stretchParams.depth,
                     stretchParams.side
                   );
@@ -115,7 +115,9 @@ pipe(
 
               await columnLayoutGroup.zStretchManager.init();
 
-              columnLayoutGroup.zStretchManager.first(stretchParams.side);
+              columnLayoutGroup.zStretchManager.gestureStart(
+                stretchParams.side
+              );
 
               // window.addEventListener("keydown", async (ev) => {
               //   switch (ev.key) {

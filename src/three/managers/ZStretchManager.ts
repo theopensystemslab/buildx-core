@@ -10,7 +10,8 @@ import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
 export const DEFAULT_MAX_DEPTH = 10;
 
-const lineMaterial = new LineBasicMaterial({ color: 0xff0000 }); // Red color for visibility
+const gestureLineMat = new LineBasicMaterial({ color: 0xff0000 }); // Red
+const columnLineMat = new LineBasicMaterial({ color: 0x0000ff }); // Blue
 
 class ZStretchManager {
   columnLayoutGroup: ColumnLayoutGroup;
@@ -30,6 +31,10 @@ class ZStretchManager {
   progressData?: {
     lastDepth: number;
     columnIndex: number;
+  };
+  debug?: {
+    gestureLine: Line;
+    columnLines: Line[];
   };
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
@@ -113,31 +118,48 @@ class ZStretchManager {
     )();
   }
 
-  drawLineAt(z: number) {
+  initializeDebugLines(allColumnGroups: ColumnGroup[]) {
     const scene = this.columnLayoutGroup.parent!;
+    const columnLines = allColumnGroups.map((columnGroup) => {
+      const points = [
+        new Vector3(-10, 0, columnGroup.position.z),
+        new Vector3(10, 0, columnGroup.position.z),
+      ];
+      const geometry = new BufferGeometry().setFromPoints(points);
+      const line = new Line(geometry, columnLineMat);
+      // scene.add(line);
+      return line;
+    });
 
-    const points = [];
-    points.push(new Vector3(-10, 0, z)); // Start point of the line
-    points.push(new Vector3(10, 0, z)); // End point of the line
+    const gestureLinePoints = [
+      new Vector3(-10, 0.1, 0),
+      new Vector3(10, 0.1, 0),
+    ];
+    const gestureLineGeometry = new BufferGeometry().setFromPoints(
+      gestureLinePoints
+    );
+    const gestureLine = new Line(gestureLineGeometry, gestureLineMat);
+    scene.add(gestureLine);
 
-    const geometry = new BufferGeometry().setFromPoints(points);
-    const line = new Line(geometry, lineMaterial);
-
-    scene.add(line);
+    this.debug = { columnLines, gestureLine };
   }
 
-  first(side: number) {
+  gestureStart(side: number) {
     if (!this.initData) return;
 
     const { startColumn, endColumn, vanillaColumnGroups } = this.initData;
 
-    const midColumns: ColumnGroup[] = [];
+    const midColumnGroups: ColumnGroup[] =
+      this.columnLayoutGroup.children.filter(
+        (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+      );
 
     const allColumnGroups =
       side === 1
-        ? [startColumn, ...midColumns, ...vanillaColumnGroups, endColumn]
-        : [startColumn, ...vanillaColumnGroups, ...midColumns, endColumn];
+        ? [startColumn, ...midColumnGroups, ...vanillaColumnGroups, endColumn]
+        : [startColumn, ...vanillaColumnGroups, ...midColumnGroups, endColumn];
 
+    this.initializeDebugLines(allColumnGroups);
     // const TESTING_CONSTANT = 0.05;
 
     switch (side) {
@@ -160,10 +182,10 @@ class ZStretchManager {
           startDepth,
         };
 
+        const columnIndex = midColumnGroups.length;
+
         this.progressData = {
-          columnIndex: allColumnGroups.indexOf(
-            midColumns[midColumns.length - 1]
-          ), // allColumnGroups.length - 2,
+          columnIndex, // allColumnGroups.length - 2,
           lastDepth: 0,
         };
 
@@ -243,7 +265,7 @@ class ZStretchManager {
     //   });
   }
 
-  progress(depth: number, side: number) {
+  gestureProgress(depth: number, side: number) {
     if (!this.initData || !this.firstData || !this.progressData) return;
 
     const {
@@ -274,19 +296,50 @@ class ZStretchManager {
     //   max(initialEndColumnZ, min(initialEndColumnZ + depth, this.maxDepth))
     // );
 
-    if (side === 1 && direction === 1) {
-      pipe(
-        allColumnGroups,
-        A.lookup(columnIndex + 1),
-        O.map((nextTarget) => {
-          // const startDepth =
-          //   this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
-          if (depth >= nextTarget.position.z - startDepth) {
-            this.progressData!.columnIndex++;
-            nextTarget.visible = true;
-          }
-        })
-      );
+    if (side === 1) {
+      if (direction === 1) {
+        pipe(
+          allColumnGroups,
+          A.lookup(columnIndex + 1),
+          O.map((nextTarget) => {
+            console.log({
+              columnIndex,
+              posN: nextTarget.position.z,
+              startDepth,
+            });
+
+            if (
+              depth >=
+              nextTarget.position.z + nextTarget.userData.depth / 2 - startDepth
+            ) {
+              this.progressData!.columnIndex++;
+              nextTarget.visible = true;
+            }
+          })
+        );
+      } else if (direction === -1 && columnIndex > 1) {
+        pipe(
+          allColumnGroups,
+          A.lookup(columnIndex),
+          O.map((currentTarget) => {
+            console.log({
+              columnIndex,
+              posC: currentTarget.position.z,
+              startDepth,
+            });
+
+            if (
+              depth <=
+              currentTarget.position.z +
+                currentTarget.userData.depth / 2 -
+                startDepth
+            ) {
+              this.progressData!.columnIndex--;
+              currentTarget.visible = false;
+            }
+          })
+        );
+      }
     }
 
     // if (side === 1 && direction === -1) {
@@ -307,6 +360,8 @@ class ZStretchManager {
 
     this.progressData.lastDepth = depth;
   }
+
+  gestureEnd() {}
 
   // foo() {
   //   const {
