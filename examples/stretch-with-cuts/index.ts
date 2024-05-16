@@ -73,7 +73,7 @@ pipe(
 
               const stretchParams = {
                 depth: 0,
-                side: 1,
+                side: 1 as 1 | -1,
               };
 
               stretchFolder = gui.addFolder("Stretch");
@@ -103,7 +103,8 @@ pipe(
                 .name("Side")
                 .listen()
                 .onChange((v) => {
-                  stretchParams.side = Number(v);
+                  stretchParams.side = Number(v) as 1 | -1;
+                  stretchParams.depth = 0;
 
                   columnLayoutGroup.zStretchManager.gestureProgress(
                     stretchParams.depth,

@@ -32,10 +32,13 @@ class ZStretchManager {
     lastDepth: number;
     columnIndex: number;
   };
-  debug?: {
-    gestureLine: Line;
-    columnLines: Line[];
-  };
+
+  debugGestureLine?: Line;
+  debugColumnLines?: Line[];
+  // debug?: {
+  //   gestureLine: Line;
+  //   columnLines: Line[];
+  // };
 
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
     this.columnLayoutGroup = columnLayoutGroup;
@@ -43,7 +46,6 @@ class ZStretchManager {
   }
 
   cleanup() {
-    // remove all invisibles
     const invisibleColumnGroups = this.columnLayoutGroup.children.filter(
       (x) => x instanceof ColumnGroup && !x.visible
     );
@@ -87,15 +89,6 @@ class ZStretchManager {
 
         const maxDepth = this.maxDepth;
 
-        // const maxLen = pipe(
-        //   systemId,
-        //   getSystemSettings,
-        //   O.match(
-        //     () => DEFAULT_MAX_LENGTH,
-        //     (x) => x.length.max
-        //   )
-        // );
-
         const maxMoreCols = floor(
           (maxDepth - layoutDepth) / vanillaColumnDepth - 1
         );
@@ -118,33 +111,62 @@ class ZStretchManager {
     )();
   }
 
-  initializeDebugLines(allColumnGroups: ColumnGroup[]) {
+  initGestureLine(side: 1 | -1) {
+    if (!this.initData) return;
+
+    const { initialEndColumnZ } = this.initData;
+    const z = side === 1 ? initialEndColumnZ : 0;
     const scene = this.columnLayoutGroup.parent!;
-    const columnLines = allColumnGroups.map((columnGroup) => {
+    const gestureLinePoints = [
+      new Vector3(-10, 0.1, z),
+      new Vector3(10, 0.1, z),
+    ];
+    const gestureLineGeometry = new BufferGeometry().setFromPoints(
+      gestureLinePoints
+    );
+    const gestureLine = new Line(gestureLineGeometry, gestureLineMat);
+    this.debugGestureLine = gestureLine;
+    scene.add(gestureLine);
+  }
+
+  initColumnLines(allColumnGroups: ColumnGroup[]) {
+    const scene = this.columnLayoutGroup.parent!;
+
+    this.debugColumnLines = allColumnGroups.map((columnGroup) => {
       const points = [
         new Vector3(-10, 0, columnGroup.position.z),
         new Vector3(10, 0, columnGroup.position.z),
       ];
       const geometry = new BufferGeometry().setFromPoints(points);
       const line = new Line(geometry, columnLineMat);
-      // scene.add(line);
+
+      scene.add(line);
+
       return line;
     });
-
-    const gestureLinePoints = [
-      new Vector3(-10, 0.1, 0),
-      new Vector3(10, 0.1, 0),
-    ];
-    const gestureLineGeometry = new BufferGeometry().setFromPoints(
-      gestureLinePoints
-    );
-    const gestureLine = new Line(gestureLineGeometry, gestureLineMat);
-    scene.add(gestureLine);
-
-    this.debug = { columnLines, gestureLine };
   }
 
-  gestureStart(side: number) {
+  updateColumnLines(allColumnGroups: ColumnGroup[]) {
+    if (!this.debugColumnLines) return;
+
+    allColumnGroups.forEach((columnGroup, index) => {
+      const line = this.debugColumnLines![index];
+      const points = line.geometry.attributes.position.array as Float32Array;
+      points[2] = points[5] = columnGroup.position.z;
+      line.geometry.attributes.position.needsUpdate = true;
+    });
+  }
+
+  updateGestureLine(z: number) {
+    if (!this.debugGestureLine) return;
+
+    const points = this.debugGestureLine.geometry.attributes.position
+      .array as Float32Array;
+    points[2] = points[5] = z;
+    this.debugGestureLine.geometry.attributes.position.needsUpdate = true;
+  }
+
+  gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
     const { startColumn, endColumn, vanillaColumnGroups } = this.initData;
@@ -159,22 +181,19 @@ class ZStretchManager {
         ? [startColumn, ...midColumnGroups, ...vanillaColumnGroups, endColumn]
         : [startColumn, ...vanillaColumnGroups, ...midColumnGroups, endColumn];
 
-    this.initializeDebugLines(allColumnGroups);
-    // const TESTING_CONSTANT = 0.05;
+    // this.initColumnLines(allColumnGroups);
+    this.initGestureLine(side);
 
     switch (side) {
       case 1: {
-        const startDepth = endColumn.position.z; // - endColumn.userData.depth;
+        const startDepth = endColumn.position.z;
 
         vanillaColumnGroups.forEach((columnGroup, index) => {
           columnGroup.position.set(
-            0, // this.columnLayoutGroup.userData.width,
+            0,
             0,
             startDepth + index * columnGroup.userData.depth
-            // columnGroup.userData.depth / 2
           );
-          // columnGroup.visible = true;
-          // this.drawLineAt(columnGroup.position.z);
         });
 
         this.firstData = {
@@ -185,25 +204,9 @@ class ZStretchManager {
         const columnIndex = midColumnGroups.length;
 
         this.progressData = {
-          columnIndex, // allColumnGroups.length - 2,
+          columnIndex,
           lastDepth: 0,
         };
-
-        // endColumn.visible = false;
-
-        // endColumn.position.z +=
-        //   vanillaColumnGroups.length * vanillaColumnGroups[0].userData.depth;
-
-        // endColumn.position.z += TESTING_CONSTANT;
-
-        // this.drawLineAt(endColumn.position.z);
-        // this.drawLineAt(endColumn.position.z + endColumn.userData.depth);
-
-        // this.vanillaColumnsGroup.position.setZ(startDepth);
-
-        // this.fences = this.vanillaColumnGroups.map(
-        //   (x) => x.position.z + x.userData.depth / 2
-        // );
 
         break;
       }
@@ -217,13 +220,7 @@ class ZStretchManager {
             startDepth -
               index * columnGroup.userData.depth -
               columnGroup.userData.depth
-            // startDepth -
-            //   index * columnGroup.userData.depth -
-            //   columnGroup.userData.depth / 2
           );
-
-          // columnGroup.visible = true;
-          // this.drawLineAt(columnGroup.position.z);
         });
 
         this.firstData = {
@@ -236,15 +233,6 @@ class ZStretchManager {
           lastDepth: 0,
         };
 
-        // startColumn.position.z -= 5;
-
-        // this.vanillaColumnsGroup.position.setZ(startDepth);
-
-        // this.fences = this.vanillaColumnGroups.map(
-        //   (x) =>
-        //     startColumn.userData.depth / 2 + x.position.z - x.userData.depth / 2
-        // );
-
         break;
       }
       default:
@@ -252,24 +240,12 @@ class ZStretchManager {
           "direction other than 1 or -1 in ZStretchManager.first"
         );
     }
-
-    // startColumn.visible = false;
-    // endColumn.visible = false;
-
-    // this.columnLayoutGroup.children
-    //   .filter((x) => x instanceof ColumnGroup)
-    //   .forEach((child, index, children) => {
-    //     if (index === 0 || index === children.length - 1) {
-    //       child.visible = false;
-    //     }
-    //   });
   }
 
   gestureProgress(depth: number, side: number) {
     if (!this.initData || !this.firstData || !this.progressData) return;
 
     const {
-      // startColumn
       initData: {
         endColumn,
         initialEndColumnZ,
@@ -278,8 +254,11 @@ class ZStretchManager {
       },
       firstData: { allColumnGroups, startDepth },
       progressData: { columnIndex, lastDepth },
-      // allColumnGroups
     } = this;
+
+    const normalizedDepth = side === 1 ? initialEndColumnZ + depth : depth;
+
+    this.updateGestureLine(normalizedDepth);
 
     const direction = sign(depth - lastDepth) * side;
 
@@ -290,146 +269,44 @@ class ZStretchManager {
 
     bookendColumn.position.setZ(initBookendZ + depth);
 
-    // return;
-
-    // endColumn.position.setZ(
-    //   max(initialEndColumnZ, min(initialEndColumnZ + depth, this.maxDepth))
-    // );
-
-    if (side === 1) {
-      if (direction === 1) {
-        pipe(
-          allColumnGroups,
-          A.lookup(columnIndex + 1),
-          O.map((nextTarget) => {
-            console.log({
-              columnIndex,
-              posN: nextTarget.position.z,
-              startDepth,
-            });
-
-            if (
-              depth >=
-              nextTarget.position.z + nextTarget.userData.depth / 2 - startDepth
-            ) {
-              this.progressData!.columnIndex++;
-              nextTarget.visible = true;
-            }
-          })
-        );
-      } else if (direction === -1 && columnIndex > 1) {
-        pipe(
-          allColumnGroups,
-          A.lookup(columnIndex),
-          O.map((currentTarget) => {
-            console.log({
-              columnIndex,
-              posC: currentTarget.position.z,
-              startDepth,
-            });
-
-            if (
-              depth <=
-              currentTarget.position.z +
-                currentTarget.userData.depth / 2 -
-                startDepth
-            ) {
-              this.progressData!.columnIndex--;
-              currentTarget.visible = false;
-            }
-          })
-        );
-      }
-    }
-
-    // if (side === 1 && direction === -1) {
-    //   pipe(
-    //     this.vanillaColumnGroups,
-    //     A.lookup(this.vanillaColumnIndex),
-    //     O.map((currentTarget) => {
-    //       const startDepth =
-    //         this.columnLayoutGroup.userData.depth - endColumn.userData.depth;
-
-    //       if (depth <= currentTarget.position.z - startDepth) {
-    //         this.vanillaColumnIndex--;
-    //         currentTarget.visible = false;
-    //       }
-    //     })
-    //   );
+    // if (side === 1) {
+    //   if (direction === 1) {
+    //     pipe(
+    //       allColumnGroups,
+    //       A.lookup(columnIndex + 1),
+    //       O.map((nextTarget) => {
+    //         if (
+    //           depth >=
+    //           nextTarget.position.z + nextTarget.userData.depth / 2 - startDepth
+    //         ) {
+    //           this.progressData!.columnIndex++;
+    //           nextTarget.visible = true;
+    //         }
+    //       })
+    //     );
+    //   } else if (direction === -1 && columnIndex > 1) {
+    //     pipe(
+    //       allColumnGroups,
+    //       A.lookup(columnIndex),
+    //       O.map((currentTarget) => {
+    //         if (
+    //           depth <=
+    //           currentTarget.position.z +
+    //             currentTarget.userData.depth / 2 -
+    //             startDepth
+    //         ) {
+    //           this.progressData!.columnIndex--;
+    //           currentTarget.visible = false;
+    //         }
+    //       })
+    //     );
+    //   }
     // }
 
     this.progressData.lastDepth = depth;
   }
 
   gestureEnd() {}
-
-  // foo() {
-  //   const {
-  //     templateVanillaColumnGroup,
-  //     columnLayoutGroup: layoutGroup,
-  //     fences,
-  //     // houseTransformsGroup,
-  //     // lengthWiseNeighbours,
-  //   } = this;
-
-  //   const lastColumnGroup = fences[fences.length - 1].columnGroup;
-
-  //   let z = 0;
-
-  //   if (side === 1) {
-  //     z = lastColumnGroup.position.z + lastColumnGroup.userData.depth;
-  //   } else if (side === -1) {
-  //     z =
-  //       lastColumnGroup.position.z - templateVanillaColumnGroup.userData.depth;
-  //   }
-
-  //   const center = new Vector3(0, 0, 0);
-  //   const halfSize = new Vector3(
-  //     layoutGroup.userData.width / 2,
-  //     layoutGroup.userData.height / 2,
-  //     templateVanillaColumnGroup.userData.depth / 2
-  //   );
-  //   const obb = new OBB(center, halfSize);
-  //   const mat = houseTransformsGroup.matrix
-  //     .clone()
-  //     .multiply(
-  //       new Matrix4().makeTranslation(
-  //         0,
-  //         0,
-  //         -(layoutGroup.userData.length / 2) + z
-  //       )
-  //     );
-  //   obb.applyMatrix4(mat);
-
-  //   if (DEBUG) {
-  //     const scene = houseTransformsGroup.parent! as Scene;
-  //     renderOBB(obb, scene);
-  //   }
-
-  //   for (let neighbour of lengthWiseNeighbours) {
-  //     if (
-  //       neighbour.userData
-  //         .getActiveLayoutGroup()
-  //         .userData.obb.intersectsOBB(obb)
-  //     ) {
-  //       return true;
-  //     }
-  //   }
-
-  //   const columnGroup = templateVanillaColumnGroup.clone();
-  //   columnGroup.position.setZ(z);
-
-  //   setInvisibleNoRaycast(columnGroup);
-
-  //   layoutGroup.add(columnGroup);
-
-  //   fences.push({
-  //     columnGroup,
-  //     z: z + columnGroup.userData.depth / 2,
-  //   });
-
-  //   return false;
-  // }
 }
 
 export default ZStretchManager;
