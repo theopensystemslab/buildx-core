@@ -3,7 +3,7 @@ import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
-import ZStretchManager from "@/three/managers/ZStretchManager";
+import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group } from "three";
@@ -29,7 +29,7 @@ export class ColumnLayoutGroup extends Group {
   obb: OBB;
   cutsManager: CutsManager;
   elementsManager: ElementsManager;
-  zStretchManager: ZStretchManager;
+  zStretchManager: ZStretchManager2;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
@@ -38,7 +38,7 @@ export class ColumnLayoutGroup extends Group {
     this.obb = new OBB();
     this.cutsManager = new CutsManager(this);
     this.elementsManager = new ElementsManager(this);
-    this.zStretchManager = new ZStretchManager(this);
+    this.zStretchManager = new ZStretchManager2(this);
   }
 
   updateOBB() {

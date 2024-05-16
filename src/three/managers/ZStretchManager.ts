@@ -1,5 +1,5 @@
-import { A, O, TE } from "@/utils/functions";
-import { floor, sign } from "@/utils/math";
+import { A, TE } from "@/utils/functions";
+import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Vector3 } from "three";
 import {
@@ -181,7 +181,6 @@ class ZStretchManager {
         ? [startColumn, ...midColumnGroups, ...vanillaColumnGroups, endColumn]
         : [startColumn, ...vanillaColumnGroups, ...midColumnGroups, endColumn];
 
-    // this.initColumnLines(allColumnGroups);
     this.initGestureLine(side);
 
     switch (side) {
@@ -240,6 +239,8 @@ class ZStretchManager {
           "direction other than 1 or -1 in ZStretchManager.first"
         );
     }
+
+    this.initColumnLines(allColumnGroups);
   }
 
   gestureProgress(depth: number, side: number) {
@@ -250,24 +251,26 @@ class ZStretchManager {
         endColumn,
         initialEndColumnZ,
         startColumn,
-        initialStartColumnZ,
+        // initialStartColumnZ,
       },
-      firstData: { allColumnGroups, startDepth },
-      progressData: { columnIndex, lastDepth },
+      firstData: {
+        allColumnGroups,
+        // startDepth
+      },
+      // progressData: { columnIndex, lastDepth },
     } = this;
 
     const normalizedDepth = side === 1 ? initialEndColumnZ + depth : depth;
 
     this.updateGestureLine(normalizedDepth);
+    this.updateColumnLines(allColumnGroups);
 
-    const direction = sign(depth - lastDepth) * side;
+    // const direction = sign(normalizedDepth - lastDepth);
+    // console.log(direction);
 
-    const [bookendColumn, initBookendZ] =
-      side === 1
-        ? [endColumn, initialEndColumnZ]
-        : [startColumn, initialStartColumnZ];
+    const bookendColumn = side === 1 ? endColumn : startColumn;
 
-    bookendColumn.position.setZ(initBookendZ + depth);
+    bookendColumn.position.setZ(normalizedDepth);
 
     // if (side === 1) {
     //   if (direction === 1) {
@@ -303,7 +306,7 @@ class ZStretchManager {
     //   }
     // }
 
-    this.progressData.lastDepth = depth;
+    this.progressData.lastDepth = normalizedDepth;
   }
 
   gestureEnd() {}

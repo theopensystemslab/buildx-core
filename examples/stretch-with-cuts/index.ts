@@ -91,8 +91,8 @@ pipe(
                 stretchParams.depth = depth;
 
                 columnLayoutGroup.zStretchManager.gestureProgress(
-                  stretchParams.depth,
-                  stretchParams.side
+                  stretchParams.depth
+                  // stretchParams.side
                 );
 
                 render();
@@ -106,8 +106,8 @@ pipe(
                   stretchParams.side = Number(v) as 1 | -1;
                   stretchParams.depth = 0;
 
-                  columnLayoutGroup.zStretchManager.gestureProgress(
-                    stretchParams.depth,
+                  columnLayoutGroup.zStretchManager.gestureStart(
+                    // stretchParams.depth,
                     stretchParams.side
                   );
                 });
