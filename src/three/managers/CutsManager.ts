@@ -2,11 +2,11 @@ import { A, O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial, Scene } from "three";
 import { Brush } from "three-bvh-csg";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import {
   ClippedElementBrush,
   ElementBrush,
 } from "../objects/house/ElementGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
 
 const C = 3;
@@ -17,14 +17,14 @@ const clippingMaterial = new MeshBasicMaterial({
 });
 
 class CutsManager {
-  columnLayoutGroup: ColumnLayoutGroup;
+  houseGroup: HouseGroup;
   clippingBrush: Brush;
   clipWidth: boolean;
   clipDepth: boolean;
   clipHeight: number | null;
 
-  constructor(columnLayoutGroup: ColumnLayoutGroup) {
-    this.columnLayoutGroup = columnLayoutGroup;
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
     this.clipWidth = false;
     this.clipDepth = false;
     this.clipHeight = null;
@@ -32,7 +32,9 @@ class CutsManager {
   }
 
   setClippingBrushX() {
-    const { halfSize } = this.columnLayoutGroup.obb;
+    const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
+
+    const { halfSize } = columnLayoutGroup.obb;
 
     const width = halfSize.x + C;
     const height = halfSize.y * 2 + C;
@@ -53,9 +55,11 @@ class CutsManager {
   }
 
   setClippingBrushY(levelIndex: number) {
+    const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
+
     const {
       userData: { layout },
-    } = this.columnLayoutGroup;
+    } = columnLayoutGroup;
 
     pipe(
       layout,
@@ -76,7 +80,7 @@ class CutsManager {
         )
       ),
       O.map((levelHeight) => {
-        const { halfSize } = this.columnLayoutGroup.obb;
+        const { halfSize } = columnLayoutGroup.obb;
 
         const width = halfSize.x * 2 + C;
         const height = halfSize.y * 2 + C;
@@ -99,7 +103,9 @@ class CutsManager {
   }
 
   setClippingBrushZ() {
-    const { halfSize } = this.columnLayoutGroup.obb;
+    const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
+
+    const { halfSize } = columnLayoutGroup.obb;
 
     const width = halfSize.x * 2 + C;
     const height = halfSize.y * 2 + C;
@@ -128,7 +134,7 @@ class CutsManager {
   }
 
   destroyClippedBrushes() {
-    this.columnLayoutGroup.traverse((node) => {
+    this.houseGroup.traverse((node) => {
       if (node instanceof ClippedElementBrush) {
         node.removeFromParent();
       }
@@ -145,7 +151,7 @@ class CutsManager {
   createClippedBrushes() {
     this.destroyClippedBrushes();
 
-    this.columnLayoutGroup.traverse((node) => {
+    this.houseGroup.traverse((node) => {
       if (isModuleGroup(node)) {
         node.createClippedBrushes(this.clippingBrush);
       }
@@ -153,7 +159,7 @@ class CutsManager {
   }
 
   showClippedBrushes() {
-    this.columnLayoutGroup.traverse((node) => {
+    this.houseGroup.getActiveLayoutGroup().traverse((node) => {
       if (node instanceof ElementBrush) {
         node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
@@ -163,7 +169,7 @@ class CutsManager {
   }
 
   showElementBrushes() {
-    this.columnLayoutGroup.traverse((node) => {
+    this.houseGroup.getActiveLayoutGroup().traverse((node) => {
       if (node instanceof ElementBrush) {
         node.visible = true;
       } else if (node instanceof ClippedElementBrush) {

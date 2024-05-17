@@ -71,9 +71,9 @@ pipe(
               friendlyName: "foo",
             }),
             TE.map(async (houseGroup) => {
-              const { elementsManager } = houseGroup;
+              const { elementsManager, layoutsManager, cutsManager } =
+                houseGroup;
               const columnLayoutGroup = houseGroup.getActiveLayoutGroup();
-              const { cutsManager } = columnLayoutGroup;
 
               addObjectToScene(houseGroup);
 
@@ -130,11 +130,12 @@ pipe(
 
               houseGroup.layoutsManager.foo();
 
-              // window.addEventListener("keydown", async (ev) => {
-              //   switch (ev.key) {
-              //     case "s":
-              //   }
-              // });
+              window.addEventListener("keydown", async (ev) => {
+                switch (ev.key) {
+                  case "s":
+                    layoutsManager.cycle();
+                }
+              });
 
               pipe(
                 cachedElementsTE,

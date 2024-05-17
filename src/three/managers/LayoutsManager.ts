@@ -28,6 +28,15 @@ class LayoutsManager {
     this.previewLayoutGroup = null;
   }
 
+  cycle() {
+    const nextLayout = this.altSectionTypeLayouts[0].columnLayoutGroup;
+    nextLayout.visible = true;
+    this.activeLayoutGroup.visible = false;
+    this.activeLayoutGroup = nextLayout;
+    this.houseGroup.cutsManager.createClippedBrushes();
+    this.houseGroup.cutsManager.showClippedBrushes();
+  }
+
   foo() {
     // cleanup
     this.altSectionTypeLayouts.forEach((x) => {
@@ -70,7 +79,10 @@ class LayoutsManager {
       ),
       TE.map((xs) => {
         t.altSectionTypeLayouts = xs;
-        console.log({ xs, t });
+        xs.forEach((x) => {
+          x.columnLayoutGroup.visible = false;
+          t.houseGroup.add(x.columnLayoutGroup);
+        });
       })
     )();
   }
