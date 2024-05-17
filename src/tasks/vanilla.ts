@@ -23,19 +23,23 @@ export const getVanillaModule = ({
     TE.chain((xs) => {
       return pipe(
         xs,
-        A.filter((sysModule) =>
-          all(
-            sysModule.systemId === systemId,
-            sectionType
-              ? sysModule.structuredDna.sectionType === sectionType
-              : true,
-            positionType
-              ? sysModule.structuredDna.positionType === positionType
-              : true,
-            levelType ? sysModule.structuredDna.levelType === levelType : true,
-            gridType ? sysModule.structuredDna.gridType === gridType : true
-          )
-        ),
+        A.filter((sysModule) => {
+          const a = sysModule.systemId === systemId;
+          const b = sectionType
+            ? sysModule.structuredDna.sectionType === sectionType
+            : true;
+          const c = positionType
+            ? sysModule.structuredDna.positionType === positionType
+            : true;
+          const d = levelType
+            ? sysModule.structuredDna.levelType === levelType
+            : true;
+          const e = gridType
+            ? sysModule.structuredDna.gridType === gridType
+            : true;
+
+          return all(a, b, c, d, e);
+        }),
         A.sort(
           pipe(
             S.Ord,

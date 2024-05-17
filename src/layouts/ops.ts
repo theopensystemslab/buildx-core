@@ -322,3 +322,24 @@ export const columnLayoutToLevelTypes = (columnLayout: ColumnLayout) =>
     ),
     O.getOrElse((): string[] => [])
   );
+
+export const columnLayoutToDnas = (
+  columnLayout: Omit<PositionedColumn, "length" | "z" | "columnIndex">[]
+) =>
+  pipe(
+    columnLayout,
+    A.map(({ positionedRows }) =>
+      pipe(
+        positionedRows,
+        A.map(({ positionedModules }) =>
+          pipe(
+            positionedModules,
+            A.map(({ module }) => module.dna)
+          )
+        )
+      )
+    ),
+    transpose,
+    A.flatten,
+    A.flatten
+  ) as string[];

@@ -1,10 +1,13 @@
+import { A, O } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial, Scene } from "three";
 import { Brush } from "three-bvh-csg";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
-import { isClippedBrush, isElementBrush } from "../objects/house/ElementGroup";
+import {
+  ClippedElementBrush,
+  ElementBrush,
+} from "../objects/house/ElementGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
-import { pipe } from "fp-ts/lib/function";
-import { A, O } from "@/utils/functions";
 
 const C = 3;
 
@@ -126,7 +129,7 @@ class CutsManager {
 
   destroyClippedBrushes() {
     this.columnLayoutGroup.traverse((node) => {
-      if (isClippedBrush(node)) {
+      if (node instanceof ClippedElementBrush) {
         node.removeFromParent();
       }
     });
@@ -151,9 +154,9 @@ class CutsManager {
 
   showClippedBrushes() {
     this.columnLayoutGroup.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof ElementBrush) {
         node.visible = false;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
       }
     });
@@ -161,9 +164,9 @@ class CutsManager {
 
   showElementBrushes() {
     this.columnLayoutGroup.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof ElementBrush) {
         node.visible = true;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = false;
       }
     });

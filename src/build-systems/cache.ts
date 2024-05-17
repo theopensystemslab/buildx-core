@@ -1,5 +1,6 @@
 import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
 import { ThreeMaterial } from "@/three/materials/types";
+import { fetchImageAsBlob } from "@/utils/airtable";
 import Dexie from "dexie";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -14,7 +15,7 @@ import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
 import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
-import { fetchImageAsBlob } from "@/utils/airtable";
+import { SectionType, remoteSectionTypesTE } from "./remote/sectionTypes";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -35,7 +36,7 @@ class BuildSystemsCache extends Dexie {
   elements: Dexie.Table<BuildElement, string>;
   materials: Dexie.Table<BuildMaterial, string>;
   models: Dexie.Table<CachedBuildModel, string>;
-  // sectionTypes: Dexie.Table<LastFetchStamped<SectionType>, string>
+  sectionTypes: Dexie.Table<SectionType, string>;
   // levelTypes: Dexie.Table<LastFetchStamped<LevelType>, string>
   // windowTypes: Dexie.Table<LastFetchStamped<WindowType>, string>
   // blocks: Dexie.Table<Block, string>
@@ -52,7 +53,7 @@ class BuildSystemsCache extends Dexie {
       elements: "[systemId+ifcTag]",
       materials: "id",
       models: "speckleBranchUrl",
-      // sectionTypes: "id",
+      sectionTypes: "id",
       // levelTypes: "[systemId+code]",
       // windowTypes: "[systemId+code]",
       // blocks: "[systemId+name]",
@@ -66,7 +67,7 @@ class BuildSystemsCache extends Dexie {
     this.elements = this.table("elements");
     this.materials = this.table("materials");
     this.models = this.table("models");
-    // this.sectionTypes = this.table("sectionTypes")
+    this.sectionTypes = this.table("sectionTypes");
     // this.levelTypes = this.table("levelTypes")
     // this.windowTypes = this.table("windowTypes")
     // this.blocks = this.table("blocks")
@@ -343,3 +344,45 @@ export const cachedModelsTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+export const localSectionTypesTE: TE.TaskEither<Error, SectionType[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.sectionTypes.toArray().then((sectionTypes) => {
+        if (A.isEmpty(sectionTypes)) {
+          throw new Error("No modules found in cache");
+        }
+        return sectionTypes;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedSectionTypesTE = runUntilFirstSuccess([
+  localSectionTypesTE,
+  pipe(
+    remoteSectionTypesTE,
+    TE.map((sectionTypes) => {
+      buildSystemsCache.sectionTypes.bulkPut(sectionTypes);
+      return sectionTypes;
+    })
+  ),
+]);
+
+export const getSectionType = ({
+  systemId,
+  code,
+}: {
+  systemId: string;
+  code: string;
+}) =>
+  pipe(
+    cachedSectionTypesTE,
+    TE.chain(
+      flow(
+        A.findFirst((x) => x.code === code && x.systemId === systemId),
+        TE.fromOption(
+          () => new Error(`no section type found for ${code} in ${systemId}`)
+        )
+      )
+    )
+  );

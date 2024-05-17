@@ -10,9 +10,8 @@ import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import { UserDataTypeEnum } from "../types";
 import {
   ClippedElementBrush,
+  ElementBrush,
   defaultElementGroupCreator,
-  isClippedBrush,
-  isElementBrush,
 } from "./ElementGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
@@ -39,7 +38,7 @@ export class ModuleGroup extends Group {
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof ElementBrush) {
         const clippedBrush = new ClippedElementBrush();
         node.parent?.add(clippedBrush);
 
@@ -56,9 +55,9 @@ export class ModuleGroup extends Group {
 
   showClippedBrushes() {
     this.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof ElementBrush) {
         node.visible = false;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
       }
     });
@@ -66,16 +65,16 @@ export class ModuleGroup extends Group {
 
   destroyClippedBrushes() {
     this.traverse((node) => {
-      if (!isClippedBrush(node)) return;
+      if (!(node instanceof ClippedElementBrush)) return;
       node.removeFromParent();
     });
   }
 
   showElementBrushes() {
     this.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof ElementBrush) {
         node.visible = true;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = false;
       }
     });

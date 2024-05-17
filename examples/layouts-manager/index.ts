@@ -1,7 +1,7 @@
 import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
-import columnLayoutGroupTE from "@/tasks/columnLayoutGroupTE";
+import houseGroupTE from "@/tasks/houseGroupTE";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
@@ -14,7 +14,8 @@ const gui = new GUI({ hideable: false });
 // Create folders for better organization
 const houseTypeFolder = gui.addFolder("House Type");
 let elementCategoriesFolder: GUI | null = null;
-let cutsFolder: GUI | null = null; // Folder for cut modes
+let cutsFolder: GUI | null = null;
+let stretchFolder: GUI | null = null;
 
 const { addObjectToScene, render, scene } = createBasicScene({
   outliner: (object) => {
@@ -37,6 +38,7 @@ pipe(
   cachedHouseTypesTE,
   TE.map((houseTypes) => {
     const options = houseTypes.map((x) => x.name);
+
     const go = (houseTypeName: string) => {
       scene.children.forEach((x) => {
         if (x instanceof ColumnLayoutGroup) {
@@ -59,15 +61,80 @@ pipe(
       pipe(
         houseTypes,
         A.findFirst((x) => x.name === houseTypeName),
-        O.map((houseType) => {
+        O.map(({ systemId, id: houseTypeId, dnas }) => {
           pipe(
-            columnLayoutGroupTE(houseType),
-            TE.map((columnLayoutGroup) => {
-              const { cutsManager, elementsManager } = columnLayoutGroup;
+            houseGroupTE({
+              systemId,
+              houseTypeId,
+              dnas,
+              houseId: "foo",
+              friendlyName: "foo",
+            }),
+            TE.map(async (houseGroup) => {
+              const { elementsManager } = houseGroup;
+              const columnLayoutGroup = houseGroup.getActiveLayoutGroup();
+              const { cutsManager } = columnLayoutGroup;
 
-              addObjectToScene(columnLayoutGroup);
+              addObjectToScene(houseGroup);
 
               columnLayoutGroup.updateOBB();
+
+              const stretchParams = {
+                depth: 0,
+                side: 1 as 1 | -1,
+              };
+
+              stretchFolder = gui.addFolder("Stretch");
+
+              const depthController = stretchFolder.add(
+                stretchParams,
+                "depth",
+                -5,
+                5,
+                0.01
+              );
+
+              depthController.listen();
+              depthController.onChange((depth) => {
+                stretchParams.depth = depth;
+
+                columnLayoutGroup.zStretchManager.gestureProgress(
+                  stretchParams.depth
+                  // stretchParams.side
+                );
+
+                render();
+              });
+
+              stretchFolder
+                .add(stretchParams, "side", { Positive: 1, Negative: -1 })
+                .name("Side")
+                .listen()
+                .onChange((v) => {
+                  stretchParams.side = Number(v) as 1 | -1;
+                  stretchParams.depth = 0;
+
+                  columnLayoutGroup.zStretchManager.gestureStart(
+                    // stretchParams.depth,
+                    stretchParams.side
+                  );
+                });
+
+              stretchFolder.open();
+
+              await columnLayoutGroup.zStretchManager.init();
+
+              columnLayoutGroup.zStretchManager.gestureStart(
+                stretchParams.side
+              );
+
+              houseGroup.layoutsManager.foo();
+
+              // window.addEventListener("keydown", async (ev) => {
+              //   switch (ev.key) {
+              //     case "s":
+              //   }
+              // });
 
               pipe(
                 cachedElementsTE,
@@ -152,12 +219,14 @@ pipe(
       );
     };
 
+    const defaultHouseTypeName = houseTypes[2].name;
+
     // Add the house type selection to its own folder
     houseTypeFolder
-      .add({ name: houseTypes[0].name }, "name", options)
+      .add({ name: defaultHouseTypeName }, "name", options)
       .onChange(go);
     houseTypeFolder.open();
 
-    go(houseTypes[0].name);
+    go(defaultHouseTypeName);
   })
 )();
