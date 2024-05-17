@@ -1,7 +1,7 @@
 import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
-import columnLayoutGroupTE from "@/tasks/columnLayoutTE";
+import houseGroupTE from "@/tasks/houseGroupTE";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
@@ -61,11 +61,19 @@ pipe(
       pipe(
         houseTypes,
         A.findFirst((x) => x.name === houseTypeName),
-        O.map((houseType) => {
+        O.map(({ systemId, id: houseTypeId, dnas }) => {
           pipe(
-            columnLayoutGroupTE(houseType),
-            TE.map(async (columnLayoutGroup) => {
-              const { cutsManager, elementsManager } = columnLayoutGroup;
+            houseGroupTE({
+              houseId: "foo",
+              friendlyName: "foo",
+              systemId,
+              dnas,
+              houseTypeId,
+            }),
+            TE.map(async (houseGroup) => {
+              const columnLayoutGroup = houseGroup.getActiveLayoutGroup();
+
+              const { cutsManager, elementsManager } = houseGroup;
 
               addObjectToScene(columnLayoutGroup);
 

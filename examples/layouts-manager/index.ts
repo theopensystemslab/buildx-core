@@ -133,7 +133,7 @@ pipe(
               window.addEventListener("keydown", async (ev) => {
                 switch (ev.key) {
                   case "s":
-                    layoutsManager.cycle();
+                    layoutsManager.swapSomeLayout();
                 }
               });
 
