@@ -2,6 +2,8 @@ import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
 import TransformsManager from "@/three/managers/TransformsManager";
 import { Group } from "three";
+import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import CutsManager from "@/three/managers/CutsManager";
 
 export type HouseGroupUserData = {
   systemId: string;
@@ -16,12 +18,25 @@ export class HouseGroup extends Group {
   elementsManager: ElementsManager;
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
+  cutsManager: CutsManager;
 
-  constructor({ ...userData }: HouseGroupUserData & {}) {
+  constructor({
+    userData,
+    initialColumnLayoutGroup,
+  }: {
+    userData: HouseGroupUserData;
+    initialColumnLayoutGroup: ColumnLayoutGroup;
+  }) {
     super();
+    this.add(initialColumnLayoutGroup);
     this.userData = userData;
     this.elementsManager = new ElementsManager(this);
-    this.layoutsManager = new LayoutsManager(this);
     this.transformsManager = new TransformsManager(this);
+    this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
+    this.cutsManager = new CutsManager(this);
+  }
+
+  get activeLayoutGroup(): ColumnLayoutGroup {
+    return this.layoutsManager.activeLayoutGroup;
   }
 }

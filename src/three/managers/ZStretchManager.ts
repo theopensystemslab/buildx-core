@@ -266,7 +266,6 @@ class ZStretchManager {
     this.updateColumnLines(allColumnGroups);
 
     // const direction = sign(normalizedDepth - lastDepth);
-    // console.log(direction);
 
     const bookendColumn = side === 1 ? endColumn : startColumn;
 

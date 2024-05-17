@@ -71,6 +71,7 @@ export const houseTypeParser = z
       lastModified: new Date(last_modified).getTime(),
     })
   );
+
 export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
   const { systemIds = allSystemIds } = input ?? {};
 

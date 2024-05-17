@@ -7,20 +7,20 @@ import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
-import { UserDataTypeEnum } from "../types";
 import {
   ClippedElementBrush,
+  FullElementBrush,
   defaultElementGroupCreator,
-  isClippedBrush,
-  isElementBrush,
 } from "./ElementGroup";
+import { HouseGroup } from "./HouseGroup";
+import { RowGroup } from "./RowGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
-  node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
+  node instanceof ModuleGroup;
 
-export type ModuleGroupUserData = BuildModule & {
-  type: typeof UserDataTypeEnum.Enum.ModuleGroup;
-  gridGroupIndex: number;
+export type ModuleGroupUserData = {
+  module: BuildModule;
+  moduleIndex: number;
   z: number;
   flip: boolean;
 };
@@ -35,11 +35,27 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
+  get houseGroup(): HouseGroup {
+    if (this.parent?.parent?.parent?.parent instanceof HouseGroup) {
+      return this.parent.parent.parent.parent;
+    } else {
+      throw new Error(`get houseGroup failed`);
+    }
+  }
+
+  get rowGroup(): RowGroup {
+    if (this.parent instanceof RowGroup) {
+      return this.parent;
+    } else {
+      throw new Error(`get rowGroup failed`);
+    }
+  }
+
   createClippedBrushes = (clippingBrush: Brush) => {
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof FullElementBrush) {
         const clippedBrush = new ClippedElementBrush();
         node.parent?.add(clippedBrush);
 
@@ -56,9 +72,9 @@ export class ModuleGroup extends Group {
 
   showClippedBrushes() {
     this.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof FullElementBrush) {
         node.visible = false;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
       }
     });
@@ -66,16 +82,16 @@ export class ModuleGroup extends Group {
 
   destroyClippedBrushes() {
     this.traverse((node) => {
-      if (!isClippedBrush(node)) return;
+      if (!(node instanceof ClippedElementBrush)) return;
       node.removeFromParent();
     });
   }
 
   showElementBrushes() {
     this.traverse((node) => {
-      if (isElementBrush(node)) {
+      if (node instanceof FullElementBrush) {
         node.visible = true;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = false;
       }
     });
@@ -83,14 +99,14 @@ export class ModuleGroup extends Group {
 }
 
 export const defaultModuleGroupCreator = ({
-  gridGroupIndex,
+  moduleIndex,
   buildModule,
   z,
   flip,
   getBuildModelTE = getCachedModelTE,
   materialGettersTE = defaultMaterialGettersTE,
 }: {
-  gridGroupIndex: number;
+  moduleIndex: number;
   buildModule: BuildModule;
   z: number;
   flip: boolean;
@@ -100,9 +116,8 @@ export const defaultModuleGroupCreator = ({
   const { systemId, speckleBranchUrl, length: moduleLength } = buildModule;
 
   const moduleGroupUserData: ModuleGroupUserData = {
-    ...buildModule,
-    type: UserDataTypeEnum.Enum.ModuleGroup,
-    gridGroupIndex,
+    module: buildModule,
+    moduleIndex: moduleIndex,
     z,
     flip,
   };
@@ -119,7 +134,7 @@ export const defaultModuleGroupCreator = ({
     TE.flatMap(({ geometries }) =>
       pipe(
         Object.entries(geometries),
-        A.traverse(TE.ApplicativeSeq)(([ifcTag, geometry]) =>
+        A.traverse(TE.ApplicativePar)(([ifcTag, geometry]) =>
           pipe(
             materialGettersTE,
             TE.flatMap(({ getElement, getInitialThreeMaterial }) =>

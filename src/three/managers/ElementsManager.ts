@@ -1,24 +1,27 @@
-import { Group } from "three";
-import { isElementGroup } from "../objects/house/ElementGroup";
+import { ElementGroup } from "../objects/house/ElementGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
 
 class ElementsManager {
-  root: Group;
+  houseGroup: HouseGroup;
 
-  constructor(root: Group) {
-    this.root = root;
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
   }
 
   setAllElementsVisibility(visible: boolean) {
-    this.root.traverse((node) => {
-      if (isElementGroup(node)) {
+    this.houseGroup.traverse((node) => {
+      if (node instanceof ElementGroup) {
         node.visible = visible;
       }
     });
   }
 
   setCategoryVisibility(category: string, visible: boolean) {
-    this.root.traverse((node) => {
-      if (isElementGroup(node) && node.element.category === category) {
+    this.houseGroup.traverse((node) => {
+      if (
+        node instanceof ElementGroup &&
+        node.userData.element.category === category
+      ) {
         node.visible = visible;
       }
     });

@@ -1,25 +1,25 @@
-import { columnLayoutToLevelTypes } from "@/layouts/ops";
+import { getSectionType } from "@/build-systems/cache";
+import { SectionType } from "@/build-systems/remote/sectionTypes";
+import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
-import CutsManager from "@/three/managers/CutsManager";
-import ElementsManager from "@/three/managers/ElementsManager";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
+import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group } from "three";
 import { OBB } from "three-stdlib";
-import { UserDataTypeEnum } from "../types";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
+import { HouseGroup } from "./HouseGroup";
 
 export type ColumnLayoutGroupUserData = {
-  type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
   dnas: string[];
   layout: ColumnLayout;
   levelTypes: string[];
   width: number;
   height: number;
   depth: number;
-  sectionType: string;
+  sectionType: SectionType;
   vanillaColumn: Column;
 };
 
@@ -27,8 +27,6 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
-  cutsManager: CutsManager;
-  elementsManager: ElementsManager;
   zStretchManager: ZStretchManager2;
 
   constructor(userData: ColumnLayoutGroupUserData) {
@@ -36,9 +34,12 @@ export class ColumnLayoutGroup extends Group {
     this.userData = userData;
     this.aabb = new Box3();
     this.obb = new OBB();
-    this.cutsManager = new CutsManager(this);
-    this.elementsManager = new ElementsManager(this);
     this.zStretchManager = new ZStretchManager2(this);
+  }
+
+  get houseGroup(): HouseGroup {
+    if (this.parent instanceof HouseGroup) return this.parent;
+    throw new Error(`get houseGroup failed`);
   }
 
   updateOBB() {
@@ -60,7 +61,7 @@ export const createColumnLayoutGroup = ({
 }) =>
   pipe(
     layout,
-    A.traverseWithIndex(TE.ApplicativeSeq)(
+    A.traverseWithIndex(TE.ApplicativePar)(
       (i, { positionedRows, z, columnIndex }) => {
         const startColumn = i === 0;
         const endColumn = i === layout.length - 1;
@@ -111,14 +112,16 @@ export const createColumnLayoutGroup = ({
       const levelTypes = columnLayoutToLevelTypes(layout);
 
       return pipe(
-        createVanillaColumn({
-          systemId,
-          levelTypes,
-          sectionType,
-        }),
-        TE.map((vanillaColumn) => {
+        sequenceT(TE.ApplicativePar)(
+          createVanillaColumn({
+            systemId,
+            levelTypes,
+            sectionType,
+          }),
+          getSectionType({ systemId, code: sectionType })
+        ),
+        TE.map(([vanillaColumn, sectionType]) => {
           const userData: ColumnLayoutGroupUserData = {
-            type: UserDataTypeEnum.Enum.ColumnLayoutGroup,
             dnas,
             layout,
             sectionType,

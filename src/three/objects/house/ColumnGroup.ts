@@ -2,11 +2,11 @@ import { PositionedRow } from "@/layouts/types";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
-import { UserDataTypeEnum } from "../types";
-import { defaultGridGroupCreator } from "./GridGroup";
+import { defaultRowGroupCreator } from "./RowGroup";
+import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import { HouseGroup } from "./HouseGroup";
 
 export type ColumnGroupUserData = {
-  type: typeof UserDataTypeEnum.Enum.ColumnGroup;
   columnIndex: number;
   depth: number;
   startColumn?: boolean;
@@ -20,6 +20,15 @@ export class ColumnGroup extends Group {
     super();
     this.userData = userData;
   }
+
+  get columnLayoutGroup(): ColumnLayoutGroup {
+    if (this.parent instanceof ColumnLayoutGroup) return this.parent;
+    throw new Error(`get columnLayoutGroup failed`);
+  }
+
+  get houseGroup(): HouseGroup {
+    return this.columnLayoutGroup.houseGroup;
+  }
 }
 
 export const defaultColumnGroupCreator = ({
@@ -27,25 +36,24 @@ export const defaultColumnGroupCreator = ({
   columnIndex,
   startColumn = false,
   endColumn = false,
-  createGridGroup = defaultGridGroupCreator,
+  createRowGroup = defaultRowGroupCreator,
 }: {
   positionedRows: PositionedRow[];
   columnIndex: number;
   startColumn?: boolean;
   endColumn?: boolean;
-  createGridGroup?: typeof defaultGridGroupCreator;
+  createRowGroup?: typeof defaultRowGroupCreator;
 }): TE.TaskEither<Error, ColumnGroup> =>
   pipe(
     positionedRows,
-    A.traverse(TE.ApplicativeSeq)((positionedRow) =>
-      createGridGroup({
+    A.traverse(TE.ApplicativePar)((positionedRow) =>
+      createRowGroup({
         ...positionedRow,
         endColumn,
       })
     ),
-    TE.map((gridGroups) => {
+    TE.map((rowGroups) => {
       const columnGroupUserData: ColumnGroupUserData = {
-        type: UserDataTypeEnum.Enum.ColumnGroup,
         columnIndex,
         depth: positionedRows[0].rowDepth,
         startColumn,
@@ -54,7 +62,7 @@ export const defaultColumnGroupCreator = ({
 
       const columnGroup = new ColumnGroup(columnGroupUserData);
 
-      columnGroup.add(...gridGroups);
+      columnGroup.add(...rowGroups);
 
       return columnGroup as ColumnGroup;
     })
