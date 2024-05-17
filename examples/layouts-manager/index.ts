@@ -128,7 +128,7 @@ pipe(
                 stretchParams.side
               );
 
-              houseGroup.layoutsManager.foo();
+              houseGroup.layoutsManager.refreshAltSectionTypeLayouts();
 
               window.addEventListener("keydown", async (ev) => {
                 switch (ev.key) {

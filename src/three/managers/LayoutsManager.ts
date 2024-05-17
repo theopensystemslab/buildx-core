@@ -19,16 +19,19 @@ class LayoutsManager {
   houseGroup: HouseGroup;
   altSectionTypeLayouts: AltSectionTypeLayout[];
   activeLayoutGroup: ColumnLayoutGroup;
+  initialLayoutGroup: ColumnLayoutGroup;
   previewLayoutGroup: ColumnLayoutGroup | null;
 
-  constructor(activeLayoutGroup: ColumnLayoutGroup) {
-    this.houseGroup = activeLayoutGroup.parent as HouseGroup;
+  constructor(initialLayoutGroup: ColumnLayoutGroup) {
+    this.houseGroup = initialLayoutGroup.parent as HouseGroup;
     this.altSectionTypeLayouts = [];
-    this.activeLayoutGroup = activeLayoutGroup;
+    this.initialLayoutGroup = initialLayoutGroup;
+    this.activeLayoutGroup = initialLayoutGroup;
     this.previewLayoutGroup = null;
   }
 
-  cycle() {
+  // just to confirm swapping layouts actually works
+  swapSomeLayout() {
     const nextLayout = this.altSectionTypeLayouts[0].columnLayoutGroup;
     nextLayout.visible = true;
     this.activeLayoutGroup.visible = false;
@@ -37,7 +40,7 @@ class LayoutsManager {
     this.houseGroup.cutsManager.showClippedBrushes();
   }
 
-  foo() {
+  refreshAltSectionTypeLayouts() {
     // cleanup
     this.altSectionTypeLayouts.forEach((x) => {
       x.columnLayoutGroup.removeFromParent();
@@ -86,41 +89,6 @@ class LayoutsManager {
       })
     )();
   }
-
-  // refreshAltSectionTypeLayouts = async () => {
-  //   // drop old ones
-  //   dropAltLayoutsByType(LayoutType.Enum.ALT_SECTION_TYPE);
-
-  //   const { dnas, sectionType: currentSectionType } =
-  //     getActiveHouseUserData(houseTransformsGroup);
-
-  //   // compute some new ones in the worker
-  //   const altSectionTypeLayouts =
-  //     await getLayoutsWorker().getAltSectionTypeLayouts({
-  //       systemId,  sectionType: Section
-  //       dnas,
-  //       currentSectionType,
-  //     });
-
-  //   // create renderable layout group objects
-  //   for (let { sectionType, layout, dnas } of altSectionTypeLayouts) {
-  //     if (sectionType.code === currentSectionType) continue;
-
-  //     createHouseLayoutGroup({
-  //       systemId: houseTransformsGroup.userData.systemId,
-  //       dnas,
-  //       houseId,
-  //       houseLayout: layout,
-  //       houseTransformsGroup,
-  //     })().then((houseLayoutGroup) => {
-  //       houseTransformsGroup.userData.pushAltLayout({
-  //         type: LayoutType.Enum.ALT_SECTION_TYPE,
-  //         houseLayoutGroup,
-  //         sectionType,
-  //       });
-  //     });
-  //   }
-  // };
 }
 
 export default LayoutsManager;
