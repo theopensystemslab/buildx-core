@@ -1,4 +1,6 @@
+import { compareProps } from "@/utils/functions";
 import { Material } from "three";
+import { ScopeElement } from "../objects/types";
 
 export const applyToMaterial = (
   object: { material: Material | Material[] },
@@ -11,3 +13,13 @@ export const applyToMaterial = (
     fn(material);
   }
 };
+
+export const compareScopeElement = (a: ScopeElement, b: ScopeElement) =>
+  compareProps(a, b, [
+    "houseId",
+    "columnIndex",
+    "rowIndex",
+    "moduleIndex",
+    "dna",
+    "ifcTag",
+  ]);

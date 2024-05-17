@@ -1,3 +1,4 @@
+import { BuildModule } from "@/build-systems/remote/modules";
 import { A, O } from "@/utils/functions";
 import { roundp } from "@/utils/math";
 import { transpose } from "fp-ts-std/Array";
@@ -11,7 +12,6 @@ import {
   PositionedRow,
   Row,
 } from "./types";
-import { BuildModule } from "@/build-systems/remote/modules";
 
 export const createPositionedModules = (
   module: BuildModule,
@@ -251,18 +251,18 @@ export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
 };
 export const positionRows = A.reduceWithIndex(
   [],
-  (levelIndex, acc: PositionedRow[], row: Row) => {
+  (rowIndex, acc: PositionedRow[], row: Row) => {
     const levelLetter = row.levelType[0];
 
     const y =
       levelLetter === "F"
         ? 0
         : roundp(
-            acc[levelIndex - 1].y +
-              acc[levelIndex - 1].positionedModules[0].module.height
+            acc[rowIndex - 1].y +
+              acc[rowIndex - 1].positionedModules[0].module.height
           );
 
-    return [...acc, { ...row, levelIndex, y }];
+    return [...acc, { ...row, rowIndex: rowIndex, y }];
   }
 );
 export const createRowLayout = (rowsMatrix: BuildModule[][]): PositionedRow[] =>
@@ -322,3 +322,24 @@ export const columnLayoutToLevelTypes = (columnLayout: ColumnLayout) =>
     ),
     O.getOrElse((): string[] => [])
   );
+
+export const columnLayoutToDnas = (
+  columnLayout: Omit<PositionedColumn, "length" | "z" | "columnIndex">[]
+) =>
+  pipe(
+    columnLayout,
+    A.map(({ positionedRows }) =>
+      pipe(
+        positionedRows,
+        A.map(({ positionedModules }) =>
+          pipe(
+            positionedModules,
+            A.map(({ module }) => module.dna)
+          )
+        )
+      )
+    ),
+    transpose,
+    A.flatten,
+    A.flatten
+  ) as string[];

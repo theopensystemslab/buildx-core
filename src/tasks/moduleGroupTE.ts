@@ -1,5 +1,5 @@
 import { cachedHouseTypesTE, cachedModulesTE } from "@/build-systems/cache";
-import { dnasToModules, modulesToMatrix } from "@/layouts/ops";
+import { dnasToModules, modulesToMatrix } from "@/layouts/init";
 import { defaultModuleGroupCreator } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
@@ -8,13 +8,13 @@ import { pipe } from "fp-ts/lib/function";
 const moduleGroupTE = ({
   houseTypeIndex,
   columnIndex,
-  levelIndex,
-  gridGroupIndex,
+  rowIndex,
+  moduleIndex,
 }: {
   houseTypeIndex: number;
   columnIndex: number;
-  levelIndex: number;
-  gridGroupIndex: number;
+  rowIndex: number;
+  moduleIndex: number;
 }) =>
   pipe(
     sequenceT(TE.ApplicativePar)(cachedHouseTypesTE, cachedModulesTE),
@@ -29,14 +29,14 @@ const moduleGroupTE = ({
             dnasToModules({ systemId, buildModules }),
             modulesToMatrix,
             A.lookup(columnIndex),
-            O.chain(A.lookup(levelIndex)),
-            O.chain(A.lookup(gridGroupIndex)),
+            O.chain(A.lookup(rowIndex)),
+            O.chain(A.lookup(moduleIndex)),
             TE.fromOption(() => Error(``)),
             TE.flatMap((buildModule) =>
               pipe(
                 defaultModuleGroupCreator({
-                  gridGroupIndex: 0,
-                  buildModule: buildModule,
+                  moduleIndex: 0,
+                  buildModule,
                   z: 0,
                   flip: true,
                 })

@@ -3,7 +3,7 @@ import {
   createColumnLayout,
   dnasToModules,
   modulesToMatrix,
-} from "@/layouts/ops";
+} from "@/layouts/init";
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,

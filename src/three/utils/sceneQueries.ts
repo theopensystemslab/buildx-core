@@ -1,13 +1,24 @@
-import { E } from "@/utils/functions";
+import { O, someOrError } from "@/utils/functions";
+import { flow } from "fp-ts/lib/function";
 import { Object3D, Scene } from "three";
 
-// Adjust the type signatures as necessary for your use case
-export const findScene = (object: Object3D): E.Either<Error, Scene> => {
-  while (object.parent !== null) {
-    object = object.parent;
-    if (object instanceof Scene) {
-      return E.right(object);
+export const findFirstGuardUp =
+  <T extends Object3D>(guard: (o: Object3D) => o is T) =>
+  (object: Object3D): O.Option<T> => {
+    if (guard(object)) {
+      return O.some(object);
     }
-  }
-  return E.left(new Error("Scene not found"));
-};
+
+    const parent = object.parent;
+
+    if (parent !== null) {
+      return findFirstGuardUp(guard)(parent);
+    }
+
+    return O.none;
+  };
+
+export const findScene = flow(
+  findFirstGuardUp((o): o is Scene => o instanceof Scene),
+  someOrError(`scene not found above ZStretchManager's columnLayoutGroup`)
+);

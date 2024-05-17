@@ -1,10 +1,13 @@
+import { A, O } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial, Scene } from "three";
 import { Brush } from "three-bvh-csg";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
-import { isClippedBrush, isElementBrush } from "../objects/house/ElementGroup";
+import {
+  ClippedElementBrush,
+  FullElementBrush,
+} from "../objects/house/ElementGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
-import { pipe } from "fp-ts/lib/function";
-import { A, O } from "@/utils/functions";
 
 const C = 3;
 
@@ -14,14 +17,14 @@ const clippingMaterial = new MeshBasicMaterial({
 });
 
 class CutsManager {
-  columnLayoutGroup: ColumnLayoutGroup;
+  houseGroup: HouseGroup;
   clippingBrush: Brush;
   clipWidth: boolean;
   clipDepth: boolean;
   clipHeight: number | null;
 
-  constructor(columnLayoutGroup: ColumnLayoutGroup) {
-    this.columnLayoutGroup = columnLayoutGroup;
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
     this.clipWidth = false;
     this.clipDepth = false;
     this.clipHeight = null;
@@ -29,7 +32,9 @@ class CutsManager {
   }
 
   setClippingBrushX() {
-    const { halfSize } = this.columnLayoutGroup.obb;
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const { halfSize } = columnLayoutGroup.obb;
 
     const width = halfSize.x + C;
     const height = halfSize.y * 2 + C;
@@ -49,17 +54,17 @@ class CutsManager {
     this.clippingBrush = clippingBrush;
   }
 
-  setClippingBrushY(levelIndex: number) {
+  setClippingBrushY(rowIndex: number) {
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
     const {
       userData: { layout },
-    } = this.columnLayoutGroup;
+    } = columnLayoutGroup;
 
     pipe(
       layout,
       A.head,
-      O.chain(({ positionedRows }) =>
-        pipe(positionedRows, A.lookup(levelIndex))
-      ),
+      O.chain(({ positionedRows }) => pipe(positionedRows, A.lookup(rowIndex))),
       O.chain(({ y, positionedModules, levelType }) =>
         pipe(
           positionedModules,
@@ -73,7 +78,7 @@ class CutsManager {
         )
       ),
       O.map((levelHeight) => {
-        const { halfSize } = this.columnLayoutGroup.obb;
+        const { halfSize } = columnLayoutGroup.obb;
 
         const width = halfSize.x * 2 + C;
         const height = halfSize.y * 2 + C;
@@ -96,7 +101,9 @@ class CutsManager {
   }
 
   setClippingBrushZ() {
-    const { halfSize } = this.columnLayoutGroup.obb;
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const { halfSize } = columnLayoutGroup.obb;
 
     const width = halfSize.x * 2 + C;
     const height = halfSize.y * 2 + C;
@@ -125,8 +132,8 @@ class CutsManager {
   }
 
   destroyClippedBrushes() {
-    this.columnLayoutGroup.traverse((node) => {
-      if (isClippedBrush(node)) {
+    this.houseGroup.traverse((node) => {
+      if (node instanceof ClippedElementBrush) {
         node.removeFromParent();
       }
     });
@@ -142,7 +149,7 @@ class CutsManager {
   createClippedBrushes() {
     this.destroyClippedBrushes();
 
-    this.columnLayoutGroup.traverse((node) => {
+    this.houseGroup.traverse((node) => {
       if (isModuleGroup(node)) {
         node.createClippedBrushes(this.clippingBrush);
       }
@@ -150,20 +157,20 @@ class CutsManager {
   }
 
   showClippedBrushes() {
-    this.columnLayoutGroup.traverse((node) => {
-      if (isElementBrush(node)) {
+    this.houseGroup.activeLayoutGroup.traverse((node) => {
+      if (node instanceof FullElementBrush) {
         node.visible = false;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
       }
     });
   }
 
   showElementBrushes() {
-    this.columnLayoutGroup.traverse((node) => {
-      if (isElementBrush(node)) {
+    this.houseGroup.activeLayoutGroup.traverse((node) => {
+      if (node instanceof FullElementBrush) {
         node.visible = true;
-      } else if (isClippedBrush(node)) {
+      } else if (node instanceof ClippedElementBrush) {
         node.visible = false;
       }
     });
