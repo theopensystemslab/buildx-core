@@ -1,5 +1,5 @@
 import { cachedHouseTypesTE } from "@/index";
-import columnLayoutGroupTE from "@/tasks/columnLayoutTE";
+import columnLayoutGroupTE from "@/tasks/columnLayoutGroupTE";
 import createRaycastedScene from "@/three/utils/createRaycastedScene";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";

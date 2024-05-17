@@ -11,12 +11,10 @@ export type Row = {
   levelType: string;
   gridUnits: number;
   rowDepth: number;
-  // is this best here, or best in our scene graph?
-  // vanillaModule: BuildModule;
 };
 
 export type PositionedRow = Row & {
-  levelIndex: number;
+  rowIndex: number;
   y: number;
 };
 

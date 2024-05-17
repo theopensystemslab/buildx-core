@@ -1,6 +1,4 @@
-import { A, O } from "@/utils/functions";
 import CameraControls from "camera-controls";
-import { pipe } from "fp-ts/lib/function";
 import {
   AmbientLight,
   Box3,
@@ -19,7 +17,8 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
-import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import { EffectComposer, RenderPass } from "three-stdlib";
+import { getOutlinePass } from "../effects/outline";
 
 const subsetOfTHREE = {
   Vector2,
@@ -43,7 +42,7 @@ interface BasicSceneComponents {
   cameraControls: CameraControls;
   addObjectToScene: (object: Object3D) => void;
   render: () => void;
-  outlinePass: OutlinePass;
+  // outlinePass: OutlinePass;
 }
 
 const defaultParams = {
@@ -78,11 +77,7 @@ function createBasicScene({
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
-  const outlinePass = new OutlinePass(
-    new Vector2(window.innerWidth, window.innerHeight),
-    scene,
-    camera
-  );
+  const outlinePass = getOutlinePass(scene, camera);
   composer.addPass(outlinePass);
 
   const light = new AmbientLight(0xffffff);
@@ -131,7 +126,7 @@ function createBasicScene({
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
     renderPass.setSize(window.innerWidth, window.innerHeight);
-    outlinePass.setSize(window.innerWidth, window.innerHeight);
+    // outlinePass.setSize(window.innerWidth, window.innerHeight);
 
     render(); // Ensure scene is re-rendered after resize
   });
@@ -143,44 +138,35 @@ function createBasicScene({
   };
 
   if (outliner) {
-    renderer.domElement.addEventListener("pointermove", onPointerMove);
-
-    const raycaster = new Raycaster();
-
-    const mouse = new Vector2();
-
-    function onPointerMove(event: any) {
-      if (event.isPrimary === false) return;
-
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-      checkIntersection();
-    }
-
-    function checkIntersection() {
-      raycaster.setFromCamera(mouse, camera);
-
-      const intersects = raycaster.intersectObject(scene, true);
-
-      pipe(
-        intersects,
-        A.head,
-        O.match(
-          () => {
-            outlinePass.selectedObjects = [];
-          },
-          (intersect) => {
-            const object = intersect.object;
-            if (outliner) {
-              outlinePass.selectedObjects = outliner(object);
-            }
-          }
-        )
-      );
-
-      render();
-    }
+    // renderer.domElement.addEventListener("pointermove", onPointerMove);
+    // const raycaster = new Raycaster();
+    // const mouse = new Vector2();
+    // function onPointerMove(event: any) {
+    //   if (event.isPrimary === false) return;
+    //   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    //   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    //   checkIntersection();
+    // }
+    // function checkIntersection() {
+    //   raycaster.setFromCamera(mouse, camera);
+    //   const intersects = raycaster.intersectObject(scene, true);
+    //   pipe(
+    //     intersects,
+    //     A.head,
+    //     O.match(
+    //       () => {
+    //         outlinePass.selectedObjects = [];
+    //       },
+    //       (intersect) => {
+    //         const object = intersect.object;
+    //         if (outliner) {
+    //           outlinePass.selectedObjects = outliner(object);
+    //         }
+    //       }
+    //     )
+    //   );
+    //   render();
+    // }
   }
 
   return {
@@ -190,7 +176,7 @@ function createBasicScene({
     cameraControls,
     addObjectToScene,
     render,
-    outlinePass,
+    // outlinePass,
   };
 }
 

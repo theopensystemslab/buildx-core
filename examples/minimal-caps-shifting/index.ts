@@ -42,7 +42,7 @@ pipe(
           pipe(
             defaultModuleGroupCreator({
               buildModule,
-              gridGroupIndex: 0,
+              moduleIndex: 0,
               z: 0,
               flip: true,
             }),

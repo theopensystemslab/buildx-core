@@ -8,6 +8,7 @@ import * as RA from "fp-ts/ReadonlyArray";
 import * as R from "fp-ts/Record";
 import * as S from "fp-ts/string";
 import * as T from "fp-ts/Task";
+import * as TO from "fp-ts/TaskOption";
 import * as E from "fp-ts/Either";
 import * as TE from "fp-ts/TaskEither";
 
@@ -17,14 +18,13 @@ export * as RM from "fp-ts/ReadonlyMap";
 export * as RNEA from "fp-ts/ReadonlyNonEmptyArray";
 export * as RR from "fp-ts/ReadonlyRecord";
 export * as SG from "fp-ts/Semigroup";
-export * as TO from "fp-ts/TaskOption";
 export * as EQ from "fp-ts/Eq";
 export * as TU from "fp-ts/Tuple";
 export * as RTU from "fp-ts/ReadonlyTuple";
 
 const clamp = Ord.clamp(Num.Ord);
 
-export { A, Num, O, Ord, R, RA, S, T, TE, E, clamp };
+export { A, Num, O, Ord, R, RA, S, T, TE, TO, E, clamp };
 
 export const any = (...args: boolean[]) =>
   args.reduce((acc, v) => acc || v, false);
@@ -199,4 +199,30 @@ export const runUntilFirstSuccess = <E, A>(
       () => Promise.reject(),
       () => undefined as any
     ) // Initial failed TaskEither for reduce
+  );
+
+export const successSeqTO = <T>(tasks: TO.TaskOption<T>[]): T.Task<T[]> =>
+  pipe(
+    tasks,
+    A.map(
+      TO.fold(
+        () => T.of([]),
+        (a) => T.of([a])
+      )
+    ),
+    A.sequence(T.ApplicativePar),
+    T.map(A.flatten)
+  );
+
+export const successSeqTE = <E, T>(tasks: TE.TaskEither<E, T>[]): T.Task<T[]> =>
+  pipe(
+    tasks,
+    A.map(
+      TE.fold(
+        () => T.of([]),
+        (a) => T.of([a])
+      )
+    ),
+    A.sequence(T.ApplicativePar),
+    T.map(A.flatten)
   );

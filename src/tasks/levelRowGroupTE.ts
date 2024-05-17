@@ -1,16 +1,16 @@
 import { cachedHouseTypesTE, cachedModulesTE } from "@/build-systems/cache";
-import { createRowLayout, dnasToModules, modulesToRows } from "@/layouts/ops";
-import { defaultGridGroupCreator } from "@/three/objects/house/GridGroup";
+import { createRowLayout, dnasToModules, modulesToRows } from "@/layouts/init";
+import { defaultRowGroupCreator } from "@/three/objects/house/RowGroup";
 import { A, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 
 const levelRowGroupTE = ({
   houseTypeIndex,
-  levelIndex,
+  rowIndex,
 }: {
   houseTypeIndex: number;
-  levelIndex: number;
+  rowIndex: number;
 }) =>
   pipe(
     sequenceT(TE.ApplicativePar)(cachedHouseTypesTE, cachedModulesTE),
@@ -32,14 +32,12 @@ const levelRowGroupTE = ({
             (layout) =>
               pipe(
                 layout,
-                A.lookup(levelIndex),
+                A.lookup(rowIndex),
                 TE.fromOption(() =>
-                  Error(
-                    `levelIndex ${levelIndex} not found in layout ${layout}`
-                  )
+                  Error(`rowIndex ${rowIndex} not found in layout ${layout}`)
                 ),
                 TE.flatMap((row) =>
-                  defaultGridGroupCreator({
+                  defaultRowGroupCreator({
                     ...row,
                     endColumn: false,
                   })
