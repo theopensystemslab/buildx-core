@@ -2,9 +2,9 @@ import { cachedModulesTE, cachedSectionTypesTE } from "@/build-systems/cache";
 import { BuildModule } from "@/build-systems/remote/modules";
 import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { getVanillaModule } from "@/tasks/vanilla";
-import { A, O, T, TE, TO, pipeLog, reduceToOption } from "@/utils/functions";
+import { A, O, TE, reduceToOption, successSeqTE } from "@/utils/functions";
 import { roundp, sign } from "@/utils/math";
-import { flow, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import { ColumnLayout, PositionedBuildModule, PositionedRow } from "./types";
 import { filterCompatibleModules, topCandidateByHamming } from "./utils";
 
@@ -159,59 +159,6 @@ export const getOtherSectionTypes = (currentSectionType: SectionType) =>
     )
   );
 
-// export const getAltSectionTypeLayouts = ({
-//   systemId,
-//   layout,
-//   sectionType,
-// }: {
-//   systemId: string;
-//   layout: ColumnLayout;
-//   sectionType: SectionType;
-// }): TE.TaskEither<
-//   Error,
-//   { layout: ColumnLayout; sectionType: SectionType }[]
-// > => {
-//   const foo = pipe(
-//     sectionType,
-//     getOtherSectionTypes,
-//     TE.map(
-//       flow(
-//         A.map((sectionType) =>
-//           pipe(
-//             { systemId, layout, sectionType },
-//             changeLayoutSectionType,
-//             TE.map((layout) => {
-//               console.log({ layout, sectionType });
-//               return { layout, sectionType };
-//             })
-//           )
-//         )
-//       )
-//     )
-//   );
-
-//   return pipe(
-//     sectionType,
-//     getOtherSectionTypes,
-//     TE.chain(
-//       A.traverse(TE.ApplicativeSeq)((sectionType) =>
-//         pipe(
-//           { systemId, layout, sectionType },
-//           changeLayoutSectionType,
-//           TE.map((layout) => {
-//             console.log({ layout, sectionType });
-//             return { layout, sectionType };
-//           })
-//         )
-//       )
-//     ),
-//     TE.map((ys) => {
-//       console.log({ ys });
-//       return ys;
-//     })
-//   );
-// };
-
 export const getAltSectionTypeLayouts = ({
   systemId,
   layout,
@@ -224,43 +171,24 @@ export const getAltSectionTypeLayouts = ({
   Error,
   { layout: ColumnLayout; sectionType: SectionType }[]
 > => {
-  const foo = pipe(
+  return pipe(
     sectionType,
     getOtherSectionTypes,
-    TO.fromTaskEither,
-    TO.map((otherSectionTypes) =>
+    TE.chain((otherSectionTypes) =>
       pipe(
         otherSectionTypes,
-        pipeLog,
         A.map((sectionType) =>
           pipe(
             { systemId, layout, sectionType },
             changeLayoutSectionType,
-            TE.map((layout) => ({ layout, sectionType })),
-            TE.fold(
-              () => TO.none, // On failure, return None
-              (result) => TO.some(result)
-            )
+            TE.map((layout) => ({ layout, sectionType }))
+            // TO.fromTaskEither
           )
-        )
+        ),
+        successSeqTE,
+        TE.fromTask,
+        TE.mapError(() => new Error(`fail`))
       )
     )
   );
-
-  foo().then(
-    O.map(
-      A.map((bar) => {
-        bar().then(
-          O.map((ding) => {
-            console.log({ ding });
-          })
-        );
-      })
-    )
-  );
-
-  // Usage
-
-  return TE.of([]);
-  // return TE.fromTaskOption(() => new Error("hey"))(foo);
 };

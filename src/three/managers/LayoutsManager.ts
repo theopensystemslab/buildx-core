@@ -70,6 +70,7 @@ class LayoutsManager {
       ),
       TE.map((xs) => {
         t.altSectionTypeLayouts = xs;
+        console.log({ xs, t });
       })
     )();
   }
