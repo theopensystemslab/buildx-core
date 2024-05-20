@@ -1,5 +1,5 @@
 import { cachedHouseTypesTE, cachedModulesTE } from "@/build-systems/cache";
-import { createRowLayout, dnasToModules, modulesToRows } from "@/layouts/ops";
+import { createRowLayout, dnasToModules, modulesToRows } from "@/layouts/init";
 import { defaultGridGroupCreator } from "@/three/objects/house/GridGroup";
 import { A, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";

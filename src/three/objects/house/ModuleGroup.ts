@@ -7,7 +7,6 @@ import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
-import { UserDataTypeEnum } from "../types";
 import {
   ClippedElementBrush,
   ElementBrush,
@@ -15,10 +14,9 @@ import {
 } from "./ElementGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
-  node.userData?.type === UserDataTypeEnum.Enum.ModuleGroup;
+  node instanceof ModuleGroup;
 
 export type ModuleGroupUserData = BuildModule & {
-  type: typeof UserDataTypeEnum.Enum.ModuleGroup;
   gridGroupIndex: number;
   z: number;
   flip: boolean;
@@ -100,7 +98,6 @@ export const defaultModuleGroupCreator = ({
 
   const moduleGroupUserData: ModuleGroupUserData = {
     ...buildModule,
-    type: UserDataTypeEnum.Enum.ModuleGroup,
     gridGroupIndex,
     z,
     flip,

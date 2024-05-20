@@ -1,7 +1,9 @@
 import { max, sin } from "@/utils/math";
 import {
+  Camera,
   MathUtils,
   Matrix4,
+  Object3D,
   OrthographicCamera,
   Quaternion,
   Vector3,
@@ -106,4 +108,20 @@ export const cameraFrameOBB2 = (
   camera.far = 1000; // Make sure this is enough to cover the scene
 
   camera.updateProjectionMatrix(); // Important to apply changes
+};
+
+export type Side = "LEFT" | "RIGHT";
+
+export const getSide = (object: Object3D, camera: Camera) => {
+  const houseDirection = new Vector3(0, 0, -1);
+  const rotationMatrix = new Matrix4().makeRotationY(object.rotation.y);
+  houseDirection.applyMatrix4(rotationMatrix);
+
+  const cameraDirection = new Vector3();
+  camera.getWorldDirection(cameraDirection);
+
+  const v = new Vector3();
+  v.crossVectors(houseDirection, cameraDirection);
+
+  return v.y < 0 ? "LEFT" : "RIGHT";
 };

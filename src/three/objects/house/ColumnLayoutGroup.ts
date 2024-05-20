@@ -1,4 +1,4 @@
-import { columnLayoutToLevelTypes } from "@/layouts/ops";
+import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
@@ -6,11 +6,9 @@ import { A, O, TE, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group } from "three";
 import { OBB } from "three-stdlib";
-import { UserDataTypeEnum } from "../types";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
 
 export type ColumnLayoutGroupUserData = {
-  type: typeof UserDataTypeEnum.Enum.ColumnLayoutGroup;
   dnas: string[];
   layout: ColumnLayout;
   levelTypes: string[];
@@ -112,7 +110,6 @@ export const createColumnLayoutGroup = ({
         }),
         TE.map((vanillaColumn) => {
           const userData: ColumnLayoutGroupUserData = {
-            type: UserDataTypeEnum.Enum.ColumnLayoutGroup,
             dnas,
             layout,
             sectionType,

@@ -16,6 +16,8 @@ import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
 import { SectionType, remoteSectionTypesTE } from "./remote/sectionTypes";
+import { LevelType, remoteLevelTypesTE } from "./remote/levelTypes";
+import { WindowType, remoteWindowTypesTE } from "./remote/windowTypes";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -37,8 +39,8 @@ class BuildSystemsCache extends Dexie {
   materials: Dexie.Table<BuildMaterial, string>;
   models: Dexie.Table<CachedBuildModel, string>;
   sectionTypes: Dexie.Table<SectionType, string>;
-  // levelTypes: Dexie.Table<LastFetchStamped<LevelType>, string>
-  // windowTypes: Dexie.Table<LastFetchStamped<WindowType>, string>
+  levelTypes: Dexie.Table<LevelType, string>;
+  windowTypes: Dexie.Table<WindowType, string>;
   // blocks: Dexie.Table<Block, string>
   // blockModuleEntries: Dexie.Table<BlockModulesEntry, string>
   // spaceTypes: Dexie.Table<SpaceType, string>
@@ -47,15 +49,15 @@ class BuildSystemsCache extends Dexie {
 
   constructor() {
     super("BuildSystemsDatabase");
-    this.version(1).stores({
+    this.version(2).stores({
       modules: "[systemId+dna]",
       houseTypes: "id",
       elements: "[systemId+ifcTag]",
-      materials: "id",
+      materials: "[systemId+specification]",
       models: "speckleBranchUrl",
-      sectionTypes: "id",
-      // levelTypes: "[systemId+code]",
-      // windowTypes: "[systemId+code]",
+      sectionTypes: "[systemId+code]",
+      levelTypes: "[systemId+code]",
+      windowTypes: "[systemId+code]",
       // blocks: "[systemId+name]",
       // blockModuleEntries: "id",
       // spaceTypes: "id",
@@ -68,8 +70,8 @@ class BuildSystemsCache extends Dexie {
     this.materials = this.table("materials");
     this.models = this.table("models");
     this.sectionTypes = this.table("sectionTypes");
-    // this.levelTypes = this.table("levelTypes")
-    // this.windowTypes = this.table("windowTypes")
+    this.levelTypes = this.table("levelTypes");
+    this.windowTypes = this.table("windowTypes");
     // this.blocks = this.table("blocks")
     // this.blockModuleEntries = this.table("blockModuleEntries")
     // this.spaceTypes = this.table("spaceTypes")
@@ -79,6 +81,8 @@ class BuildSystemsCache extends Dexie {
 }
 
 const buildSystemsCache = new BuildSystemsCache();
+
+// ELEMENTS
 
 export const localElementsTE: TE.TaskEither<Error, BuildElement[]> =
   TE.tryCatch(
@@ -119,6 +123,8 @@ export const elementGetterTE = pipe(
   )
 );
 
+// MODULES
+
 export const localModulesTE: TE.TaskEither<Error, BuildModule[]> = TE.tryCatch(
   () =>
     buildSystemsCache.modules.toArray().then((modules) => {
@@ -140,6 +146,8 @@ export const cachedModulesTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+// MATERIALS
 
 export const localMaterialsTE: TE.TaskEither<Error, BuildMaterial[]> =
   TE.tryCatch(
@@ -218,6 +226,8 @@ export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
     })
   );
 
+// HOUSE TYPES
+
 export const localHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
   TE.tryCatch(
     () =>
@@ -256,6 +266,8 @@ export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
       )
     ),
   ]);
+
+// MODELS
 
 export const localModelTE = (
   speckleBranchUrl: string
@@ -345,6 +357,8 @@ export const cachedModelsTE = runUntilFirstSuccess([
   ),
 ]);
 
+// SECTION TYPES
+
 export const localSectionTypesTE: TE.TaskEither<Error, SectionType[]> =
   TE.tryCatch(
     () =>
@@ -377,6 +391,92 @@ export const getSectionType = ({
 }) =>
   pipe(
     cachedSectionTypesTE,
+    TE.chain(
+      flow(
+        A.findFirst((x) => x.code === code && x.systemId === systemId),
+        TE.fromOption(
+          () => new Error(`no section type found for ${code} in ${systemId}`)
+        )
+      )
+    )
+  );
+
+// LEVEL TYPES
+export const localLevelTypesTE: TE.TaskEither<Error, LevelType[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.levelTypes.toArray().then((levelTypes) => {
+      if (A.isEmpty(levelTypes)) {
+        throw new Error("No modules found in cache");
+      }
+      return levelTypes;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedLevelTypesTE = runUntilFirstSuccess([
+  localLevelTypesTE,
+  pipe(
+    remoteLevelTypesTE,
+    TE.map((levelTypes) => {
+      buildSystemsCache.levelTypes.bulkPut(levelTypes);
+      return levelTypes;
+    })
+  ),
+]);
+
+export const getLevelType = ({
+  systemId,
+  code,
+}: {
+  systemId: string;
+  code: string;
+}) =>
+  pipe(
+    cachedLevelTypesTE,
+    TE.chain(
+      flow(
+        A.findFirst((x) => x.code === code && x.systemId === systemId),
+        TE.fromOption(
+          () => new Error(`no section type found for ${code} in ${systemId}`)
+        )
+      )
+    )
+  );
+
+// WINDOW TYPES
+
+export const localWindowTypesTE: TE.TaskEither<Error, WindowType[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.windowTypes.toArray().then((windowTypes) => {
+        if (A.isEmpty(windowTypes)) {
+          throw new Error("No modules found in cache");
+        }
+        return windowTypes;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedWindowTypesTE = runUntilFirstSuccess([
+  localWindowTypesTE,
+  pipe(
+    remoteWindowTypesTE,
+    TE.map((windowTypes) => {
+      buildSystemsCache.windowTypes.bulkPut(windowTypes);
+      return windowTypes;
+    })
+  ),
+]);
+
+export const getWindowType = ({
+  systemId,
+  code,
+}: {
+  systemId: string;
+  code: string;
+}) =>
+  pipe(
+    cachedWindowTypesTE,
     TE.chain(
       flow(
         A.findFirst((x) => x.code === code && x.systemId === systemId),

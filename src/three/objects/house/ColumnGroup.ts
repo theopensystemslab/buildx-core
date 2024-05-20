@@ -2,11 +2,9 @@ import { PositionedRow } from "@/layouts/types";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
-import { UserDataTypeEnum } from "../types";
 import { defaultGridGroupCreator } from "./GridGroup";
 
 export type ColumnGroupUserData = {
-  type: typeof UserDataTypeEnum.Enum.ColumnGroup;
   columnIndex: number;
   depth: number;
   startColumn?: boolean;
@@ -45,7 +43,6 @@ export const defaultColumnGroupCreator = ({
     ),
     TE.map((gridGroups) => {
       const columnGroupUserData: ColumnGroupUserData = {
-        type: UserDataTypeEnum.Enum.ColumnGroup,
         columnIndex,
         depth: positionedRows[0].rowDepth,
         startColumn,

@@ -1,5 +1,5 @@
 import { cachedHouseTypesTE, cachedModulesTE } from "@/build-systems/cache";
-import { dnasToModules, modulesToMatrix } from "@/layouts/ops";
+import { dnasToModules, modulesToMatrix } from "@/layouts/init";
 import { defaultModuleGroupCreator } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
