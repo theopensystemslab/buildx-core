@@ -2,12 +2,22 @@ import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
+import { getMeshes } from "@/three/effects/outline";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
-import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
+import { ElementBrush } from "@/three/objects/house/ElementGroup";
 import { A, O, TE } from "@/utils/functions";
+import { Gesture } from "@use-gesture/vanilla";
 import { GUI } from "dat.gui";
 import { flow, pipe } from "fp-ts/lib/function";
-import { AxesHelper } from "three";
+import {
+  AxesHelper,
+  BufferGeometry,
+  Line,
+  LineBasicMaterial,
+  Raycaster,
+  Scene,
+  Vector2,
+} from "three";
 
 const gui = new GUI({ hideable: false });
 
@@ -17,13 +27,8 @@ let elementCategoriesFolder: GUI | null = null;
 let cutsFolder: GUI | null = null;
 let stretchFolder: GUI | null = null;
 
-const { addObjectToScene, render, scene } = createBasicScene({
-  outliner: (object) => {
-    return object.parent && isModuleGroup(object.parent)
-      ? object.parent.children
-      : [];
-  },
-});
+const { addObjectToScene, render, scene, renderer, camera } =
+  createBasicScene();
 
 addObjectToScene(new AxesHelper());
 
@@ -231,3 +236,58 @@ pipe(
     go(defaultHouseTypeName);
   })
 )();
+
+const raycaster = new Raycaster();
+
+// Function to create a line representing the ray
+const createRayLine = (raycaster: Raycaster, length = 100) => {
+  const points = [
+    raycaster.ray.origin,
+    raycaster.ray.origin
+      .clone()
+      .add(raycaster.ray.direction.clone().multiplyScalar(length)),
+  ];
+
+  const geometry = new BufferGeometry().setFromPoints(points);
+  const material = new LineBasicMaterial({ color: 0xff0000 });
+  return new Line(geometry, material);
+};
+
+// Clear previous ray lines
+const clearRayLines = (scene: Scene) => {
+  scene.children = scene.children.filter((child) => !(child instanceof Line));
+};
+
+new Gesture(renderer.domElement, {
+  onClick: (ev) => {
+    const { x, y } = ev.event;
+
+    // Normalize the coordinates to NDC
+    const ndcX = (x / window.innerWidth) * 2 - 1;
+    const ndcY = -(y / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
+
+    // Draw the ray for visual debugging
+    clearRayLines(scene);
+    const rayLine = createRayLine(raycaster);
+    scene.add(rayLine);
+
+    pipe(
+      raycaster.intersectObjects(scene.children, true),
+      A.head,
+      O.map(({ object }) => {
+        if (object instanceof ElementBrush) {
+          const moduleGroup = object.getModuleGroup();
+          // outlineObject();
+          getMeshes(moduleGroup).forEach((x) => {
+            console.log("hello?");
+            x.visible = false;
+          });
+
+          render();
+        }
+      })
+    );
+  },
+});

@@ -5,7 +5,7 @@ import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { Brush, Evaluator } from "three-bvh-csg";
-import { ClippedElementBrush, ElementBrush } from "./ElementGroup";
+import { ClippedElementBrush, FullElementBrush } from "./ElementGroup";
 import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
 
 export type GridGroupUserData = {
@@ -35,7 +35,7 @@ export class GridGroup extends Group {
 
   showClippedBrushes() {
     this.traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
@@ -53,7 +53,7 @@ export class GridGroup extends Group {
 
   showElementBrushes() {
     this.traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         node.visible = true;
       } else if (node instanceof ClippedElementBrush) {
         node.visible = false;

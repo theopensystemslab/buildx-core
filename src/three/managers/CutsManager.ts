@@ -4,7 +4,7 @@ import { BoxGeometry, DoubleSide, MeshBasicMaterial, Scene } from "three";
 import { Brush } from "three-bvh-csg";
 import {
   ClippedElementBrush,
-  ElementBrush,
+  FullElementBrush,
 } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
@@ -160,7 +160,7 @@ class CutsManager {
 
   showClippedBrushes() {
     this.houseGroup.getActiveLayoutGroup().traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
@@ -170,7 +170,7 @@ class CutsManager {
 
   showElementBrushes() {
     this.houseGroup.getActiveLayoutGroup().traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         node.visible = true;
       } else if (node instanceof ClippedElementBrush) {
         node.visible = false;

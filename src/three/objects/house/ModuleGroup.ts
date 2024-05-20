@@ -9,7 +9,7 @@ import { Group, Object3D } from "three";
 import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import {
   ClippedElementBrush,
-  ElementBrush,
+  FullElementBrush,
   defaultElementGroupCreator,
 } from "./ElementGroup";
 
@@ -36,7 +36,7 @@ export class ModuleGroup extends Group {
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         const clippedBrush = new ClippedElementBrush();
         node.parent?.add(clippedBrush);
 
@@ -53,7 +53,7 @@ export class ModuleGroup extends Group {
 
   showClippedBrushes() {
     this.traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
         node.visible = true;
@@ -70,7 +70,7 @@ export class ModuleGroup extends Group {
 
   showElementBrushes() {
     this.traverse((node) => {
-      if (node instanceof ElementBrush) {
+      if (node instanceof FullElementBrush) {
         node.visible = true;
       } else if (node instanceof ClippedElementBrush) {
         node.visible = false;
