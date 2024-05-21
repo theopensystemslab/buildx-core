@@ -282,7 +282,6 @@ new Gesture(renderer.domElement, {
 
           // outlineObject();
           getMeshes(moduleGroup).forEach((x) => {
-            console.log("hello?");
             x.visible = false;
           });
 

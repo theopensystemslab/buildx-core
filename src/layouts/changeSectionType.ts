@@ -24,10 +24,10 @@ export const changeLayoutSectionType = ({
     TE.chain((allModules) =>
       pipe(
         layout,
-        A.traverse(TE.ApplicativeSeq)((positionedColumn) =>
+        A.traverse(TE.ApplicativePar)((positionedColumn) =>
           pipe(
             positionedColumn.positionedRows,
-            A.traverse(TE.ApplicativeSeq)((gridGroup) => {
+            A.traverse(TE.ApplicativePar)((rowGroup) => {
               const {
                 positionedModules: modules,
                 positionedModules: [
@@ -37,7 +37,7 @@ export const changeLayoutSectionType = ({
                     },
                   },
                 ],
-              } = gridGroup;
+              } = rowGroup;
 
               const vanillaModuleTE = getVanillaModule({
                 systemId,
@@ -127,7 +127,7 @@ export const changeLayoutSectionType = ({
                     ),
                     O.map(
                       (modules): PositionedRow => ({
-                        ...gridGroup,
+                        ...rowGroup,
                         positionedModules: modules,
                       })
                     ),

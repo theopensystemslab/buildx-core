@@ -134,7 +134,7 @@ export const defaultModuleGroupCreator = ({
     TE.flatMap(({ geometries }) =>
       pipe(
         Object.entries(geometries),
-        A.traverse(TE.ApplicativeSeq)(([ifcTag, geometry]) =>
+        A.traverse(TE.ApplicativePar)(([ifcTag, geometry]) =>
           pipe(
             materialGettersTE,
             TE.flatMap(({ getElement, getInitialThreeMaterial }) =>

@@ -12,11 +12,11 @@ import {
 import { A, E, O, R, TE, runUntilFirstSuccess } from "../utils/functions";
 import { BuildElement, remoteElementsTE } from "./remote/elements";
 import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
+import { LevelType, remoteLevelTypesTE } from "./remote/levelTypes";
 import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
 import { SectionType, remoteSectionTypesTE } from "./remote/sectionTypes";
-import { LevelType, remoteLevelTypesTE } from "./remote/levelTypes";
 import { WindowType, remoteWindowTypesTE } from "./remote/windowTypes";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
@@ -450,7 +450,7 @@ export const localWindowTypesTE: TE.TaskEither<Error, WindowType[]> =
     () =>
       buildSystemsCache.windowTypes.toArray().then((windowTypes) => {
         if (A.isEmpty(windowTypes)) {
-          throw new Error("No modules found in cache");
+          throw new Error("No window types found in cache");
         }
         return windowTypes;
       }),
@@ -481,7 +481,7 @@ export const getWindowType = ({
       flow(
         A.findFirst((x) => x.code === code && x.systemId === systemId),
         TE.fromOption(
-          () => new Error(`no section type found for ${code} in ${systemId}`)
+          () => new Error(`no window type found for ${code} in ${systemId}`)
         )
       )
     )

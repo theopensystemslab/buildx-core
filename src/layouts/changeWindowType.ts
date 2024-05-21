@@ -14,98 +14,12 @@ import { columnLayoutToDnas } from "./init";
 import { modifyLayoutAt } from "./mutations";
 import { ColumnLayout } from "./types";
 
-export const getModuleWindowTypeAlts = ({
-  systemId,
-  dna,
-  side,
-}: {
-  systemId: string;
-  dna: string;
-  side: Side;
-}): TE.TaskEither<Error, BuildModule[]> => {
-  const currentDna = parseDna(dna);
-
-  const { levelType, positionType, windowTypeTop, windowTypeEnd } = currentDna;
-
-  return pipe(
-    cachedModulesTE,
-    TE.map((looseCandidates) =>
-      pipe(
-        looseCandidates,
-        A.filter((candidate) => {
-          let check =
-            candidate.systemId === systemId &&
-            candidate.dna !== dna &&
-            compareProps(candidate.structuredDna, currentDna, [
-              "sectionType",
-              "positionType",
-              "levelType",
-              "gridType",
-            ]);
-
-          if (!check) return false;
-
-          if (positionType === "END") {
-            return candidate.structuredDna.windowTypeEnd !== windowTypeEnd;
-          }
-
-          if (levelType[0] === "R") {
-            const bool =
-              candidate.structuredDna.windowTypeTop !== windowTypeTop;
-            if (bool) {
-              // console.log(`CANDIDATE: ${candidate.dna}`);
-            }
-            return bool;
-          }
-
-          const bool =
-            side === "RIGHT"
-              ? compareProps(candidate.structuredDna, currentDna, [
-                  "windowTypeEnd",
-                  "windowTypeTop",
-                  "windowTypeSide1",
-                ]) &&
-                candidate.structuredDna.windowTypeSide2 !==
-                  currentDna.windowTypeSide2
-              : compareProps(candidate.structuredDna, currentDna, [
-                  "windowTypeEnd",
-                  "windowTypeTop",
-                  "windowTypeSide2",
-                ]) &&
-                candidate.structuredDna.windowTypeSide1 !==
-                  currentDna.windowTypeSide1;
-
-          return bool;
-        })
-      )
-    )
-  );
+type AltWindowTypeLayout = {
+  layout: ColumnLayout;
+  dnas: string[];
+  windowType: WindowType;
+  candidate: BuildModule;
 };
-
-export const getWindowType = (
-  windowTypes: WindowType[],
-  structuredDna: StructuredDna,
-  side: Side
-) =>
-  pipe(
-    windowTypes,
-    A.findFirst((windowType) => {
-      switch (true) {
-        case structuredDna.positionType === "END":
-          return windowType.code === structuredDna.windowTypeEnd;
-        case structuredDna.levelType[0] === "R":
-          return windowType.code === structuredDna.windowTypeTop;
-        // left = windowTypeSide2
-        case side === "RIGHT":
-          return windowType.code === structuredDna.windowTypeSide2;
-        // right = windowTypeSide1
-        case side === "LEFT":
-          return windowType.code === structuredDna.windowTypeSide1;
-        default:
-          return false;
-      }
-    })
-  );
 
 export const getAltWindowTypeLayouts = ({
   systemId,
@@ -121,7 +35,7 @@ export const getAltWindowTypeLayouts = ({
   rowIndex: number;
   moduleIndex: number;
   side: Side;
-}) =>
+}): TE.TaskEither<Error, AltWindowTypeLayout[]> =>
   pipe(
     cachedWindowTypesTE,
     TE.chain((windowTypes) =>
@@ -231,4 +145,92 @@ export const getAltWindowTypeLayouts = ({
         )
       )
     )
+  );
+
+export const getModuleWindowTypeAlts = ({
+  systemId,
+  dna,
+  side,
+}: {
+  systemId: string;
+  dna: string;
+  side: Side;
+}): TE.TaskEither<Error, BuildModule[]> => {
+  const currentDna = parseDna(dna);
+
+  const { levelType, positionType, windowTypeTop, windowTypeEnd } = currentDna;
+
+  return pipe(
+    cachedModulesTE,
+    TE.map((looseCandidates) =>
+      pipe(
+        looseCandidates,
+        A.filter((candidate) => {
+          let check =
+            candidate.systemId === systemId &&
+            candidate.dna !== dna &&
+            compareProps(candidate.structuredDna, currentDna, [
+              "sectionType",
+              "positionType",
+              "levelType",
+              "gridType",
+            ]);
+
+          if (!check) return false;
+
+          if (positionType === "END") {
+            return candidate.structuredDna.windowTypeEnd !== windowTypeEnd;
+          }
+
+          if (levelType[0] === "R") {
+            return candidate.structuredDna.windowTypeTop !== windowTypeTop;
+          }
+
+          const bool =
+            side === "RIGHT"
+              ? compareProps(candidate.structuredDna, currentDna, [
+                  "windowTypeEnd",
+                  "windowTypeTop",
+                  "windowTypeSide1",
+                ]) &&
+                candidate.structuredDna.windowTypeSide2 !==
+                  currentDna.windowTypeSide2
+              : compareProps(candidate.structuredDna, currentDna, [
+                  "windowTypeEnd",
+                  "windowTypeTop",
+                  "windowTypeSide2",
+                ]) &&
+                candidate.structuredDna.windowTypeSide1 !==
+                  currentDna.windowTypeSide1;
+
+          return bool;
+        })
+      )
+    )
+  );
+};
+
+export const getWindowType = (
+  windowTypes: WindowType[],
+  structuredDna: StructuredDna,
+  side: Side
+) =>
+  pipe(
+    windowTypes,
+    A.findFirst((windowType) => {
+      switch (true) {
+        case structuredDna.positionType === "END":
+          return windowType.code === structuredDna.windowTypeEnd;
+        case structuredDna.levelType[0] === "R":
+          return windowType.code === structuredDna.windowTypeTop;
+        // left = windowTypeSide2
+        case side === "RIGHT":
+          return windowType.code === structuredDna.windowTypeSide2;
+        // right = windowTypeSide1
+        case side === "LEFT":
+          return windowType.code === structuredDna.windowTypeSide1;
+        default:
+          return false;
+      }
+    })
   );

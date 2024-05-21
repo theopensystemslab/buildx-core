@@ -63,7 +63,7 @@ export const createVanillaColumn = ({
 }) =>
   pipe(
     levelTypes,
-    A.traverse(TE.ApplicativeSeq)((levelType) =>
+    A.traverse(TE.ApplicativePar)((levelType) =>
       pipe(
         getVanillaModule({
           systemId,

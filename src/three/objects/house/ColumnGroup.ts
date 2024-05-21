@@ -36,23 +36,23 @@ export const defaultColumnGroupCreator = ({
   columnIndex,
   startColumn = false,
   endColumn = false,
-  createGridGroup = defaultRowGroupCreator,
+  createRowGroup = defaultRowGroupCreator,
 }: {
   positionedRows: PositionedRow[];
   columnIndex: number;
   startColumn?: boolean;
   endColumn?: boolean;
-  createGridGroup?: typeof defaultRowGroupCreator;
+  createRowGroup?: typeof defaultRowGroupCreator;
 }): TE.TaskEither<Error, ColumnGroup> =>
   pipe(
     positionedRows,
-    A.traverse(TE.ApplicativeSeq)((positionedRow) =>
-      createGridGroup({
+    A.traverse(TE.ApplicativePar)((positionedRow) =>
+      createRowGroup({
         ...positionedRow,
         endColumn,
       })
     ),
-    TE.map((gridGroups) => {
+    TE.map((rowGroups) => {
       const columnGroupUserData: ColumnGroupUserData = {
         columnIndex,
         depth: positionedRows[0].rowDepth,
@@ -62,7 +62,7 @@ export const defaultColumnGroupCreator = ({
 
       const columnGroup = new ColumnGroup(columnGroupUserData);
 
-      columnGroup.add(...gridGroups);
+      columnGroup.add(...rowGroups);
 
       return columnGroup as ColumnGroup;
     })

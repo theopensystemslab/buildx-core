@@ -210,7 +210,7 @@ export const successSeqTO = <T>(tasks: TO.TaskOption<T>[]): T.Task<T[]> =>
         (a) => T.of([a])
       )
     ),
-    A.sequence(T.ApplicativeSeq),
+    A.sequence(T.ApplicativePar),
     T.map(A.flatten)
   );
 
@@ -223,6 +223,6 @@ export const successSeqTE = <E, T>(tasks: TE.TaskEither<E, T>[]): T.Task<T[]> =>
         (a) => T.of([a])
       )
     ),
-    A.sequence(T.ApplicativeSeq),
+    A.sequence(T.ApplicativePar),
     T.map(A.flatten)
   );

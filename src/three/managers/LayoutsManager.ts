@@ -4,6 +4,7 @@ import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { WindowType } from "@/build-systems/remote/windowTypes";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { getAltWindowTypeLayouts } from "@/layouts/changeWindowType";
+import { columnLayoutToDnas } from "@/layouts/init";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import {
@@ -13,7 +14,6 @@ import {
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ScopeElement } from "../objects/types";
 import { Side } from "../utils/camera";
-import { columnLayoutToDnas } from "@/layouts/init";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
@@ -45,7 +45,6 @@ class LayoutsManager {
     this.activeLayoutGroup = initialLayoutGroup;
   }
 
-  // just to confirm swapping layouts actually works
   swapSomeLayout() {
     const nextLayout = this.sectionTypeLayouts[0].layoutGroup;
     nextLayout.visible = true;
@@ -56,7 +55,6 @@ class LayoutsManager {
   }
 
   refreshAltSectionTypeLayouts() {
-    // cleanup
     this.sectionTypeLayouts.forEach((x) => {
       x.layoutGroup.removeFromParent();
     });
@@ -77,11 +75,8 @@ class LayoutsManager {
           sectionType,
         })
       ),
-      TE.map((xs) => {
-        return xs;
-      }),
       TE.chain(
-        A.traverse(TE.ApplicativeSeq)(({ layout, sectionType }) => {
+        A.traverse(TE.ApplicativePar)(({ layout, sectionType }) => {
           const dnas = columnLayoutToDnas(layout);
 
           return pipe(
@@ -105,28 +100,46 @@ class LayoutsManager {
     )();
   }
 
-  refreshAltWindowTypeLayouts(
-    { columnIndex, rowIndex, moduleIndex }: ScopeElement,
-    side: Side
-  ) {
+  refreshAltWindowTypeLayouts(target: ScopeElement, side: Side) {
     const { systemId } = this.houseGroup.userData;
     const { layout: currentLayout } = this.activeLayoutGroup.userData;
+    const { columnIndex, rowIndex, moduleIndex } = target;
+
+    const t = this;
 
     pipe(
       getAltWindowTypeLayouts({
         systemId,
         columnIndex,
         currentLayout,
-        rowIndex: rowIndex,
+        rowIndex,
         moduleIndex,
         side,
       }),
-      TE.map((xs) => {
-        console.log(xs);
+      TE.chain(
+        A.traverse(TE.ApplicativePar)(
+          ({ dnas, layout, candidate, windowType }) =>
+            pipe(
+              createColumnLayoutGroup({
+                systemId,
+                dnas,
+                layout,
+              }),
+              TE.map((layoutGroup) => ({
+                candidate,
+                windowType,
+                layoutGroup,
+              }))
+            )
+        )
+      ),
+      TE.map((options) => {
+        t.changeWindowType = {
+          options,
+          target,
+        };
       })
     )();
-
-    console.log("ran");
   }
 }
 

@@ -58,7 +58,7 @@ export const createColumnLayoutGroup = ({
 }) =>
   pipe(
     layout,
-    A.traverseWithIndex(TE.ApplicativeSeq)(
+    A.traverseWithIndex(TE.ApplicativePar)(
       (i, { positionedRows, z, columnIndex }) => {
         const startColumn = i === 0;
         const endColumn = i === layout.length - 1;

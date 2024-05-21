@@ -90,7 +90,7 @@ export const defaultRowGroupCreator = ({
 }): TE.TaskEither<Error, RowGroup> =>
   pipe(
     positionedModules,
-    A.traverse(TE.ApplicativeSeq)(({ module, moduleIndex: moduleIndex, z }) =>
+    A.traverse(TE.ApplicativePar)(({ module, moduleIndex: moduleIndex, z }) =>
       createModuleGroup({
         buildModule: module,
         moduleIndex,
@@ -126,7 +126,7 @@ export const defaultRowGroupCreator = ({
             })
         ),
         TE.map((vanillaModule) => {
-          const gridGroup = new RowGroup({
+          const rowGroup = new RowGroup({
             rowIndex: rowIndex,
             depth: moduleGroups.reduce(
               (acc, v) => acc + v.userData.module.length,
@@ -135,9 +135,9 @@ export const defaultRowGroupCreator = ({
             height: positionedModules[0].module.height,
             vanillaModule,
           });
-          gridGroup.add(...moduleGroups);
-          gridGroup.position.setY(y);
-          return gridGroup;
+          rowGroup.add(...moduleGroups);
+          rowGroup.position.setY(y);
+          return rowGroup;
         })
       )
     )

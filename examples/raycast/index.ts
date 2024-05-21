@@ -79,37 +79,3 @@ pipe(
     addObjectToScene(houseGroup);
   })
 )();
-
-// new Gesture(renderer.domElement, {
-//   onClick: (ev) => {
-//     const { x, y } = ev.event;
-
-//     // Normalize the coordinates to NDC
-//     const ndcX = (x / window.innerWidth) * 2 - 1;
-//     const ndcY = -(y / window.innerHeight) * 2 + 1;
-
-//     raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
-
-//     // Draw the ray for visual debugging
-//     clearRayLines(scene);
-//     const rayLine = createRayLine(raycaster);
-//     scene.add(rayLine);
-
-//     pipe(
-//       raycaster.intersectObjects(scene.children, true),
-//       A.head,
-//       O.map(({ object }) => {
-//         if (object instanceof ElementBrush) {
-//           const moduleGroup = object.getModuleGroup();
-//           // outlineObject();
-//           getMeshes(moduleGroup).forEach((x) => {
-//             console.log("hello?");
-//             x.visible = false;
-//           });
-
-//           render();
-//         }
-//       })
-//     );
-//   },
-// });

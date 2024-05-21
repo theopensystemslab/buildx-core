@@ -20,7 +20,7 @@ const pointer = new Vector2();
 let prevScopeElement: ScopeElement | null = null;
 let prevSide: Side | null = null;
 
-const foo = (event: PointerEvent): void => {
+const selectFromEvent = (event: PointerEvent): void => {
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -45,6 +45,7 @@ const foo = (event: PointerEvent): void => {
           side !== prevSide
         ) {
           layoutsManager.refreshAltWindowTypeLayouts(scopeElement, side);
+          layoutsManager.refreshAltSectionTypeLayouts();
 
           // Update previous values
           prevScopeElement = scopeElement;
@@ -60,7 +61,7 @@ const foo = (event: PointerEvent): void => {
 };
 
 new Gesture(renderer.domElement, {
-  onClick: ({ event }) => foo(event as PointerEvent),
+  onClick: ({ event }) => selectFromEvent(event as PointerEvent),
 });
 
 pipe(
