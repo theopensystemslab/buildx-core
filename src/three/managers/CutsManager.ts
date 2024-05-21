@@ -54,7 +54,7 @@ class CutsManager {
     this.clippingBrush = clippingBrush;
   }
 
-  setClippingBrushY(levelIndex: number) {
+  setClippingBrushY(rowIndex: number) {
     const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
 
     const {
@@ -64,9 +64,7 @@ class CutsManager {
     pipe(
       layout,
       A.head,
-      O.chain(({ positionedRows }) =>
-        pipe(positionedRows, A.lookup(levelIndex))
-      ),
+      O.chain(({ positionedRows }) => pipe(positionedRows, A.lookup(rowIndex))),
       O.chain(({ y, positionedModules, levelType }) =>
         pipe(
           positionedModules,

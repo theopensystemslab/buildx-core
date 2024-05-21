@@ -12,12 +12,15 @@ import {
   FullElementBrush,
   defaultElementGroupCreator,
 } from "./ElementGroup";
+import { HouseGroup } from "./HouseGroup";
+import { RowGroup } from "./RowGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
 
-export type ModuleGroupUserData = BuildModule & {
-  gridGroupIndex: number;
+export type ModuleGroupUserData = {
+  module: BuildModule;
+  moduleIndex: number;
   z: number;
   flip: boolean;
 };
@@ -30,6 +33,22 @@ export class ModuleGroup extends Group {
     super();
     this.userData = userData;
     this.evaluator = new Evaluator();
+  }
+
+  get houseGroup(): HouseGroup {
+    if (this.parent?.parent?.parent?.parent instanceof HouseGroup) {
+      return this.parent.parent.parent.parent;
+    } else {
+      throw new Error(`get houseGroup failed`);
+    }
+  }
+
+  get rowGroup(): RowGroup {
+    if (this.parent instanceof RowGroup) {
+      return this.parent;
+    } else {
+      throw new Error(`get rowGroup failed`);
+    }
   }
 
   createClippedBrushes = (clippingBrush: Brush) => {
@@ -80,14 +99,14 @@ export class ModuleGroup extends Group {
 }
 
 export const defaultModuleGroupCreator = ({
-  gridGroupIndex,
+  moduleIndex,
   buildModule,
   z,
   flip,
   getBuildModelTE = getCachedModelTE,
   materialGettersTE = defaultMaterialGettersTE,
 }: {
-  gridGroupIndex: number;
+  moduleIndex: number;
   buildModule: BuildModule;
   z: number;
   flip: boolean;
@@ -97,8 +116,8 @@ export const defaultModuleGroupCreator = ({
   const { systemId, speckleBranchUrl, length: moduleLength } = buildModule;
 
   const moduleGroupUserData: ModuleGroupUserData = {
-    ...buildModule,
-    gridGroupIndex,
+    module: buildModule,
+    moduleIndex: moduleIndex,
     z,
     flip,
   };

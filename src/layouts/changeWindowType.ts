@@ -53,7 +53,7 @@ export const getModuleWindowTypeAlts = ({
             const bool =
               candidate.structuredDna.windowTypeTop !== windowTypeTop;
             if (bool) {
-              console.log(`CANDIDATE: ${candidate.dna}`);
+              // console.log(`CANDIDATE: ${candidate.dna}`);
             }
             return bool;
           }
@@ -110,7 +110,7 @@ export const getWindowType = (
 export const getAltWindowTypeLayouts = ({
   systemId,
   columnIndex,
-  levelIndex,
+  rowIndex,
   moduleIndex,
   side,
   currentLayout,
@@ -118,7 +118,7 @@ export const getAltWindowTypeLayouts = ({
   systemId: string;
   currentLayout: ColumnLayout;
   columnIndex: number;
-  levelIndex: number;
+  rowIndex: number;
   moduleIndex: number;
   side: Side;
 }) =>
@@ -131,7 +131,7 @@ export const getAltWindowTypeLayouts = ({
         O.chain(({ positionedRows }) =>
           pipe(
             positionedRows,
-            A.lookup(levelIndex),
+            A.lookup(rowIndex),
             O.chain(({ positionedModules }) =>
               pipe(
                 positionedModules,
@@ -163,7 +163,7 @@ export const getAltWindowTypeLayouts = ({
         ),
         TE.fromOption(() =>
           Error(
-            `no module at [${columnIndex},${levelIndex},${moduleIndex}] in layout: ${JSON.stringify(
+            `no module at [${columnIndex},${rowIndex},${moduleIndex}] in layout: ${JSON.stringify(
               currentLayout,
               null,
               2
@@ -206,7 +206,7 @@ export const getAltWindowTypeLayouts = ({
                 modifyLayoutAt(
                   currentLayout,
                   columnIndex,
-                  levelIndex,
+                  rowIndex,
                   moduleIndex,
                   candidate,
                   vanillaModule
@@ -232,91 +232,3 @@ export const getAltWindowTypeLayouts = ({
       )
     )
   );
-
-// validatePositionedColumn(augColumn)
-
-// const candidates: {
-//   candidate: Module
-//   layout: ColumnLayout
-//   dnas: string[]
-//   windowType: WindowType
-// }[] = []
-
-// const candidates = pipe(
-//   await getWindowTypeAlternatives({ systemId, dna, side }),
-//   A.map((candidate) => {
-//     const updatedColumn = pipe(
-//       augColumn,
-//       produce((draft: AugPosCol) => {
-//         const origRow = draft.positionedRows[levelIndex]
-//         const newRow = swapModuleInRow(origRow, gridGroupIndex, candidate)
-
-//         const gridUnitDelta = newRow.gridUnits - origRow.gridUnits
-
-//         if (sign(gridUnitDelta) === 1) {
-//           // pad all other rows with gridUnitDelta vanilla
-//           for (let i = 0; i < draft.positionedRows.length; i++) {
-//             if (i === levelIndex) continue
-
-//             draft.positionedRows[i] = addModulesToRow(
-//               draft.positionedRows[i],
-//               A.replicate(
-//                 gridUnitDelta,
-//                 draft.positionedRows[i].vanillaModule
-//               )
-//             )
-//             // validatePositionedRow(draft.positionedRows[i])
-//           }
-//           draft.positionedRows[levelIndex] = newRow
-//           // validatePositionedRow(draft.positionedRows[levelIndex])
-//         } else if (sign(gridUnitDelta) === -1) {
-//           // pad this column with gridUnitDelta vanilla
-//           draft.positionedRows[levelIndex] = addModulesToRow(
-//             newRow,
-//             A.replicate(gridUnitDelta, newRow.vanillaModule)
-//           )
-//         }
-//         // validatePositionedRow(draft.positionedRows[levelIndex])
-
-//         // validatePositionedColumn(draft)
-//       })
-//     )
-
-//     validatePositionedColumn(updatedColumn)
-
-//     const lengthDelta =
-//       updatedColumn.positionedRows[0].rowLength - updatedColumn.columnLength
-
-//     const nextLayout = pipe(
-//       currentLayout,
-//       produce((draft: ColumnLayout) => {
-//         draft[columnIndex] = {
-//           ...updatedColumn,
-//           columnLength: updatedColumn.positionedRows[0].rowLength,
-//         }
-
-//         for (let i = columnIndex + 1; i < draft.length; i++) {
-//           draft[i] = {
-//             ...draft[i],
-//             z: draft[i].z + lengthDelta,
-//           }
-//         }
-//       })
-//     )
-
-//     postVanillaColumn(nextLayout[0])
-//     const dnas = columnLayoutToDnas(nextLayout)
-
-//     layoutsDB.houseLayouts.put({ systemId, dnas, layout: nextLayout })
-
-//     return {
-//       candidate,
-//       layout: nextLayout,
-//       dnas,
-//       windowType: pipe(
-//         getWindowType(windowTypes, candidate, side),
-//         someOrError(`no window type`)
-//       ),
-//     }
-//   })
-// )

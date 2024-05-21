@@ -278,7 +278,8 @@ new Gesture(renderer.domElement, {
       A.head,
       O.map(({ object }) => {
         if (object instanceof ElementBrush) {
-          const moduleGroup = object.getModuleGroup();
+          const moduleGroup = object.moduleGroup;
+
           // outlineObject();
           getMeshes(moduleGroup).forEach((x) => {
             console.log("hello?");

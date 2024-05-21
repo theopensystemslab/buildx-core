@@ -4,18 +4,18 @@ import { OutlinePass } from "three-stdlib";
 let outlinePass: OutlinePass | null = null;
 
 export const getOutlinePass = (scene: Scene, camera: Camera) => {
-  outlinePass = new OutlinePass(
-    new Vector2(window.innerWidth, window.innerHeight),
-    scene,
-    camera
-  );
-
+  if (outlinePass === null) {
+    outlinePass = new OutlinePass(
+      new Vector2(window.innerWidth, window.innerHeight),
+      scene,
+      camera
+    );
+  }
   return outlinePass;
 };
 
 export const getMeshes = (object: Object3D): Mesh[] => {
   if (object instanceof Mesh) {
-    console.log(`object instanceof mesh`);
     return [object];
   }
 
@@ -24,7 +24,6 @@ export const getMeshes = (object: Object3D): Mesh[] => {
   if (object instanceof Group) {
     object.traverse((child) => {
       if (child instanceof Mesh) {
-        console.log({ child });
         meshes.push(child);
       }
     });
@@ -37,7 +36,6 @@ export const getMeshes = (object: Object3D): Mesh[] => {
 export const outlineObject = (object: Object3D) => {
   if (outlinePass !== null) {
     const meshes = getMeshes(object);
-    console.log(meshes);
     outlinePass.selectedObjects = meshes;
   }
 };

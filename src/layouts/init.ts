@@ -251,18 +251,18 @@ export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
 };
 export const positionRows = A.reduceWithIndex(
   [],
-  (levelIndex, acc: PositionedRow[], row: Row) => {
+  (rowIndex, acc: PositionedRow[], row: Row) => {
     const levelLetter = row.levelType[0];
 
     const y =
       levelLetter === "F"
         ? 0
         : roundp(
-            acc[levelIndex - 1].y +
-              acc[levelIndex - 1].positionedModules[0].module.height
+            acc[rowIndex - 1].y +
+              acc[rowIndex - 1].positionedModules[0].module.height
           );
 
-    return [...acc, { ...row, levelIndex, y }];
+    return [...acc, { ...row, rowIndex: rowIndex, y }];
   }
 );
 export const createRowLayout = (rowsMatrix: BuildModule[][]): PositionedRow[] =>

@@ -7,6 +7,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Box3, Group } from "three";
 import { OBB } from "three-stdlib";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
+import { HouseGroup } from "./HouseGroup";
 
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
@@ -31,6 +32,11 @@ export class ColumnLayoutGroup extends Group {
     this.aabb = new Box3();
     this.obb = new OBB();
     this.zStretchManager = new ZStretchManager2(this);
+  }
+
+  get houseGroup(): HouseGroup {
+    if (this.parent instanceof HouseGroup) return this.parent;
+    throw new Error(`get houseGroup failed`);
   }
 
   updateOBB() {

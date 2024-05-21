@@ -32,25 +32,25 @@ export const modifyRowAt = (
 
 export const modifyColumnAt = (
   column: Column,
-  levelIndex: number,
+  rowIndex: number,
   moduleIndex: number,
   newModule: BuildModule,
   vanillaModule: BuildModule
 ): Column => {
-  const initialGridUnits = column.positionedRows[levelIndex].gridUnits;
+  const initialGridUnits = column.positionedRows[rowIndex].gridUnits;
 
   // so you wanna split the positioned rows up
   return pipe(
     column.positionedRows,
     A.mapWithIndex((i, row) => {
-      if (i === levelIndex) {
+      if (i === rowIndex) {
         return modifyRowAt(row, moduleIndex, newModule);
       } else {
         return row;
       }
     }),
     (rows): Row[] => {
-      const delta = rows[levelIndex].gridUnits - initialGridUnits;
+      const delta = rows[rowIndex].gridUnits - initialGridUnits;
 
       switch (sign(delta)) {
         // this row now bigger
@@ -58,7 +58,7 @@ export const modifyColumnAt = (
           return pipe(
             rows,
             A.mapWithIndex((i, row) =>
-              i === levelIndex ? row : vanillaPadRow(row, delta, vanillaModule)
+              i === rowIndex ? row : vanillaPadRow(row, delta, vanillaModule)
             )
             // A.sequence(T.ApplicativeSeq)
           );
@@ -67,7 +67,7 @@ export const modifyColumnAt = (
           return pipe(
             rows,
             A.mapWithIndex((i, row) =>
-              i === levelIndex ? vanillaPadRow(row, -delta, vanillaModule) : row
+              i === rowIndex ? vanillaPadRow(row, -delta, vanillaModule) : row
             )
           );
         default:
@@ -84,7 +84,7 @@ export const modifyColumnAt = (
 export const modifyLayoutAt = (
   layout: ColumnLayout,
   columnIndex: number,
-  levelIndex: number,
+  rowIndex: number,
   moduleIndex: number,
   newModule: BuildModule,
   vanillaModule: BuildModule
@@ -95,7 +95,7 @@ export const modifyLayoutAt = (
       index === columnIndex
         ? modifyColumnAt(
             positionedColumn,
-            levelIndex,
+            rowIndex,
             moduleIndex,
             newModule,
             vanillaModule

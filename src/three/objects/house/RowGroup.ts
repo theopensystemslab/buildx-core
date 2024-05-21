@@ -5,24 +5,40 @@ import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { Brush, Evaluator } from "three-bvh-csg";
+import { ColumnGroup } from "./ColumnGroup";
+import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { ClippedElementBrush, FullElementBrush } from "./ElementGroup";
+import { HouseGroup } from "./HouseGroup";
 import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
 
-export type GridGroupUserData = {
-  levelIndex: number;
+export type RowGroupUserData = {
+  rowIndex: number;
   depth: number;
   height: number;
   vanillaModule: BuildModule;
 };
 
-export class GridGroup extends Group {
-  userData: GridGroupUserData;
+export class RowGroup extends Group {
+  userData: RowGroupUserData;
   evaluator: Evaluator;
 
-  constructor(userData: GridGroupUserData) {
+  constructor(userData: RowGroupUserData) {
     super();
     this.userData = userData;
     this.evaluator = new Evaluator();
+  }
+
+  get columnGroup(): ColumnGroup {
+    if (this.parent instanceof ColumnGroup) return this.parent;
+    throw new Error(`get columnGroup failed`);
+  }
+
+  get columnLayoutGroup(): ColumnLayoutGroup {
+    return this.columnGroup.columnLayoutGroup;
+  }
+
+  get houseGroup(): HouseGroup {
+    return this.columnLayoutGroup.houseGroup;
   }
 
   createClippedBrushes(clippingBrush: Brush) {
@@ -62,26 +78,25 @@ export class GridGroup extends Group {
   }
 }
 
-export const defaultGridGroupCreator = ({
+export const defaultRowGroupCreator = ({
   positionedModules,
-  levelIndex,
+  rowIndex,
   y,
   endColumn,
   createModuleGroup = defaultModuleGroupCreator,
 }: PositionedRow & {
   endColumn: boolean;
   createModuleGroup?: typeof defaultModuleGroupCreator;
-}): TE.TaskEither<Error, GridGroup> =>
+}): TE.TaskEither<Error, RowGroup> =>
   pipe(
     positionedModules,
-    A.traverse(TE.ApplicativeSeq)(
-      ({ module, moduleIndex: gridGroupIndex, z }) =>
-        createModuleGroup({
-          buildModule: module,
-          gridGroupIndex,
-          z,
-          flip: endColumn,
-        })
+    A.traverse(TE.ApplicativeSeq)(({ module, moduleIndex: moduleIndex, z }) =>
+      createModuleGroup({
+        buildModule: module,
+        moduleIndex,
+        z,
+        flip: endColumn,
+      })
     ),
     TE.chain((moduleGroups) =>
       pipe(
@@ -91,8 +106,15 @@ export const defaultGridGroupCreator = ({
         TE.chain(
           ({
             userData: {
-              systemId,
-              structuredDna: { sectionType, positionType, levelType, gridType },
+              module: {
+                systemId,
+                structuredDna: {
+                  sectionType,
+                  positionType,
+                  levelType,
+                  gridType,
+                },
+              },
             },
           }) =>
             getVanillaModule({
@@ -104,9 +126,12 @@ export const defaultGridGroupCreator = ({
             })
         ),
         TE.map((vanillaModule) => {
-          const gridGroup = new GridGroup({
-            levelIndex,
-            depth: moduleGroups.reduce((acc, v) => acc + v.userData.length, 0),
+          const gridGroup = new RowGroup({
+            rowIndex: rowIndex,
+            depth: moduleGroups.reduce(
+              (acc, v) => acc + v.userData.module.length,
+              0
+            ),
             height: positionedModules[0].module.height,
             vanillaModule,
           });

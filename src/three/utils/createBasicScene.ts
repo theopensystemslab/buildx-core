@@ -17,7 +17,7 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
-import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import { EffectComposer, RenderPass } from "three-stdlib";
 import { getOutlinePass } from "../effects/outline";
 
 const subsetOfTHREE = {
@@ -42,7 +42,7 @@ interface BasicSceneComponents {
   cameraControls: CameraControls;
   addObjectToScene: (object: Object3D) => void;
   render: () => void;
-  outlinePass: OutlinePass;
+  // outlinePass: OutlinePass;
 }
 
 const defaultParams = {
@@ -126,7 +126,7 @@ function createBasicScene({
     renderer.setSize(window.innerWidth, window.innerHeight);
     composer.setSize(window.innerWidth, window.innerHeight);
     renderPass.setSize(window.innerWidth, window.innerHeight);
-    outlinePass.setSize(window.innerWidth, window.innerHeight);
+    // outlinePass.setSize(window.innerWidth, window.innerHeight);
 
     render(); // Ensure scene is re-rendered after resize
   });
@@ -176,7 +176,7 @@ function createBasicScene({
     cameraControls,
     addObjectToScene,
     render,
-    outlinePass,
+    // outlinePass,
   };
 }
 

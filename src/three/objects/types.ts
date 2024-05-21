@@ -4,8 +4,8 @@ export type ScopeElement = {
   ifcTag: string;
   dna: string;
   columnIndex: number;
-  levelIndex: number;
+  rowIndex: number;
   moduleIndex: number;
   houseId: string;
-  object: ElementGroup;
+  elementGroup: ElementGroup;
 };

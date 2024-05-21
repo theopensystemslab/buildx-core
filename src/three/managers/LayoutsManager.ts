@@ -106,7 +106,7 @@ class LayoutsManager {
   }
 
   refreshAltWindowTypeLayouts(
-    { columnIndex, levelIndex, moduleIndex }: ScopeElement,
+    { columnIndex, rowIndex, moduleIndex }: ScopeElement,
     side: Side
   ) {
     const { systemId } = this.houseGroup.userData;
@@ -117,14 +117,12 @@ class LayoutsManager {
         systemId,
         columnIndex,
         currentLayout,
-        levelIndex,
+        rowIndex: rowIndex,
         moduleIndex,
         side,
       }),
       TE.map((xs) => {
-        xs.forEach(({ candidate, dnas, layout, windowType }) => {
-          console.log({ candidate, dnas, layout, windowType });
-        });
+        console.log(xs);
       })
     )();
 
