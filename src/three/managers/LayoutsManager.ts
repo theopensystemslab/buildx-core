@@ -1,11 +1,10 @@
-import { getSectionType } from "@/build-systems/cache";
 import { LevelType } from "@/build-systems/remote/levelTypes";
 import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { WindowType } from "@/build-systems/remote/windowTypes";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { getAltWindowTypeLayouts } from "@/layouts/changeWindowType";
 import { columnLayoutToDnas } from "@/layouts/init";
-import { A, TE } from "@/utils/functions";
+import { A, O, Ord, S, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import {
   ColumnLayoutGroup,
@@ -17,12 +16,14 @@ import { Side } from "../utils/camera";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
+  // this is the initial layout group, in case we want to reset
   houseTypeLayoutGroup: ColumnLayoutGroup;
-  activeLayoutGroup: ColumnLayoutGroup;
-  sectionTypeLayouts: Array<{
+  _activeLayoutGroup: ColumnLayoutGroup;
+  sectionTypeLayouts?: Array<{
     sectionType: SectionType;
     layoutGroup: ColumnLayoutGroup;
   }>;
+  // there are only alternative level type layouts sometimes
   changeLevelType?: {
     target: ScopeElement;
     options: Array<{
@@ -30,6 +31,7 @@ class LayoutsManager {
       levelType: LevelType;
     }>;
   };
+  // there are only alternative window type layouts sometimes
   changeWindowType?: {
     target: ScopeElement;
     options: Array<{
@@ -42,39 +44,100 @@ class LayoutsManager {
     this.houseGroup = initialLayoutGroup.parent as HouseGroup;
     this.sectionTypeLayouts = [];
     this.houseTypeLayoutGroup = initialLayoutGroup;
-    this.activeLayoutGroup = initialLayoutGroup;
+    this._activeLayoutGroup = initialLayoutGroup;
+    this.init();
   }
 
-  swapSomeLayout() {
-    const nextLayout = this.sectionTypeLayouts[0].layoutGroup;
-    nextLayout.visible = true;
-    this.activeLayoutGroup.visible = false;
-    this.activeLayoutGroup = nextLayout;
-    this.houseGroup.cutsManager.createClippedBrushes();
-    this.houseGroup.cutsManager.showClippedBrushes();
+  init() {
+    this.prepareAltSectionTypeLayouts();
   }
 
-  refreshAltSectionTypeLayouts() {
-    this.sectionTypeLayouts.forEach((x) => {
-      x.layoutGroup.removeFromParent();
-    });
-    this.sectionTypeLayouts = [];
+  get activeLayoutGroup(): ColumnLayoutGroup {
+    return this._activeLayoutGroup;
+  }
 
-    const { systemId } = this.houseGroup.userData;
-    const { layout, sectionType: code } = this.activeLayoutGroup.userData;
+  get currentSectionType(): SectionType {
+    return this.activeLayoutGroup.userData.sectionType;
+  }
 
+  set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
+    this._activeLayoutGroup.visible = false;
+    layoutGroup.visible = true;
+    this._activeLayoutGroup = layoutGroup;
+
+    // CUTS STUFF - ignore this for now
+    // this.houseGroup.cutsManager.createClippedBrushes();
+    // this.houseGroup.cutsManager.showClippedBrushes();
+  }
+
+  // this seems messy too
+  cycleSectionTypeLayout() {
+    const { currentSectionType, sectionTypeLayouts } = this;
     const t = this;
 
     pipe(
-      { systemId, code },
-      getSectionType,
-      TE.chain((sectionType) =>
-        getAltSectionTypeLayouts({
-          systemId,
-          layout,
-          sectionType,
+      sectionTypeLayouts,
+      O.fromNullable,
+      O.chain(
+        A.findIndex((x) => {
+          const condition = x.sectionType.code === currentSectionType.code;
+          console.log({
+            code0: x.sectionType.code,
+            code1: currentSectionType.code,
+            condition,
+          });
+          return condition;
         })
       ),
+      O.map((currentIndex) => {
+        const nextIndex =
+          currentIndex === sectionTypeLayouts!.length - 1
+            ? 0
+            : currentIndex + 1;
+
+        pipe(
+          sectionTypeLayouts!,
+          A.lookup(nextIndex),
+          O.map((nextLayout) => {
+            t.activeLayoutGroup = nextLayout.layoutGroup;
+          })
+        );
+      })
+    );
+  }
+
+  // this seems quite messy
+  prepareAltSectionTypeLayouts() {
+    const activeLayoutGroup = this.activeLayoutGroup;
+
+    this.sectionTypeLayouts?.forEach((x) => {
+      if (x.layoutGroup.uuid === activeLayoutGroup.uuid) return;
+      x.layoutGroup.removeFromParent();
+    });
+
+    this.sectionTypeLayouts = [
+      {
+        layoutGroup: activeLayoutGroup,
+        sectionType: activeLayoutGroup.userData.sectionType,
+      },
+    ];
+
+    const { systemId } = this.houseGroup.userData;
+
+    const t = this;
+
+    const {
+      activeLayoutGroup: {
+        userData: { layout, sectionType },
+      },
+    } = t;
+
+    pipe(
+      getAltSectionTypeLayouts({
+        systemId,
+        layout,
+        sectionType,
+      }),
       TE.chain(
         A.traverse(TE.ApplicativePar)(({ layout, sectionType }) => {
           const dnas = columnLayoutToDnas(layout);
@@ -91,7 +154,17 @@ class LayoutsManager {
         })
       ),
       TE.map((xs) => {
-        t.sectionTypeLayouts = xs;
+        const bySectionType = Ord.contramap(
+          (x: (typeof xs)[0]) => x.sectionType.code
+        );
+
+        const ys = pipe(
+          [...xs, ...t.sectionTypeLayouts!],
+          A.sort(pipe(S.Ord, bySectionType))
+        );
+
+        t.sectionTypeLayouts = ys;
+
         xs.forEach((x) => {
           x.layoutGroup.visible = false;
           t.houseGroup.add(x.layoutGroup);
@@ -100,6 +173,7 @@ class LayoutsManager {
     )();
   }
 
+  // Ignore this for now
   refreshAltWindowTypeLayouts(target: ScopeElement, side: Side) {
     const { systemId } = this.houseGroup.userData;
     const { layout: currentLayout } = this.activeLayoutGroup.userData;

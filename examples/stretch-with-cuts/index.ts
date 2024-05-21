@@ -71,7 +71,7 @@ pipe(
               houseTypeId,
             }),
             TE.map(async (houseGroup) => {
-              const columnLayoutGroup = houseGroup.getActiveLayoutGroup();
+              const columnLayoutGroup = houseGroup.activeLayoutGroup;
 
               const { cutsManager, elementsManager } = houseGroup;
 

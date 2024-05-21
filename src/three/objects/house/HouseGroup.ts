@@ -36,7 +36,7 @@ export class HouseGroup extends Group {
     this.cutsManager = new CutsManager(this);
   }
 
-  getActiveLayoutGroup() {
+  get activeLayoutGroup(): ColumnLayoutGroup {
     return this.layoutsManager.activeLayoutGroup;
   }
 }

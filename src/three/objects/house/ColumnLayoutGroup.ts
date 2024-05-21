@@ -1,8 +1,11 @@
+import { getSectionType } from "@/build-systems/cache";
+import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
+import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group } from "three";
 import { OBB } from "three-stdlib";
@@ -16,7 +19,7 @@ export type ColumnLayoutGroupUserData = {
   width: number;
   height: number;
   depth: number;
-  sectionType: string;
+  sectionType: SectionType;
   vanillaColumn: Column;
 };
 
@@ -109,12 +112,15 @@ export const createColumnLayoutGroup = ({
       const levelTypes = columnLayoutToLevelTypes(layout);
 
       return pipe(
-        createVanillaColumn({
-          systemId,
-          levelTypes,
-          sectionType,
-        }),
-        TE.map((vanillaColumn) => {
+        sequenceT(TE.ApplicativePar)(
+          createVanillaColumn({
+            systemId,
+            levelTypes,
+            sectionType,
+          }),
+          getSectionType({ systemId, code: sectionType })
+        ),
+        TE.map(([vanillaColumn, sectionType]) => {
           const userData: ColumnLayoutGroupUserData = {
             dnas,
             layout,
@@ -125,6 +131,8 @@ export const createColumnLayoutGroup = ({
             depth,
             vanillaColumn,
           };
+
+          console.log({ userData });
 
           const columnLayoutGroup = new ColumnLayoutGroup(userData);
 

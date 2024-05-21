@@ -45,7 +45,7 @@ const selectFromEvent = (event: PointerEvent): void => {
           side !== prevSide
         ) {
           layoutsManager.refreshAltWindowTypeLayouts(scopeElement, side);
-          layoutsManager.refreshAltSectionTypeLayouts();
+          layoutsManager.prepareAltSectionTypeLayouts();
 
           // Update previous values
           prevScopeElement = scopeElement;
@@ -83,5 +83,14 @@ pipe(
   ),
   TE.map((houseGroup) => {
     addObjectToScene(houseGroup);
+
+    window.addEventListener("keydown", (ev) => {
+      switch (ev.key) {
+        case "c":
+          houseGroup.layoutsManager.cycleSectionTypeLayout();
+      }
+
+      render();
+    });
   })
 )();

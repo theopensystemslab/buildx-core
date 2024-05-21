@@ -78,7 +78,7 @@ pipe(
             TE.map(async (houseGroup) => {
               const { elementsManager, layoutsManager, cutsManager } =
                 houseGroup;
-              const columnLayoutGroup = houseGroup.getActiveLayoutGroup();
+              const columnLayoutGroup = houseGroup.activeLayoutGroup;
 
               addObjectToScene(houseGroup);
 
@@ -133,12 +133,12 @@ pipe(
                 stretchParams.side
               );
 
-              houseGroup.layoutsManager.refreshAltSectionTypeLayouts();
+              houseGroup.layoutsManager.prepareAltSectionTypeLayouts();
 
               window.addEventListener("keydown", async (ev) => {
                 switch (ev.key) {
                   case "s":
-                    layoutsManager.swapSomeLayout();
+                    layoutsManager.cycleSectionTypeLayout();
                 }
               });
 

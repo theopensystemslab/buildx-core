@@ -32,7 +32,7 @@ class CutsManager {
   }
 
   setClippingBrushX() {
-    const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const { halfSize } = columnLayoutGroup.obb;
 
@@ -55,7 +55,7 @@ class CutsManager {
   }
 
   setClippingBrushY(rowIndex: number) {
-    const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const {
       userData: { layout },
@@ -101,7 +101,7 @@ class CutsManager {
   }
 
   setClippingBrushZ() {
-    const columnLayoutGroup = this.houseGroup.getActiveLayoutGroup();
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const { halfSize } = columnLayoutGroup.obb;
 
@@ -157,7 +157,7 @@ class CutsManager {
   }
 
   showClippedBrushes() {
-    this.houseGroup.getActiveLayoutGroup().traverse((node) => {
+    this.houseGroup.activeLayoutGroup.traverse((node) => {
       if (node instanceof FullElementBrush) {
         node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
@@ -167,7 +167,7 @@ class CutsManager {
   }
 
   showElementBrushes() {
-    this.houseGroup.getActiveLayoutGroup().traverse((node) => {
+    this.houseGroup.activeLayoutGroup.traverse((node) => {
       if (node instanceof FullElementBrush) {
         node.visible = true;
       } else if (node instanceof ClippedElementBrush) {
