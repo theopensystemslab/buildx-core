@@ -71,9 +71,17 @@ pipe(
             TE.map((houseGroup) => {
               const columnLayoutGroup = houseGroup.activeLayoutGroup;
 
+              window.addEventListener("keydown", (ev) => {
+                switch (ev.key) {
+                  case "c":
+                    columnLayoutGroup.cutsManager.debugClippingBrush();
+                    render();
+                }
+              });
+
               const { elementsManager } = houseGroup;
 
-              addObjectToScene(columnLayoutGroup);
+              addObjectToScene(houseGroup);
 
               columnLayoutGroup.updateOBB();
 
@@ -117,39 +125,38 @@ pipe(
 
                   elementCategoriesFolder?.add(masterToggle, "Toggle All");
 
-                  cutsFolder
-                    ?.add(
-                      {
-                        cutMode: "No Cut",
-                      },
-                      "cutMode",
-                      ["No Cut", "X-cut", "Y-cut", "Z-cut"]
-                    )
-                    .onChange((value) => {
-                      const { cutsManager } = houseGroup.activeLayoutGroup;
-                      switch (value) {
-                        case "X-cut":
-                          cutsManager.setClippingBrushX();
-                          cutsManager.createClippedBrushes();
-                          cutsManager.showClippedBrushes();
-                          break;
-                        case "Y-cut":
-                          cutsManager.setClippingBrushY(1);
-                          cutsManager.createClippedBrushes();
-                          cutsManager.showClippedBrushes();
-                          break;
-                        case "Z-cut":
-                          cutsManager.setClippingBrushZ();
-                          cutsManager.createClippedBrushes();
-                          cutsManager.showClippedBrushes();
-                          break;
-                        default:
-                          cutsManager.destroyClippedBrushes();
-                          cutsManager.showElementBrushes();
-                          break;
-                      }
-                      render();
-                    });
+                  // cutsFolder
+                  //   ?.add(
+                  //     {
+                  //       cutMode: "No Cut",
+                  //     },
+                  //     "cutMode",
+                  //     ["No Cut", "X-cut", "Y-cut", "Z-cut"]
+                  //   )
+                  //   .onChange((value) => {
+                  //     switch (value) {
+                  //       case "X-cut":              const { cutsManager } = columnLayoutGroup;
+                  //         cutsManager.setClippingBrushX();
+                  //         cutsManager.createClippedBrushes();
+                  //         cutsManager.showClippedBrushes();
+                  //         break;
+                  //       case "Y-cut":
+                  //         cutsManager.setClippingBrushY(1);
+                  //         cutsManager.createClippedBrushes();
+                  //         cutsManager.showClippedBrushes();
+                  //         break;
+                  //       case "Z-cut":
+                  //         cutsManager.setClippingBrushZ();
+                  //         cutsManager.createClippedBrushes();
+                  //         cutsManager.showClippedBrushes();
+                  //         break;
+                  //       default:
+                  //         cutsManager.destroyClippedBrushes();
+                  //         cutsManager.showElementBrushes();
+                  //         break;
+                  //     }
+                  //     render();
+                  //   });
 
                   elementCategoriesFolder?.open();
                   cutsFolder?.open();

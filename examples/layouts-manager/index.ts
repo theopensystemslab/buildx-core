@@ -3,21 +3,13 @@ import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import { getMeshes } from "@/three/effects/outline";
-import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { ElementBrush } from "@/three/objects/house/ElementGroup";
+import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { A, O, TE } from "@/utils/functions";
 import { Gesture } from "@use-gesture/vanilla";
 import { GUI } from "dat.gui";
 import { flow, pipe } from "fp-ts/lib/function";
-import {
-  AxesHelper,
-  BufferGeometry,
-  Line,
-  LineBasicMaterial,
-  Raycaster,
-  Scene,
-  Vector2,
-} from "three";
+import { AxesHelper, Raycaster, Vector2 } from "three";
 
 const gui = new GUI({ hideable: false });
 
@@ -46,7 +38,7 @@ pipe(
 
     const go = (houseTypeName: string) => {
       scene.children.forEach((x) => {
-        if (x instanceof ColumnLayoutGroup) {
+        if (x instanceof HouseGroup) {
           scene.remove(x);
         }
       });
@@ -89,7 +81,8 @@ pipe(
                 side: 1 as 1 | -1,
               };
 
-              stretchFolder = gui.addFolder("Stretch");
+              if (stretchFolder === null)
+                stretchFolder = gui.addFolder("Stretch");
 
               const depthController = stretchFolder.add(
                 stretchParams,
@@ -138,6 +131,11 @@ pipe(
                   case "s":
                     layoutsManager.cycleSectionTypeLayout();
                     render();
+                    break;
+                  case "d":
+                    cutsManager.debugClippingBrush();
+                    render();
+                    break;
                 }
               });
 
@@ -187,7 +185,7 @@ pipe(
                         cutMode: "No Cut",
                       },
                       "cutMode",
-                      ["No Cut", "X-cut", "Y-cut", "Z-cut"]
+                      ["No Cut", "X-cut", "Y-cut", "Z-cut", "XZ-cut", "XYZ-cut"]
                     )
                     .onChange((value) => {
                       switch (value) {
@@ -203,6 +201,16 @@ pipe(
                           break;
                         case "Z-cut":
                           cutsManager.setClippingBrushZ();
+                          cutsManager.createClippedBrushes();
+                          cutsManager.showClippedBrushes();
+                          break;
+                        case "XZ-cut":
+                          cutsManager.setClippingBrushXZ();
+                          cutsManager.createClippedBrushes();
+                          cutsManager.showClippedBrushes();
+                          break;
+                        case "XYZ-cut":
+                          cutsManager.setClippingBrushXYZ(1);
                           cutsManager.createClippedBrushes();
                           cutsManager.showClippedBrushes();
                           break;
@@ -239,23 +247,23 @@ pipe(
 const raycaster = new Raycaster();
 
 // Function to create a line representing the ray
-const createRayLine = (raycaster: Raycaster, length = 100) => {
-  const points = [
-    raycaster.ray.origin,
-    raycaster.ray.origin
-      .clone()
-      .add(raycaster.ray.direction.clone().multiplyScalar(length)),
-  ];
+// const createRayLine = (raycaster: Raycaster, length = 100) => {
+//   const points = [
+//     raycaster.ray.origin,
+//     raycaster.ray.origin
+//       .clone()
+//       .add(raycaster.ray.direction.clone().multiplyScalar(length)),
+//   ];
 
-  const geometry = new BufferGeometry().setFromPoints(points);
-  const material = new LineBasicMaterial({ color: 0xff0000 });
-  return new Line(geometry, material);
-};
+//   const geometry = new BufferGeometry().setFromPoints(points);
+//   const material = new LineBasicMaterial({ color: 0xff0000 });
+//   return new Line(geometry, material);
+// };
 
 // Clear previous ray lines
-const clearRayLines = (scene: Scene) => {
-  scene.children = scene.children.filter((child) => !(child instanceof Line));
-};
+// const clearRayLines = (scene: Scene) => {
+//   scene.children = scene.children.filter((child) => !(child instanceof Line));
+// };
 
 new Gesture(renderer.domElement, {
   onClick: (ev) => {
@@ -268,9 +276,9 @@ new Gesture(renderer.domElement, {
     raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
 
     // Draw the ray for visual debugging
-    clearRayLines(scene);
-    const rayLine = createRayLine(raycaster);
-    scene.add(rayLine);
+    // clearRayLines(scene);
+    // const rayLine = createRayLine(raycaster);
+    // scene.add(rayLine);
 
     pipe(
       raycaster.intersectObjects(scene.children, true),

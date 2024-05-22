@@ -32,7 +32,7 @@ const selectFromEvent = (event: PointerEvent): void => {
     A.head,
     O.map(({ object: nearestObject }) => {
       if (nearestObject instanceof ElementBrush) {
-        const { layoutsManager } = nearestObject.houseGroup;
+        // const { layoutsManager } = nearestObject.houseGroup;
 
         const moduleGroup = nearestObject.moduleGroup;
         const scopeElement = nearestObject.scopeElement;
@@ -44,8 +44,8 @@ const selectFromEvent = (event: PointerEvent): void => {
             !compareScopeElement(scopeElement, prevScopeElement)) ||
           side !== prevSide
         ) {
-          layoutsManager.refreshAltWindowTypeLayouts(scopeElement, side);
-          layoutsManager.prepareAltSectionTypeLayouts();
+          // layoutsManager.refreshAltWindowTypeLayouts(scopeElement, side);
+          // layoutsManager.prepareAltSectionTypeLayouts();
 
           // Update previous values
           prevScopeElement = scopeElement;

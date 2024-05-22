@@ -7,10 +7,11 @@ import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group } from "three";
+import { Box3, Group, Scene } from "three";
 import { OBB } from "three-stdlib";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
+import CutsManager2 from "@/three/managers/CutsManager2";
 
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
@@ -28,6 +29,7 @@ export class ColumnLayoutGroup extends Group {
   aabb: Box3;
   obb: OBB;
   zStretchManager: ZStretchManager2;
+  cutsManager: CutsManager2;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
@@ -35,11 +37,16 @@ export class ColumnLayoutGroup extends Group {
     this.aabb = new Box3();
     this.obb = new OBB();
     this.zStretchManager = new ZStretchManager2(this);
+    this.cutsManager = new CutsManager2(this);
   }
 
   get houseGroup(): HouseGroup {
     if (this.parent instanceof HouseGroup) return this.parent;
     throw new Error(`get houseGroup failed`);
+  }
+
+  get scene(): Scene {
+    return this.houseGroup.scene;
   }
 
   updateOBB() {
