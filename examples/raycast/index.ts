@@ -41,7 +41,7 @@ const onPointerMove = (event: PointerEvent): void => {
             !compareScopeElement(scopeElement, prevScopeElement)) ||
           side !== prevSide
         ) {
-          layoutsManager.refreshAltWindowTypeLayouts(scopeElement, side);
+          layoutsManager.prepareAltWindowTypeLayouts(scopeElement, side);
 
           // Update previous values
           prevScopeElement = scopeElement;

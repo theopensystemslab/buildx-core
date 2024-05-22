@@ -3,11 +3,12 @@ import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
+import CutsManager2 from "@/three/managers/CutsManager2";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group } from "three";
+import { Box3, Group, Scene } from "three";
 import { OBB } from "three-stdlib";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
@@ -28,6 +29,7 @@ export class ColumnLayoutGroup extends Group {
   aabb: Box3;
   obb: OBB;
   zStretchManager: ZStretchManager2;
+  cutsManager: CutsManager2;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
@@ -35,6 +37,7 @@ export class ColumnLayoutGroup extends Group {
     this.aabb = new Box3();
     this.obb = new OBB();
     this.zStretchManager = new ZStretchManager2(this);
+    this.cutsManager = new CutsManager2(this);
   }
 
   get houseGroup(): HouseGroup {
@@ -42,9 +45,22 @@ export class ColumnLayoutGroup extends Group {
     throw new Error(`get houseGroup failed`);
   }
 
+  get scene(): Scene {
+    return this.houseGroup.scene;
+  }
+
   updateOBB() {
     const { width, height, depth } = this.userData;
     this.obb.halfSize.set(width / 2, height / 2, depth / 2);
+  }
+
+  get otherLayoutGroups(): ColumnLayoutGroup[] {
+    const uuid = this.uuid;
+
+    return this.houseGroup.children.filter(
+      (x): x is ColumnLayoutGroup =>
+        x instanceof ColumnLayoutGroup && x.uuid !== uuid
+    );
   }
 }
 
@@ -135,6 +151,8 @@ export const createColumnLayoutGroup = ({
           const columnLayoutGroup = new ColumnLayoutGroup(userData);
 
           columnLayoutGroup.add(...columnGroups);
+
+          columnLayoutGroup.updateOBB();
 
           return columnLayoutGroup;
         })

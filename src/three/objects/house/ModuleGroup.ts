@@ -14,6 +14,7 @@ import {
 } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
+import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -35,14 +36,6 @@ export class ModuleGroup extends Group {
     this.evaluator = new Evaluator();
   }
 
-  get houseGroup(): HouseGroup {
-    if (this.parent?.parent?.parent?.parent instanceof HouseGroup) {
-      return this.parent.parent.parent.parent;
-    } else {
-      throw new Error(`get houseGroup failed`);
-    }
-  }
-
   get rowGroup(): RowGroup {
     if (this.parent instanceof RowGroup) {
       return this.parent;
@@ -51,7 +44,15 @@ export class ModuleGroup extends Group {
     }
   }
 
-  createClippedBrushes = (clippingBrush: Brush) => {
+  get houseGroup(): HouseGroup {
+    return this.rowGroup.houseGroup;
+  }
+
+  get columnLayoutGroup(): ColumnLayoutGroup {
+    return this.rowGroup.columnLayoutGroup;
+  }
+
+  createClippedBrushes(clippingBrush: Brush) {
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
@@ -68,7 +69,7 @@ export class ModuleGroup extends Group {
         clippedBrush.updateMatrixWorld();
       }
     });
-  };
+  }
 
   showClippedBrushes() {
     this.traverse((node) => {
