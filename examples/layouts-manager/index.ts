@@ -133,12 +133,11 @@ pipe(
                 stretchParams.side
               );
 
-              houseGroup.layoutsManager.prepareAltSectionTypeLayouts();
-
               window.addEventListener("keydown", async (ev) => {
                 switch (ev.key) {
                   case "s":
                     layoutsManager.cycleSectionTypeLayout();
+                    render();
                 }
               });
 

@@ -132,8 +132,6 @@ export const createColumnLayoutGroup = ({
             vanillaColumn,
           };
 
-          console.log({ userData });
-
           const columnLayoutGroup = new ColumnLayoutGroup(userData);
 
           columnLayoutGroup.add(...columnGroups);

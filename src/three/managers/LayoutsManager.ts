@@ -4,7 +4,7 @@ import { WindowType } from "@/build-systems/remote/windowTypes";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { getAltWindowTypeLayouts } from "@/layouts/changeWindowType";
 import { columnLayoutToDnas } from "@/layouts/init";
-import { A, O, Ord, S, TE } from "@/utils/functions";
+import { A, Num, O, Ord, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import {
   ColumnLayoutGroup,
@@ -79,15 +79,7 @@ class LayoutsManager {
       sectionTypeLayouts,
       O.fromNullable,
       O.chain(
-        A.findIndex((x) => {
-          const condition = x.sectionType.code === currentSectionType.code;
-          console.log({
-            code0: x.sectionType.code,
-            code1: currentSectionType.code,
-            condition,
-          });
-          return condition;
-        })
+        A.findIndex((x) => x.sectionType.code === currentSectionType.code)
       ),
       O.map((currentIndex) => {
         const nextIndex =
@@ -155,12 +147,12 @@ class LayoutsManager {
       ),
       TE.map((xs) => {
         const bySectionType = Ord.contramap(
-          (x: (typeof xs)[0]) => x.sectionType.code
+          (x: (typeof xs)[0]) => x.sectionType.width
         );
 
         const ys = pipe(
           [...xs, ...t.sectionTypeLayouts!],
-          A.sort(pipe(S.Ord, bySectionType))
+          A.sort(pipe(Num.Ord, bySectionType))
         );
 
         t.sectionTypeLayouts = ys;
