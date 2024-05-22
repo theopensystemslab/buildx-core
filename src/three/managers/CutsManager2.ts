@@ -23,6 +23,7 @@ class CutsManager2 {
     z?: Brush;
     xz?: Brush;
   };
+  private _setting?: keyof typeof this._clippingBrushes | null;
 
   constructor(layoutGroup: ColumnLayoutGroup) {
     this._layoutGroup = layoutGroup;
@@ -59,6 +60,8 @@ class CutsManager2 {
     clippingBrush.updateMatrixWorld();
 
     this._clippingBrushes.x = clippingBrush;
+
+    return this._clippingBrushes.x;
   }
 
   private createClippingBrushZ() {
@@ -82,18 +85,21 @@ class CutsManager2 {
     clippingBrush.updateMatrixWorld();
 
     this._clippingBrushes.z = clippingBrush;
+
+    return this._clippingBrushes.z;
   }
 
   private createClippingBrushXZ() {
-    if (!this._clippingBrushes.x || !this._clippingBrushes.z) return;
-
-    console.log(`xz go`);
+    if (!this._clippingBrushes.x || !this._clippingBrushes.z)
+      throw new Error("createClippingBrushXZ called without X and Z brushes");
 
     this._clippingBrushes.xz = this._evaluator.evaluate(
       this._clippingBrushes.x,
       this._clippingBrushes.z,
       ADDITION
     );
+
+    return this._clippingBrushes.xz;
   }
 
   private destroyClippedBrushes() {
@@ -122,12 +128,59 @@ class CutsManager2 {
     });
   }
 
+  private showElementBrushes() {
+    this.layoutGroup.traverse((node) => {
+      if (node instanceof FullElementBrush) {
+        node.visible = true;
+      } else if (node instanceof ClippedElementBrush) {
+        node.visible = false;
+      }
+    });
+  }
+
+  setClippingBrush(setting: typeof this._setting) {
+    this._setting = setting;
+
+    this.destroyClippedBrushes();
+
+    if (setting === null) {
+      this.showElementBrushes();
+      this._clippingBrushes = {};
+      return;
+    }
+
+    switch (setting) {
+      case "x":
+        this.createClippedBrushes(this.createClippingBrushX());
+        break;
+      case "z":
+        this.createClippedBrushes(this.createClippingBrushZ());
+        break;
+      case "xz":
+        this.createClippingBrushX();
+        this.createClippingBrushZ();
+        this.createClippedBrushes(this.createClippingBrushXZ());
+        break;
+    }
+
+    this.showClippedBrushes();
+  }
+
+  cycleClippingBrush() {
+    const settings: Array<typeof this._setting> = [null, "x", "z", "xz"];
+    const currentIndex = settings.indexOf(this._setting);
+    const nextIndex = (currentIndex + 1) % settings.length;
+    const nextSetting = settings[nextIndex];
+    console.log(nextSetting);
+    this.setClippingBrush(nextSetting);
+  }
+
   debugClippingBrush() {
     this.createClippingBrushX();
     this.createClippingBrushZ();
     this.createClippingBrushXZ();
 
-    const scene = this.layoutGroup.scene;
+    // const scene = this.layoutGroup.scene;
 
     const brush = this._clippingBrushes.xz;
 

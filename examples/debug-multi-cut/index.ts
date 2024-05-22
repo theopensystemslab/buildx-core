@@ -74,9 +74,15 @@ pipe(
               window.addEventListener("keydown", (ev) => {
                 switch (ev.key) {
                   case "c":
-                    columnLayoutGroup.cutsManager.debugClippingBrush();
-                    render();
+                    // columnLayoutGroup.cutsManager.debugClippingBrush();
+                    // columnLayoutGroup.cutsManager.cycleClippingBrush();
+                    houseGroup.activeLayoutGroup.cutsManager.cycleClippingBrush();
+                    break;
+                  case "s":
+                    houseGroup.layoutsManager.cycleSectionTypeLayout();
+                    break;
                 }
+                render();
               });
 
               const { elementsManager } = houseGroup;
@@ -168,12 +174,12 @@ pipe(
       );
     };
 
+    const name = houseTypes[1].name;
+
     // Add the house type selection to its own folder
-    houseTypeFolder
-      .add({ name: houseTypes[0].name }, "name", options)
-      .onChange(go);
+    houseTypeFolder.add({ name }, "name", options).onChange(go);
     houseTypeFolder.open();
 
-    go(houseTypes[0].name);
+    go(name);
   })
 )();
