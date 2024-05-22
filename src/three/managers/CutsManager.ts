@@ -1,6 +1,6 @@
 import { A, O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { BoxGeometry, DoubleSide, MeshBasicMaterial, Scene } from "three";
+import { BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
 import { Brush } from "three-bvh-csg";
 import {
   ClippedElementBrush,
@@ -52,6 +52,75 @@ class CutsManager {
     clippingBrush.updateMatrixWorld();
 
     this.clippingBrush = clippingBrush;
+  }
+
+  setClippingBrushXZ() {
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const { halfSize } = columnLayoutGroup.obb;
+
+    const width = halfSize.x + C;
+    const height = halfSize.y * 2 + C;
+    const depth = halfSize.z + C;
+
+    const x = width / 2;
+    const y = halfSize.y;
+    const z = depth / 2 + halfSize.z;
+
+    const clippingBrush = new Brush(
+      new BoxGeometry(width, height, depth),
+      clippingMaterial
+    );
+    clippingBrush.position.set(x, y, z);
+    clippingBrush.updateMatrixWorld();
+
+    this.clippingBrush = clippingBrush;
+  }
+
+  setClippingBrushXYZ(rowIndex: number) {
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const {
+      userData: { layout },
+    } = columnLayoutGroup;
+
+    pipe(
+      layout,
+      A.head,
+      O.chain(({ positionedRows }) => pipe(positionedRows, A.lookup(rowIndex))),
+      O.chain(({ y, positionedModules, levelType }) =>
+        pipe(
+          positionedModules,
+          A.head,
+          O.map(({ module: { height } }) => {
+            const levelLetter = levelType[0];
+            const sign = levelLetter === "F" ? -1 : 1;
+            const result = sign * (height / 2) + y;
+            return result;
+          })
+        )
+      ),
+      O.map((levelHeight) => {
+        const { halfSize } = columnLayoutGroup.obb;
+
+        const width = halfSize.x + C;
+        const height = halfSize.y * 2 + C;
+        const depth = halfSize.z + C;
+
+        const x = width / 2;
+        const y = height / 2 + levelHeight;
+        const z = depth / 2 + halfSize.z;
+
+        const clippingBrush = new Brush(
+          new BoxGeometry(width, height, depth),
+          clippingMaterial
+        );
+        clippingBrush.position.set(x, y, z);
+        clippingBrush.updateMatrixWorld();
+
+        this.clippingBrush = clippingBrush;
+      })
+    );
   }
 
   setClippingBrushY(rowIndex: number) {
@@ -139,11 +208,12 @@ class CutsManager {
     });
   }
 
-  debugClippingBrush(scene: Scene, visible: boolean) {
-    if (visible && !scene.children.includes(this.clippingBrush))
+  debugClippingBrush() {
+    const scene = this.houseGroup.scene;
+
+    if (!scene.children.includes(this.clippingBrush))
       scene.add(this.clippingBrush);
-    else if (!visible && scene.children.includes(this.clippingBrush))
-      scene.remove(this.clippingBrush);
+    else this.clippingBrush.visible = !this.clippingBrush.visible;
   }
 
   createClippedBrushes() {
