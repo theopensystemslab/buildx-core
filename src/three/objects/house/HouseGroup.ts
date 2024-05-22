@@ -1,9 +1,11 @@
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
 import TransformsManager from "@/three/managers/TransformsManager";
-import { Group } from "three";
+import { findFirstGuardUp } from "@/three/utils/sceneQueries";
+import { someOrError } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
+import { Group, Scene } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import CutsManager from "@/three/managers/CutsManager";
 
 export type HouseGroupUserData = {
   systemId: string;
@@ -18,7 +20,7 @@ export class HouseGroup extends Group {
   elementsManager: ElementsManager;
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
-  cutsManager: CutsManager;
+  // cutsManager: CutsManager;
 
   constructor({
     userData,
@@ -33,10 +35,18 @@ export class HouseGroup extends Group {
     this.elementsManager = new ElementsManager(this);
     this.transformsManager = new TransformsManager(this);
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
-    this.cutsManager = new CutsManager(this);
+    // this.cutsManager = new CutsManager(this);
   }
 
   get activeLayoutGroup(): ColumnLayoutGroup {
     return this.layoutsManager.activeLayoutGroup;
+  }
+
+  get scene(): Scene {
+    return pipe(
+      this,
+      findFirstGuardUp((o): o is Scene => o instanceof Scene),
+      someOrError(`scene not found above HouseGroup`)
+    );
   }
 }
