@@ -1,7 +1,7 @@
-import { A, O } from "@/utils/functions";
+import { A, O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial, Scene } from "three";
-import { Brush } from "three-bvh-csg";
+import { ADDITION, Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import {
   ClippedElementBrush,
   FullElementBrush,
@@ -18,20 +18,67 @@ const clippingMaterial = new MeshBasicMaterial({
 
 class CutsManager {
   houseGroup: HouseGroup;
-  clippingBrush: Brush;
-  clipWidth: boolean;
-  clipDepth: boolean;
-  clipHeight: number | null;
+  clippingBrushes: {
+    x: Brush;
+    y?: Brush;
+    z: Brush;
+    composite?: Brush;
+  };
+  evaluator: Evaluator;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
-    this.clipWidth = false;
-    this.clipDepth = false;
-    this.clipHeight = null;
-    this.clippingBrush = new Brush();
+    this.clippingBrushes = {
+      x: this.createClippingBrushX(),
+      z: this.createClippingBrushZ(),
+    };
+    this.evaluator = new Evaluator();
   }
 
-  setClippingBrushX() {
+  set clipWidth(b: boolean) {
+    if (b) {
+      if (this.clippingBrushes.composite) {
+        this.clippingBrushes.composite = this.evaluator.evaluate(
+          this.clippingBrushes.composite,
+          this.clippingBrushes.x,
+          ADDITION
+        );
+      } else {
+        this.clippingBrushes.composite = this.clippingBrushes.x.clone();
+      }
+    } else {
+      if (this.clippingBrushes.composite)
+        this.clippingBrushes.composite = this.evaluator.evaluate(
+          this.clippingBrushes.composite,
+          this.clippingBrushes.x,
+          SUBTRACTION
+        );
+    }
+  }
+
+  set clipDepth(b: boolean) {
+    if (b) {
+      if (this.clippingBrushes.composite) {
+        this.clippingBrushes.composite = this.evaluator.evaluate(
+          this.clippingBrushes.composite,
+          this.clippingBrushes.z,
+          ADDITION
+        );
+      } else {
+        this.clippingBrushes.composite = this.clippingBrushes.z.clone();
+      }
+    } else {
+      if (this.clippingBrushes.composite) {
+        this.clippingBrushes.composite = this.evaluator.evaluate(
+          this.clippingBrushes.composite,
+          this.clippingBrushes.z,
+          SUBTRACTION
+        );
+      }
+    }
+  }
+
+  createClippingBrushX(): Brush {
     const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const { halfSize } = columnLayoutGroup.obb;
@@ -44,24 +91,24 @@ class CutsManager {
     const y = halfSize.y;
     const z = halfSize.z;
 
-    const clippingBrush = new Brush(
+    const clippingBrushX = new Brush(
       new BoxGeometry(width, height, depth),
       clippingMaterial
     );
-    clippingBrush.position.set(x, y, z);
-    clippingBrush.updateMatrixWorld();
+    clippingBrushX.position.set(x, y, z);
+    clippingBrushX.updateMatrixWorld();
 
-    this.clippingBrush = clippingBrush;
+    return clippingBrushX;
   }
 
-  setClippingBrushY(rowIndex: number) {
+  createClippingBrushY(rowIndex: number): Brush {
     const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const {
       userData: { layout },
     } = columnLayoutGroup;
 
-    pipe(
+    return pipe(
       layout,
       A.head,
       O.chain(({ positionedRows }) => pipe(positionedRows, A.lookup(rowIndex))),
@@ -95,12 +142,13 @@ class CutsManager {
         clippingBrush.position.set(x, y, z);
         clippingBrush.updateMatrixWorld();
 
-        this.clippingBrush = clippingBrush;
-      })
+        return clippingBrush;
+      }),
+      someOrError(`could not createClippingBrushY`)
     );
   }
 
-  setClippingBrushZ() {
+  createClippingBrushZ() {
     const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const { halfSize } = columnLayoutGroup.obb;
@@ -120,16 +168,16 @@ class CutsManager {
     clippingBrush.position.set(x, y, z);
     clippingBrush.updateMatrixWorld();
 
-    this.clippingBrush = clippingBrush;
+    return clippingBrush;
   }
 
-  updateClippedBrushes() {
-    if (this.clipWidth || this.clipHeight !== null || this.clipDepth) {
-      this.createClippedBrushes();
-    } else {
-      this.destroyClippedBrushes();
-    }
-  }
+  // updateClippedBrushes() {
+  //   if (this.clipWidth || this.clipHeight !== null || this.clipDepth) {
+  //     this.createClippedBrushes();
+  //   } else {
+  //     this.destroyClippedBrushes();
+  //   }
+  // }
 
   destroyClippedBrushes() {
     this.houseGroup.traverse((node) => {
@@ -140,18 +188,25 @@ class CutsManager {
   }
 
   debugClippingBrush(scene: Scene, visible: boolean) {
-    if (visible && !scene.children.includes(this.clippingBrush))
-      scene.add(this.clippingBrush);
-    else if (!visible && scene.children.includes(this.clippingBrush))
-      scene.remove(this.clippingBrush);
+    if (!this.clippingBrushes.composite) return;
+
+    if (visible && !scene.children.includes(this.clippingBrushes.composite))
+      scene.add(this.clippingBrushes.composite);
+    else if (
+      !visible &&
+      scene.children.includes(this.clippingBrushes.composite)
+    )
+      scene.remove(this.clippingBrushes.composite);
   }
 
   createClippedBrushes() {
     this.destroyClippedBrushes();
 
+    if (!this.clippingBrushes.composite) return;
+
     this.houseGroup.traverse((node) => {
       if (isModuleGroup(node)) {
-        node.createClippedBrushes(this.clippingBrush);
+        node.createClippedBrushes(this.clippingBrushes.composite!);
       }
     });
   }

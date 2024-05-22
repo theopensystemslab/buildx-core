@@ -192,17 +192,18 @@ pipe(
                     .onChange((value) => {
                       switch (value) {
                         case "X-cut":
-                          cutsManager.setClippingBrushX();
-                          cutsManager.createClippedBrushes();
+                          cutsManager.clipWidth = true;
+                          // cutsManager.createClippedBrushes();
                           cutsManager.showClippedBrushes();
                           break;
                         case "Y-cut":
-                          cutsManager.setClippingBrushY(1);
+                          cutsManager.createClippingBrushY(1);
                           cutsManager.createClippedBrushes();
                           cutsManager.showClippedBrushes();
                           break;
                         case "Z-cut":
-                          cutsManager.setClippingBrushZ();
+                          cutsManager.clipDepth = true;
+                          // cutsManager.createClippingBrushZ();
                           cutsManager.createClippedBrushes();
                           cutsManager.showClippedBrushes();
                           break;
