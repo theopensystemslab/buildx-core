@@ -129,6 +129,21 @@ class LayoutsManager {
     });
   }
 
+  cycleWindowTypeLayout() {
+    const t = this;
+
+    pipe(
+      this.changeWindowType,
+      O.fromNullable,
+      O.map(({ options }) => {
+        if (options.length > 0) {
+          t.activeLayoutGroup = options[0].layoutGroup;
+          console.log(t.activeLayoutGroup.scene);
+        }
+      })
+    );
+  }
+
   async prepareAltWindowTypeLayouts(target: ScopeElement, side: Side) {
     const { systemId } = this.houseGroup.userData;
     const { layout: currentLayout } = this.activeLayoutGroup.userData;
@@ -152,11 +167,16 @@ class LayoutsManager {
                 dnas,
                 layout,
               }),
-              TE.map((layoutGroup) => ({
-                candidate,
-                windowType,
-                layoutGroup,
-              }))
+              TE.map((layoutGroup) => {
+                layoutGroup.visible = false;
+                this.houseGroup.add(layoutGroup);
+
+                return {
+                  candidate,
+                  windowType,
+                  layoutGroup,
+                };
+              })
             )
         )
       ),

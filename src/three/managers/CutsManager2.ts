@@ -23,12 +23,13 @@ class CutsManager2 {
     z?: Brush;
     xz?: Brush;
   };
-  private _setting?: keyof typeof this._clippingBrushes | null;
+  private _setting: keyof typeof this._clippingBrushes | null;
 
   constructor(layoutGroup: ColumnLayoutGroup) {
     this._layoutGroup = layoutGroup;
     this._evaluator = new Evaluator();
     this._clippingBrushes = {};
+    this._setting = null;
   }
 
   get layoutGroup() {

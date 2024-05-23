@@ -2,12 +2,19 @@ import { cachedElementsTE, cachedHouseTypesTE } from "@/build-systems/cache";
 import { BuildElement } from "@/build-systems/remote/elements";
 import { createBasicScene } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
+import { outlineObject } from "@/three/effects/outline";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
+import { ElementBrush } from "@/three/objects/house/ElementGroup";
+import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { isModuleGroup } from "@/three/objects/house/ModuleGroup";
+import { ScopeElement } from "@/three/objects/types";
+import { compareScopeElement } from "@/three/utils";
+import { Side } from "@/three/utils/camera";
 import { A, O, TE } from "@/utils/functions";
+import { Gesture } from "@use-gesture/vanilla";
 import { GUI } from "dat.gui";
 import { flow, pipe } from "fp-ts/lib/function";
-import { AxesHelper } from "three";
+import { AxesHelper, Object3D, Raycaster, Vector2 } from "three";
 
 const gui = new GUI({ hideable: false });
 
@@ -16,7 +23,7 @@ const houseTypeFolder = gui.addFolder("House Type");
 let elementCategoriesFolder: GUI | null = null;
 let cutsFolder: GUI | null = null; // Folder for cut modes
 
-const { addObjectToScene, render, scene } = createBasicScene({
+const { addObjectToScene, render, scene, camera, renderer } = createBasicScene({
   outliner: (object) => {
     return object.parent && isModuleGroup(object.parent)
       ? object.parent.children
@@ -39,7 +46,7 @@ pipe(
     const options = houseTypes.map((x) => x.name);
     const go = (houseTypeName: string) => {
       scene.children.forEach((x) => {
-        if (x instanceof ColumnLayoutGroup) {
+        if (x instanceof HouseGroup) {
           scene.remove(x);
         }
       });
@@ -81,6 +88,8 @@ pipe(
                   case "s":
                     houseGroup.layoutsManager.cycleSectionTypeLayout();
                     break;
+                  case "w":
+                    houseGroup.layoutsManager.cycleWindowTypeLayout();
                 }
                 render();
               });
@@ -174,7 +183,7 @@ pipe(
       );
     };
 
-    const name = houseTypes[1].name;
+    const name = houseTypes[0].name;
 
     // Add the house type selection to its own folder
     houseTypeFolder.add({ name }, "name", options).onChange(go);
@@ -183,3 +192,65 @@ pipe(
     go(name);
   })
 )();
+
+const raycaster = new Raycaster();
+const pointer = new Vector2();
+
+// Variables to store previous values
+let prevScopeElement: ScopeElement | null = null;
+let prevSide: Side | null = null;
+
+const selectFromEvent = (event: PointerEvent): void => {
+  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  let raycastObjects: Object3D[] = [];
+
+  scene.traverse((node) => {
+    if (node instanceof ColumnLayoutGroup && node.visible) {
+      raycastObjects.push(node);
+    }
+  });
+
+  const intersects = raycaster.intersectObjects(raycastObjects);
+
+  pipe(
+    intersects,
+    A.head,
+    O.map(({ object: nearestObject }) => {
+      if (nearestObject instanceof ElementBrush) {
+        const { layoutsManager } = nearestObject.houseGroup;
+
+        const moduleGroup = nearestObject.moduleGroup;
+        const scopeElement = nearestObject.scopeElement;
+        const side = "LEFT";
+
+        // Only refresh if scopeElement or side have changed
+        if (
+          (prevScopeElement &&
+            !compareScopeElement(scopeElement, prevScopeElement)) ||
+          side !== prevSide
+        ) {
+          layoutsManager.prepareAltWindowTypeLayouts(scopeElement, side);
+          // layoutsManager.prepareAltSectionTypeLayouts();
+
+          // Update previous values
+          prevScopeElement = scopeElement;
+          prevSide = side;
+        }
+
+        console.log(moduleGroup);
+
+        outlineObject(moduleGroup);
+      }
+    })
+  );
+
+  render();
+};
+
+new Gesture(renderer.domElement, {
+  onClick: ({ event }) => selectFromEvent(event as PointerEvent),
+});
