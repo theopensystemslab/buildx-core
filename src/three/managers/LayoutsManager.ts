@@ -54,6 +54,7 @@ class LayoutsManager {
     this._activeLayoutGroup.visible = false;
     layoutGroup.visible = true;
     this._activeLayoutGroup = layoutGroup;
+    this._activeLayoutGroup.updateOBB();
   }
 
   cycleSectionTypeLayout() {

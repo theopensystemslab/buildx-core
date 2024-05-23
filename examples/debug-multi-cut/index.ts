@@ -83,6 +83,8 @@ pipe(
                   case "c":
                     // columnLayoutGroup.cutsManager.debugClippingBrush();
                     // columnLayoutGroup.cutsManager.cycleClippingBrush();
+                    const uuid = houseGroup.activeLayoutGroup.uuid;
+                    console.log(uuid);
                     houseGroup.activeLayoutGroup.cutsManager.cycleClippingBrush();
                     break;
                   case "s":

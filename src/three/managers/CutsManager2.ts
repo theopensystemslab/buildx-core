@@ -78,6 +78,8 @@ class CutsManager2 {
     const y = halfSize.y;
     const z = depth / 2 + halfSize.z;
 
+    console.log({ width, height, depth, x, y, z });
+
     const clippingBrush = new Brush(
       new BoxGeometry(width, height, depth),
       clippingMaterial
