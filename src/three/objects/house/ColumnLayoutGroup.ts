@@ -3,6 +3,7 @@ import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
+import CutsManager2 from "@/three/managers/CutsManager2";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
@@ -11,7 +12,6 @@ import { Box3, Group, Scene } from "three";
 import { OBB } from "three-stdlib";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
-import CutsManager2 from "@/three/managers/CutsManager2";
 
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
@@ -52,6 +52,15 @@ export class ColumnLayoutGroup extends Group {
   updateOBB() {
     const { width, height, depth } = this.userData;
     this.obb.halfSize.set(width / 2, height / 2, depth / 2);
+  }
+
+  get otherLayoutGroups(): ColumnLayoutGroup[] {
+    const uuid = this.uuid;
+
+    return this.houseGroup.children.filter(
+      (x): x is ColumnLayoutGroup =>
+        x instanceof ColumnLayoutGroup && x.uuid !== uuid
+    );
   }
 }
 
@@ -142,6 +151,8 @@ export const createColumnLayoutGroup = ({
           const columnLayoutGroup = new ColumnLayoutGroup(userData);
 
           columnLayoutGroup.add(...columnGroups);
+
+          columnLayoutGroup.updateOBB();
 
           return columnLayoutGroup;
         })

@@ -6,6 +6,8 @@ import {
   FullElementBrush,
 } from "../objects/house/ElementGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
+import { pipe } from "fp-ts/lib/function";
+import { A, O, compareProps, someOrError } from "@/utils/functions";
 
 const PAD = 3;
 
@@ -15,29 +17,28 @@ const clippingMaterial = new MeshBasicMaterial({
 });
 
 class CutsManager2 {
-  private _layoutGroup: ColumnLayoutGroup;
-  private _evaluator: Evaluator;
-  private _clippingBrushes: {
+  private layoutGroup: ColumnLayoutGroup;
+  private evaluator: Evaluator;
+  private clippingBrushes: {
     x?: Brush;
     y?: Brush;
     z?: Brush;
-    xz?: Brush;
   };
-  private _setting: keyof typeof this._clippingBrushes | null;
+  settings: {
+    x: boolean;
+    z: boolean;
+    rowIndex: number | null;
+  };
 
   constructor(layoutGroup: ColumnLayoutGroup) {
-    this._layoutGroup = layoutGroup;
-    this._evaluator = new Evaluator();
-    this._clippingBrushes = {};
-    this._setting = null;
-  }
-
-  get layoutGroup() {
-    return this._layoutGroup;
-  }
-
-  set layoutGroup(layoutGroup: ColumnLayoutGroup) {
-    this._layoutGroup = layoutGroup;
+    this.layoutGroup = layoutGroup;
+    this.evaluator = new Evaluator();
+    this.clippingBrushes = {};
+    this.settings = {
+      rowIndex: null,
+      x: false,
+      z: false,
+    };
   }
 
   private createClippingBrushX() {
@@ -60,9 +61,9 @@ class CutsManager2 {
     clippingBrush.position.set(x, y, z);
     clippingBrush.updateMatrixWorld();
 
-    this._clippingBrushes.x = clippingBrush;
+    this.clippingBrushes.x = clippingBrush;
 
-    return this._clippingBrushes.x;
+    return this.clippingBrushes.x;
   }
 
   private createClippingBrushZ() {
@@ -78,8 +79,6 @@ class CutsManager2 {
     const y = halfSize.y;
     const z = depth / 2 + halfSize.z;
 
-    console.log({ width, height, depth, x, y, z });
-
     const clippingBrush = new Brush(
       new BoxGeometry(width, height, depth),
       clippingMaterial
@@ -87,22 +86,57 @@ class CutsManager2 {
     clippingBrush.position.set(x, y, z);
     clippingBrush.updateMatrixWorld();
 
-    this._clippingBrushes.z = clippingBrush;
+    this.clippingBrushes.z = clippingBrush;
 
-    return this._clippingBrushes.z;
+    return this.clippingBrushes.z;
   }
 
-  private createClippingBrushXZ() {
-    if (!this._clippingBrushes.x || !this._clippingBrushes.z)
-      throw new Error("createClippingBrushXZ called without X and Z brushes");
+  private createClippingBrushY(rowIndex: number) {
+    const {
+      userData: { layout },
+      obb: { halfSize },
+    } = this.layoutGroup;
 
-    this._clippingBrushes.xz = this._evaluator.evaluate(
-      this._clippingBrushes.x,
-      this._clippingBrushes.z,
-      ADDITION
+    const clippingBrush = pipe(
+      layout,
+      A.head,
+      O.chain(({ positionedRows }) => pipe(positionedRows, A.lookup(rowIndex))),
+      O.chain(({ y, positionedModules, levelType }) =>
+        pipe(
+          positionedModules,
+          A.head,
+          O.map(({ module: { height } }) => {
+            const levelLetter = levelType[0];
+            const sign = levelLetter === "F" ? -1 : 1;
+            const result = sign * (height / 2) + y;
+            return result;
+          })
+        )
+      ),
+      O.map((levelHeight) => {
+        const width = halfSize.x * 2 + PAD;
+        const height = halfSize.y * 2 + PAD;
+        const depth = 999;
+
+        const x = 0;
+        const y = height / 2 + levelHeight;
+        const z = halfSize.z;
+
+        const clippingBrush = new Brush(
+          new BoxGeometry(width, height, depth),
+          clippingMaterial
+        );
+        clippingBrush.position.set(x, y, z);
+        clippingBrush.updateMatrixWorld();
+
+        return clippingBrush;
+      }),
+      someOrError(`failure`)
     );
 
-    return this._clippingBrushes.xz;
+    this.clippingBrushes.y = clippingBrush;
+
+    return clippingBrush;
   }
 
   private destroyClippedBrushes() {
@@ -141,59 +175,81 @@ class CutsManager2 {
     });
   }
 
-  setClippingBrush(setting: typeof this._setting) {
-    this._setting = setting;
-
+  setClippingBrush(settings: typeof this.settings) {
     this.destroyClippedBrushes();
 
-    if (setting === null) {
+    this.settings = settings;
+
+    const { x, z, rowIndex } = settings;
+
+    let brush: Brush | null = null;
+
+    if (x) {
+      brush = this.createClippingBrushX();
+    }
+    if (z) {
+      const brushZ = this.createClippingBrushZ();
+      brush =
+        brush === null
+          ? brushZ
+          : this.evaluator.evaluate(brush, brushZ, ADDITION);
+    }
+    if (rowIndex !== null) {
+      const brushY = this.createClippingBrushY(rowIndex);
+      brush =
+        brush === null
+          ? brushY
+          : this.evaluator.evaluate(brush, brushY, ADDITION);
+    }
+
+    if (brush !== null) {
+      this.createClippedBrushes(brush);
+      this.showClippedBrushes();
+    } else {
       this.showElementBrushes();
-      this._clippingBrushes = {};
-      return;
     }
-
-    switch (setting) {
-      case "x":
-        this.createClippedBrushes(this.createClippingBrushX());
-        break;
-      case "z":
-        this.createClippedBrushes(this.createClippingBrushZ());
-        break;
-      case "xz":
-        this.createClippingBrushX();
-        this.createClippingBrushZ();
-        this.createClippedBrushes(this.createClippingBrushXZ());
-        break;
-    }
-
-    this.showClippedBrushes();
   }
 
   cycleClippingBrush() {
-    const settings: Array<typeof this._setting> = [null, "x", "z", "xz"];
-    const currentIndex = settings.indexOf(this._setting);
+    const settings: Array<typeof this.settings> = [
+      {
+        x: false,
+        z: false,
+        rowIndex: null,
+      },
+      {
+        x: true,
+        z: false,
+        rowIndex: null,
+      },
+      {
+        x: false,
+        z: true,
+        rowIndex: null,
+      },
+      {
+        x: false,
+        z: false,
+        rowIndex: 1,
+      },
+      {
+        x: true,
+        z: true,
+        rowIndex: null,
+      },
+      {
+        x: true,
+        z: true,
+        rowIndex: 1,
+      },
+    ];
+    const currentIndex = settings.findIndex((x) =>
+      compareProps(x, this.settings)
+    );
     const nextIndex = (currentIndex + 1) % settings.length;
+    console.log({ currentIndex, nextIndex });
     const nextSetting = settings[nextIndex];
-    console.log(nextSetting);
     this.setClippingBrush(nextSetting);
-  }
-
-  debugClippingBrush() {
-    this.createClippingBrushX();
-    this.createClippingBrushZ();
-    this.createClippingBrushXZ();
-
-    // const scene = this.layoutGroup.scene;
-
-    const brush = this._clippingBrushes.xz;
-
-    if (!brush) return;
-
-    // if (!scene.children.includes(brush)) scene.add(brush);
-    // else brush.visible = !brush.visible;
-
-    this.createClippedBrushes(brush);
-    this.showClippedBrushes();
   }
 }
 

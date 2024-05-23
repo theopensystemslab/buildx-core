@@ -76,15 +76,9 @@ pipe(
               houseTypeId,
             }),
             TE.map((houseGroup) => {
-              const columnLayoutGroup = houseGroup.activeLayoutGroup;
-
               window.addEventListener("keydown", (ev) => {
                 switch (ev.key) {
                   case "c":
-                    // columnLayoutGroup.cutsManager.debugClippingBrush();
-                    // columnLayoutGroup.cutsManager.cycleClippingBrush();
-                    const uuid = houseGroup.activeLayoutGroup.uuid;
-                    console.log(uuid);
                     houseGroup.activeLayoutGroup.cutsManager.cycleClippingBrush();
                     break;
                   case "s":
@@ -92,6 +86,7 @@ pipe(
                     break;
                   case "w":
                     houseGroup.layoutsManager.cycleWindowTypeLayout();
+                    break;
                 }
                 render();
               });
@@ -99,8 +94,6 @@ pipe(
               const { elementsManager } = houseGroup;
 
               addObjectToScene(houseGroup);
-
-              columnLayoutGroup.updateOBB();
 
               pipe(
                 cachedElementsTE,
@@ -141,39 +134,6 @@ pipe(
                   };
 
                   elementCategoriesFolder?.add(masterToggle, "Toggle All");
-
-                  // cutsFolder
-                  //   ?.add(
-                  //     {
-                  //       cutMode: "No Cut",
-                  //     },
-                  //     "cutMode",
-                  //     ["No Cut", "X-cut", "Y-cut", "Z-cut"]
-                  //   )
-                  //   .onChange((value) => {
-                  //     switch (value) {
-                  //       case "X-cut":              const { cutsManager } = columnLayoutGroup;
-                  //         cutsManager.setClippingBrushX();
-                  //         cutsManager.createClippedBrushes();
-                  //         cutsManager.showClippedBrushes();
-                  //         break;
-                  //       case "Y-cut":
-                  //         cutsManager.setClippingBrushY(1);
-                  //         cutsManager.createClippedBrushes();
-                  //         cutsManager.showClippedBrushes();
-                  //         break;
-                  //       case "Z-cut":
-                  //         cutsManager.setClippingBrushZ();
-                  //         cutsManager.createClippedBrushes();
-                  //         cutsManager.showClippedBrushes();
-                  //         break;
-                  //       default:
-                  //         cutsManager.destroyClippedBrushes();
-                  //         cutsManager.showElementBrushes();
-                  //         break;
-                  //     }
-                  //     render();
-                  //   });
 
                   elementCategoriesFolder?.open();
                   cutsFolder?.open();
@@ -242,8 +202,6 @@ const selectFromEvent = (event: PointerEvent): void => {
           prevScopeElement = scopeElement;
           prevSide = side;
         }
-
-        console.log(moduleGroup);
 
         outlineObject(moduleGroup);
       }

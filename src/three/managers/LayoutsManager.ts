@@ -138,16 +138,21 @@ class LayoutsManager {
       O.fromNullable,
       O.map(({ options }) => {
         if (options.length > 0) {
+          options[0].layoutGroup.cutsManager.setClippingBrush(
+            options[0].layoutGroup.houseGroup.activeLayoutGroup.cutsManager
+              .settings
+          );
           t.activeLayoutGroup = options[0].layoutGroup;
-          console.log(t.activeLayoutGroup.scene);
         }
       })
     );
   }
 
   async prepareAltWindowTypeLayouts(target: ScopeElement, side: Side) {
-    const { systemId } = this.houseGroup.userData;
-    const { layout: currentLayout } = this.activeLayoutGroup.userData;
+    const houseGroup = this.houseGroup;
+    const activeLayoutGroup = this.activeLayoutGroup;
+    const { systemId } = houseGroup.userData;
+    const { layout: currentLayout } = activeLayoutGroup.userData;
     const { columnIndex, rowIndex, moduleIndex } = target;
 
     const options = await pipe(
@@ -170,7 +175,14 @@ class LayoutsManager {
               }),
               TE.map((layoutGroup) => {
                 layoutGroup.visible = false;
-                this.houseGroup.add(layoutGroup);
+
+                houseGroup.add(layoutGroup);
+
+                layoutGroup.updateOBB();
+
+                layoutGroup.cutsManager.setClippingBrush(
+                  activeLayoutGroup.cutsManager.settings
+                );
 
                 return {
                   candidate,

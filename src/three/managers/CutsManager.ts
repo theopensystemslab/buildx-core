@@ -209,7 +209,6 @@ class CutsManager {
   }
 
   debugClippingBrush() {
-    console.log("hi");
     const scene = this.houseGroup.scene;
 
     if (!scene.children.includes(this.clippingBrush))
