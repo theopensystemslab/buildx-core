@@ -58,23 +58,42 @@ scene.add(testObject);
 // List of objects that should respond to gestures
 const gestureEnabledObjects: Mesh[] = [testObject];
 
-// Instantiate the gesture handler
-const gestureHandler = new GestureManager(
+// Instantiate the gesture manager
+new GestureManager({
+  domElement: renderer.domElement,
   camera,
   cameraControls,
-  gestureEnabledObjects
-);
-
-// Set up pointer events for gesture detection
-renderer.domElement.addEventListener("pointerdown", (event) =>
-  gestureHandler.onPointerDown(event)
-);
-renderer.domElement.addEventListener("pointerup", (event) =>
-  gestureHandler.onPointerUp(event)
-);
-renderer.domElement.addEventListener("pointermove", (event) =>
-  gestureHandler.onPointerMove(event)
-);
+  gestureEnabledObjects,
+  onGestureStart: () => {
+    console.log("Gesture started, disabling camera controls");
+    cameraControls.enabled = false;
+  },
+  onGestureEnd: () => {
+    console.log("Gesture ended, enabling camera controls");
+    cameraControls.enabled = true;
+  },
+  onSingleTap: (intersection) => {
+    console.log("Single tap detected", intersection);
+  },
+  onDoubleTap: (intersection) => {
+    console.log("Double tap detected", intersection);
+  },
+  onLongTap: (intersection) => {
+    console.log("Long tap detected", intersection);
+  },
+  onTapMissed: () => {
+    console.log("Tap missed detected");
+  },
+  onDragStart: (intersection) => {
+    console.log("Drag started", intersection);
+  },
+  onDragProgress: (intersection) => {
+    console.log("Drag in progress", intersection);
+  },
+  onDragEnd: (intersection) => {
+    console.log("Drag ended", intersection);
+  },
+});
 
 function animate() {
   const delta = clock.getDelta();

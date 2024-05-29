@@ -1,6 +1,14 @@
-// GestureManager.ts
-import { Raycaster, Vector2, Object3D, PerspectiveCamera, Mesh } from "three";
+import {
+  Raycaster,
+  Vector2,
+  Object3D,
+  PerspectiveCamera,
+  Mesh,
+  Intersection,
+} from "three";
 import CameraControls from "camera-controls";
+
+type GestureHandler = (intersection?: Intersection) => void;
 
 class GestureManager {
   private raycaster = new Raycaster();
@@ -21,18 +29,64 @@ class GestureManager {
   private currentGestureObject: Mesh | null = null;
   private isLongTapOnGestureObject = false;
   private tapCount = 0;
+  private domElement: HTMLElement;
+  private onGestureStart?: () => void;
+  private onGestureEnd?: () => void;
+  private onSingleTap?: GestureHandler;
+  private onDoubleTap?: GestureHandler;
+  private onLongTap?: GestureHandler;
+  private onTapMissed?: () => void;
+  private onDragStart?: GestureHandler;
+  private onDragProgress?: GestureHandler;
+  private onDragEnd?: GestureHandler;
+  private gestureStarted = false; // Flag to track if a gesture has actually started
 
-  constructor(
-    camera: PerspectiveCamera,
-    cameraControls: CameraControls,
-    gestureEnabledObjects: Object3D[]
-  ) {
-    this.camera = camera;
-    this.cameraControls = cameraControls;
-    this.gestureEnabledObjects = gestureEnabledObjects;
+  constructor(params: {
+    domElement: HTMLElement;
+    camera: PerspectiveCamera;
+    cameraControls: CameraControls;
+    gestureEnabledObjects: Object3D[];
+    onGestureStart?: () => void;
+    onGestureEnd?: () => void;
+    onSingleTap?: GestureHandler;
+    onDoubleTap?: GestureHandler;
+    onLongTap?: GestureHandler;
+    onTapMissed?: () => void;
+    onDragStart?: GestureHandler;
+    onDragProgress?: GestureHandler;
+    onDragEnd?: GestureHandler;
+  }) {
+    this.domElement = params.domElement;
+    this.camera = params.camera;
+    this.cameraControls = params.cameraControls;
+    this.gestureEnabledObjects = params.gestureEnabledObjects;
+
+    this.onGestureStart = params.onGestureStart;
+    this.onGestureEnd = params.onGestureEnd;
+    this.onSingleTap = params.onSingleTap;
+    this.onDoubleTap = params.onDoubleTap;
+    this.onLongTap = params.onLongTap;
+    this.onTapMissed = params.onTapMissed;
+    this.onDragStart = params.onDragStart;
+    this.onDragProgress = params.onDragProgress;
+    this.onDragEnd = params.onDragEnd;
+
+    this.attachEventListeners();
   }
 
-  public onPointerDown(event: PointerEvent) {
+  private attachEventListeners() {
+    this.domElement.addEventListener(
+      "pointerdown",
+      this.onPointerDown.bind(this)
+    );
+    this.domElement.addEventListener("pointerup", this.onPointerUp.bind(this));
+    this.domElement.addEventListener(
+      "pointermove",
+      this.onPointerMove.bind(this)
+    );
+  }
+
+  private onPointerDown(event: PointerEvent) {
     this.pointerIsDown = true;
     this.pointerMoved = false;
     this.isDraggingGestureEnabledObject = false;
@@ -56,26 +110,29 @@ class GestureManager {
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
       this.currentGestureObject = intersects[0].object as Mesh;
+      this.gestureStarted = true; // Set the gesture started flag
       console.log(
         "Pointer down on gesture-enabled object",
         this.currentGestureObject
       );
+      this.onGestureStart?.();
     } else {
       // Otherwise, enable camera controls
       this.cameraControls.enabled = true;
       this.currentGestureObject = null;
+      this.gestureStarted = false; // Reset the gesture started flag
       // console.log("Pointer down on non-gesture area");
     }
 
     // Set up long tap detection
     this.longTapTimeoutId = setTimeout(() => {
       if (!this.pointerMoved && this.isLongTapOnGestureObject) {
-        this.handleLongTap(event);
+        this.onLongTap?.(intersects[0]);
       }
     }, this.longTapThreshold);
   }
 
-  public onPointerUp(event: PointerEvent) {
+  private onPointerUp(_event: PointerEvent) {
     const pointerUpTime = performance.now();
     const duration = pointerUpTime - this.pointerDownTime;
 
@@ -86,12 +143,18 @@ class GestureManager {
     }
 
     if (this.pointerMoved) {
-      this.handleDragEnd(event, this.isDraggingGestureEnabledObject);
+      this.onDragEnd?.(
+        this.isDraggingGestureEnabledObject
+          ? this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
+          : undefined
+      );
     } else if (!this.pointerMoved) {
       if (duration < this.longTapThreshold) {
         this.tapCount++;
         if (this.tapCount === 1) {
-          this.handleSingleTap(event);
+          this.onSingleTap?.(
+            this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
+          );
           this.tapTimeoutId = setTimeout(() => {
             this.tapCount = 0;
           }, this.doubleTapThreshold);
@@ -100,17 +163,27 @@ class GestureManager {
             clearTimeout(this.tapTimeoutId);
             this.tapTimeoutId = null;
           }
-          this.handleDoubleTap(event);
+          this.onDoubleTap?.(
+            this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
+          );
           this.tapCount = 0;
         }
+      }
+      // If no gesture was started and it's a single tap, handle tap on missed space
+      if (!this.gestureStarted && this.tapCount === 1) {
+        this.onTapMissed?.();
       }
     }
 
     this.pointerIsDown = false;
     this.cameraControls.enabled = true; // Re-enable camera controls after gesture handling
+    if (this.gestureStarted && this.onGestureEnd) {
+      this.onGestureEnd();
+      this.gestureStarted = false; // Reset the gesture started flag
+    }
   }
 
-  public onPointerMove(event: PointerEvent) {
+  private onPointerMove(event: PointerEvent) {
     if (this.pointerIsDown) {
       const moveDistance = this.initialPointerPosition.distanceTo(
         new Vector2(event.clientX, event.clientY)
@@ -118,7 +191,11 @@ class GestureManager {
 
       if (moveDistance > this.dragThreshold) {
         if (!this.pointerMoved) {
-          this.handleDragStart(event, this.isDraggingGestureEnabledObject);
+          this.onDragStart?.(
+            this.isDraggingGestureEnabledObject
+              ? this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
+              : undefined
+          );
         }
         this.pointerMoved = true;
 
@@ -128,66 +205,13 @@ class GestureManager {
           this.longTapTimeoutId = null;
         }
 
-        // Handle drag logic here
-        this.handleDrag(event, this.isDraggingGestureEnabledObject);
+        // Handle drag progress logic here
+        this.onDragProgress?.(
+          this.isDraggingGestureEnabledObject
+            ? this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
+            : undefined
+        );
       }
-    }
-  }
-
-  private handleSingleTap(_event: PointerEvent) {
-    // Implement single tap logic
-    console.log("Single tap detected");
-  }
-
-  private handleDoubleTap(_event: PointerEvent) {
-    // Implement double tap logic
-    console.log("Double tap detected");
-  }
-
-  private handleLongTap(_event: PointerEvent) {
-    // Implement long tap logic
-    console.log("Long tap detected");
-  }
-
-  private handleDragStart(
-    _event: PointerEvent,
-    isDraggingGestureEnabledObject: boolean
-  ) {
-    // Implement drag start logic
-    if (isDraggingGestureEnabledObject) {
-      console.log(
-        "Drag started on gesture-enabled object",
-        this.currentGestureObject
-      );
-    }
-  }
-
-  private handleDrag(
-    _event: PointerEvent,
-    isDraggingGestureEnabledObject: boolean
-  ) {
-    // Implement drag logic
-    if (isDraggingGestureEnabledObject) {
-      console.log(
-        "Dragging detected on gesture-enabled object",
-        this.currentGestureObject
-      );
-    } else {
-      // console.log("Dragging detected on non-gesture area");
-    }
-  }
-
-  private handleDragEnd(
-    _event: PointerEvent,
-    isDraggingGestureEnabledObject: boolean
-  ) {
-    // Implement drag end logic
-    if (isDraggingGestureEnabledObject) {
-      console.log(
-        "Drag ended on gesture-enabled object",
-        this.currentGestureObject
-      );
-      // Add your code to handle the end of the drag gesture here
     }
   }
 }
