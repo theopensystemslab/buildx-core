@@ -1,4 +1,4 @@
-// gestureHandler.ts
+// GestureManager.ts
 import { Raycaster, Vector2, Object3D, PerspectiveCamera, Mesh } from "three";
 import CameraControls from "camera-controls";
 
@@ -11,13 +11,16 @@ class GestureManager {
   private pointerDownTime = 0;
   private pointerIsDown = false;
   private pointerMoved = false;
-  private clickTimeoutId: NodeJS.Timeout | null = null;
-  private doubleClickThreshold = 300; // milliseconds
-  private longPressThreshold = 500; // milliseconds
+  private tapTimeoutId: NodeJS.Timeout | null = null;
+  private longTapTimeoutId: NodeJS.Timeout | null = null;
+  private doubleTapThreshold = 300; // milliseconds
+  private longTapThreshold = 500; // milliseconds
   private dragThreshold = 5; // pixels
   private initialPointerPosition = new Vector2();
   private isDraggingGestureEnabledObject = false;
   private currentGestureObject: Mesh | null = null;
+  private isLongTapOnGestureObject = false;
+  private tapCount = 0;
 
   constructor(
     camera: PerspectiveCamera,
@@ -33,6 +36,7 @@ class GestureManager {
     this.pointerIsDown = true;
     this.pointerMoved = false;
     this.isDraggingGestureEnabledObject = false;
+    this.isLongTapOnGestureObject = false;
     this.pointerDownTime = performance.now();
     this.initialPointerPosition.set(event.clientX, event.clientY);
 
@@ -50,6 +54,7 @@ class GestureManager {
       // Disable camera controls if we hit a gestureable object
       this.cameraControls.enabled = false;
       this.isDraggingGestureEnabledObject = true;
+      this.isLongTapOnGestureObject = true;
       this.currentGestureObject = intersects[0].object as Mesh;
       console.log(
         "Pointer down on gesture-enabled object",
@@ -59,29 +64,45 @@ class GestureManager {
       // Otherwise, enable camera controls
       this.cameraControls.enabled = true;
       this.currentGestureObject = null;
-      console.log("Pointer down on non-gesture area");
+      // console.log("Pointer down on non-gesture area");
     }
+
+    // Set up long tap detection
+    this.longTapTimeoutId = setTimeout(() => {
+      if (!this.pointerMoved && this.isLongTapOnGestureObject) {
+        this.handleLongTap(event);
+      }
+    }, this.longTapThreshold);
   }
 
   public onPointerUp(event: PointerEvent) {
     const pointerUpTime = performance.now();
     const duration = pointerUpTime - this.pointerDownTime;
 
-    if (!this.pointerMoved) {
-      if (duration < this.doubleClickThreshold) {
-        if (this.clickTimeoutId) {
-          clearTimeout(this.clickTimeoutId);
-          this.clickTimeoutId = null;
-          this.handleDoubleClick(event);
-        } else {
-          this.clickTimeoutId = setTimeout(() => {
-            this.handleSingleClick(event);
-            this.clickTimeoutId = null;
-          }, this.doubleClickThreshold);
+    // Clear the long tap timeout if the pointer is released
+    if (this.longTapTimeoutId) {
+      clearTimeout(this.longTapTimeoutId);
+      this.longTapTimeoutId = null;
+    }
+
+    if (this.pointerMoved) {
+      this.handleDragEnd(event, this.isDraggingGestureEnabledObject);
+    } else if (!this.pointerMoved) {
+      if (duration < this.longTapThreshold) {
+        this.tapCount++;
+        if (this.tapCount === 1) {
+          this.handleSingleTap(event);
+          this.tapTimeoutId = setTimeout(() => {
+            this.tapCount = 0;
+          }, this.doubleTapThreshold);
+        } else if (this.tapCount === 2) {
+          if (this.tapTimeoutId) {
+            clearTimeout(this.tapTimeoutId);
+            this.tapTimeoutId = null;
+          }
+          this.handleDoubleTap(event);
+          this.tapCount = 0;
         }
-      } else if (duration >= this.longPressThreshold) {
-        // Handle long press
-        this.handleLongPress(event);
       }
     }
 
@@ -96,26 +117,49 @@ class GestureManager {
       );
 
       if (moveDistance > this.dragThreshold) {
+        if (!this.pointerMoved) {
+          this.handleDragStart(event, this.isDraggingGestureEnabledObject);
+        }
         this.pointerMoved = true;
+
+        // Clear the long tap timeout if the pointer is moved
+        if (this.longTapTimeoutId) {
+          clearTimeout(this.longTapTimeoutId);
+          this.longTapTimeoutId = null;
+        }
+
         // Handle drag logic here
         this.handleDrag(event, this.isDraggingGestureEnabledObject);
       }
     }
   }
 
-  private handleSingleClick(_event: PointerEvent) {
-    // Implement single click logic
-    console.log("Single click detected");
+  private handleSingleTap(_event: PointerEvent) {
+    // Implement single tap logic
+    console.log("Single tap detected");
   }
 
-  private handleDoubleClick(_event: PointerEvent) {
-    // Implement double click logic
-    console.log("Double click detected");
+  private handleDoubleTap(_event: PointerEvent) {
+    // Implement double tap logic
+    console.log("Double tap detected");
   }
 
-  private handleLongPress(_event: PointerEvent) {
-    // Implement long press logic
-    console.log("Long press detected");
+  private handleLongTap(_event: PointerEvent) {
+    // Implement long tap logic
+    console.log("Long tap detected");
+  }
+
+  private handleDragStart(
+    _event: PointerEvent,
+    isDraggingGestureEnabledObject: boolean
+  ) {
+    // Implement drag start logic
+    if (isDraggingGestureEnabledObject) {
+      console.log(
+        "Drag started on gesture-enabled object",
+        this.currentGestureObject
+      );
+    }
   }
 
   private handleDrag(
@@ -129,7 +173,21 @@ class GestureManager {
         this.currentGestureObject
       );
     } else {
-      console.log("Dragging detected on non-gesture area");
+      // console.log("Dragging detected on non-gesture area");
+    }
+  }
+
+  private handleDragEnd(
+    _event: PointerEvent,
+    isDraggingGestureEnabledObject: boolean
+  ) {
+    // Implement drag end logic
+    if (isDraggingGestureEnabledObject) {
+      console.log(
+        "Drag ended on gesture-enabled object",
+        this.currentGestureObject
+      );
+      // Add your code to handle the end of the drag gesture here
     }
   }
 }
