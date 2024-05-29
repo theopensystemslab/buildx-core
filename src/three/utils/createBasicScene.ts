@@ -72,6 +72,7 @@ function createBasicScene({
 
   const renderer = new WebGLRenderer({ canvas });
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor("white");
 
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(scene, camera);
@@ -80,7 +81,7 @@ function createBasicScene({
   const outlinePass = getOutlinePass(scene, camera);
   composer.addPass(outlinePass);
 
-  const light = new AmbientLight(0xffffff);
+  const light = new AmbientLight(0xffffff, 4);
   scene.add(light);
 
   const cameraControls = new CameraControls(camera, canvas);
