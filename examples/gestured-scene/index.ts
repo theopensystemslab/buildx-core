@@ -64,34 +64,19 @@ new GestureManager({
   camera,
   cameraControls,
   gestureEnabledObjects,
-  onGestureStart: () => {
-    console.log("Gesture started, disabling camera controls");
-    cameraControls.enabled = false;
-  },
-  onGestureEnd: () => {
-    console.log("Gesture ended, enabling camera controls");
-    cameraControls.enabled = true;
-  },
-  onSingleTap: (intersection) => {
-    console.log("Single tap detected", intersection);
-  },
-  onDoubleTap: (intersection) => {
-    console.log("Double tap detected", intersection);
-  },
-  onLongTap: (intersection) => {
-    console.log("Long tap detected", intersection);
-  },
-  onTapMissed: () => {
-    console.log("Tap missed detected");
-  },
   onDragStart: (intersection) => {
-    console.log("Drag started", intersection);
+    console.log("Drag Start", intersection);
   },
-  onDragProgress: (intersection) => {
-    console.log("Drag in progress", intersection);
+  onDragProgress: (progress) => {
+    if (progress.object) {
+      progress.object.position.copy(
+        progress.originalPosition.clone().add(progress.delta)
+      );
+      console.log("Drag Progress", progress.currentPoint);
+    }
   },
   onDragEnd: (intersection) => {
-    console.log("Drag ended", intersection);
+    console.log("Drag End", intersection);
   },
 });
 
