@@ -62,18 +62,20 @@ const gestureEnabledObjects: Mesh[] = [testObject];
 new GestureManager({
   domElement: renderer.domElement,
   camera,
-  cameraControls,
   gestureEnabledObjects,
-  onDragStart: () => {},
+  onGestureStart: () => {
+    cameraControls.enabled = false;
+  },
+  onGestureEnd: () => {
+    cameraControls.enabled = true;
+  },
   onDragProgress: ({
     delta: { x: x1, z: z1 },
     object,
     originalPosition: { x: x0, y, z: z0 },
   }) => {
     object?.position.set(x0 + x1, y, z0 + z1);
-    console.log(object?.position.toArray());
   },
-  onDragEnd: () => {},
 });
 
 function animate() {

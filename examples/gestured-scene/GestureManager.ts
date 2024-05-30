@@ -3,11 +3,10 @@ import {
   Vector2,
   Vector3,
   Object3D,
-  PerspectiveCamera,
   Plane,
   Intersection,
+  Camera,
 } from "three";
-import CameraControls from "camera-controls";
 
 type GestureHandler = (intersection?: Intersection) => void;
 type DetailedDragHandler = (progress: DetailedDragProgress) => void;
@@ -25,8 +24,7 @@ class GestureManager {
   private raycaster = new Raycaster();
   private pointer = new Vector2();
   private gestureEnabledObjects: Object3D[];
-  private camera: PerspectiveCamera;
-  private cameraControls: CameraControls;
+  private camera: Camera;
   private pointerDownTime = 0;
   private pointerIsDown = false;
   private pointerMoved = false;
@@ -59,9 +57,8 @@ class GestureManager {
 
   constructor(params: {
     domElement: HTMLElement;
-    camera: PerspectiveCamera;
-    cameraControls: CameraControls;
-    gestureEnabledObjects: Object3D[];
+    camera: Camera;
+    gestureEnabledObjects?: Object3D[];
     onGestureStart?: () => void;
     onGestureEnd?: () => void;
     onSingleTap?: GestureHandler;
@@ -74,8 +71,7 @@ class GestureManager {
   }) {
     this.domElement = params.domElement;
     this.camera = params.camera;
-    this.cameraControls = params.cameraControls;
-    this.gestureEnabledObjects = params.gestureEnabledObjects;
+    this.gestureEnabledObjects = params.gestureEnabledObjects ?? [];
 
     this.onGestureStart = params.onGestureStart;
     this.onGestureEnd = params.onGestureEnd;
@@ -109,28 +105,19 @@ class GestureManager {
     this.isLongTapOnGestureObject = false;
     this.pointerDownTime = performance.now();
     this.initialPointerPosition.set(event.clientX, event.clientY);
-
-    // Update the pointer variable for raycasting
     this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Perform raycasting to detect if an object was hit
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(
       this.gestureEnabledObjects
     );
 
     if (intersects.length > 0) {
-      // Disable camera controls if we hit a gestureable object
-      this.cameraControls.enabled = false;
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
       this.currentGestureObject = intersects[0].object;
       this.gestureStarted = true; // Set the gesture started flag
-
-      // Position the movement planes at the intersection point
       const intersectionPoint = intersects[0].point;
-      console.log("Initial Intersection Point:", intersectionPoint); // Log initial intersection point
       this.movementPlaneXZ.setFromNormalAndCoplanarPoint(
         new Vector3(0, 1, 0),
         intersectionPoint
@@ -139,25 +126,15 @@ class GestureManager {
         new Vector3(1, 0, 0),
         intersectionPoint
       );
-
-      // Log the setup of the movement planes
-      console.log("Movement Plane XZ:", this.movementPlaneXZ);
-      console.log("Movement Plane Y:", this.movementPlaneY);
-
-      // Set initial points and original position
       this.initialPoint.copy(intersectionPoint);
       this.lastPoint.copy(intersectionPoint);
       this.originalPosition.copy(this.currentGestureObject.position);
 
       this.onGestureStart?.();
     } else {
-      // Otherwise, enable camera controls
-      this.cameraControls.enabled = true;
       this.currentGestureObject = null;
       this.gestureStarted = false; // Reset the gesture started flag
     }
-
-    // Set up long tap detection
     this.longTapTimeoutId = setTimeout(() => {
       if (!this.pointerMoved && this.isLongTapOnGestureObject) {
         this.onLongTap?.(intersects[0]);
@@ -168,8 +145,6 @@ class GestureManager {
   private onPointerUp(_event: PointerEvent) {
     const pointerUpTime = performance.now();
     const duration = pointerUpTime - this.pointerDownTime;
-
-    // Clear the long tap timeout if the pointer is released
     if (this.longTapTimeoutId) {
       clearTimeout(this.longTapTimeoutId);
       this.longTapTimeoutId = null;
@@ -202,14 +177,12 @@ class GestureManager {
           this.tapCount = 0;
         }
       }
-      // If no gesture was started and it's a single tap, handle tap on missed space
       if (!this.gestureStarted && this.tapCount === 1) {
         this.onTapMissed?.();
       }
     }
 
     this.pointerIsDown = false;
-    this.cameraControls.enabled = true; // Re-enable camera controls after gesture handling
     if (this.gestureStarted && this.onGestureEnd) {
       this.onGestureEnd();
       this.gestureStarted = false; // Reset the gesture started flag
@@ -232,38 +205,29 @@ class GestureManager {
         }
         this.pointerMoved = true;
 
-        // Clear the long tap timeout if the pointer is moved
         if (this.longTapTimeoutId) {
           clearTimeout(this.longTapTimeoutId);
           this.longTapTimeoutId = null;
         }
 
-        // Update the pointer variable for raycasting
         this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-        // Perform raycasting to detect the new intersection points
         this.raycaster.setFromCamera(this.pointer, this.camera);
 
         const intersectionPointXZ = new Vector3();
         const intersectionPointY = new Vector3();
 
-        // Intersect with the XZ movement plane
         const intersectXZ = this.raycaster.ray.intersectPlane(
           this.movementPlaneXZ,
           intersectionPointXZ
         );
-        // Intersect with the Y movement plane
         const intersectY = this.raycaster.ray.intersectPlane(
           this.movementPlaneY,
           intersectionPointY
         );
 
-        console.log("Intersection Point XZ:", intersectionPointXZ); // Log intersection point XZ
-        console.log("Intersection Point Y:", intersectionPointY); // Log intersection point Y
-
         if (intersectXZ && intersectY) {
-          // Construct the current point from XZ intersections
           const currentPoint = new Vector3(
             intersectionPointXZ.x,
             this.initialPoint.y,
@@ -271,7 +235,6 @@ class GestureManager {
           );
           const delta = currentPoint.clone().sub(this.initialPoint);
 
-          // Pass the detailed drag progress data to the handler
           this.onDragProgress?.({
             initialPoint: this.initialPoint.clone(),
             lastPoint: this.lastPoint.clone(),
@@ -281,11 +244,28 @@ class GestureManager {
             object: this.currentGestureObject,
           });
 
-          // Update the last point
           this.lastPoint.copy(currentPoint);
         }
       }
     }
+  }
+
+  setCamera(newCamera: Camera) {
+    this.camera = newCamera;
+  }
+
+  setGestureEnabledObjects(newObjects: Object3D[]) {
+    this.gestureEnabledObjects = newObjects;
+  }
+
+  addGestureEnabledObject(object: Object3D) {
+    this.gestureEnabledObjects.push(object);
+  }
+
+  removeGestureEnabledObject(object: Object3D) {
+    this.gestureEnabledObjects = this.gestureEnabledObjects.filter(
+      (obj) => obj !== object
+    );
   }
 }
 
