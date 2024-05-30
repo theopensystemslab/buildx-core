@@ -4,7 +4,6 @@ import {
   Vector3,
   Object3D,
   PerspectiveCamera,
-  Mesh,
   Plane,
   Intersection,
 } from "three";
@@ -19,7 +18,7 @@ type DetailedDragProgress = {
   currentPoint: Vector3;
   delta: Vector3;
   originalPosition: Vector3;
-  object: Mesh | null;
+  object: Object3D | null;
 };
 
 class GestureManager {
@@ -40,7 +39,7 @@ class GestureManager {
   private initialPoint = new Vector3();
   private lastPoint = new Vector3();
   private isDraggingGestureEnabledObject = false;
-  private currentGestureObject: Mesh | null = null;
+  private currentGestureObject: Object3D | null = null;
   private isLongTapOnGestureObject = false;
   private tapCount = 0;
   private domElement: HTMLElement;
@@ -126,7 +125,7 @@ class GestureManager {
       this.cameraControls.enabled = false;
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
-      this.currentGestureObject = intersects[0].object as Mesh;
+      this.currentGestureObject = intersects[0].object;
       this.gestureStarted = true; // Set the gesture started flag
 
       // Position the movement planes at the intersection point
