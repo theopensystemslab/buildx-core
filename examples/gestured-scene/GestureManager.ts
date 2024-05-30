@@ -34,7 +34,7 @@ class GestureManager {
   private longTapTimeoutId: NodeJS.Timeout | null = null;
   private doubleTapThreshold = 300; // milliseconds
   private longTapThreshold = 500; // milliseconds
-  private dragThreshold = 5; // pixels
+  private dragThreshold = 1; // pixels
   private initialPointerPosition = new Vector2();
   private initialPoint = new Vector3();
   private lastPoint = new Vector3();
@@ -130,30 +130,31 @@ class GestureManager {
 
       // Position the movement planes at the intersection point
       const intersectionPoint = intersects[0].point;
-      this.movementPlaneXZ.set(new Vector3(0, 1, 0), intersectionPoint.y);
+      console.log("Initial Intersection Point:", intersectionPoint); // Log initial intersection point
+      this.movementPlaneXZ.setFromNormalAndCoplanarPoint(
+        new Vector3(0, 1, 0),
+        intersectionPoint
+      );
       this.movementPlaneY.setFromNormalAndCoplanarPoint(
         new Vector3(1, 0, 0),
         intersectionPoint
       );
+
+      // Log the setup of the movement planes
+      console.log("Movement Plane XZ:", this.movementPlaneXZ);
+      console.log("Movement Plane Y:", this.movementPlaneY);
 
       // Set initial points and original position
       this.initialPoint.copy(intersectionPoint);
       this.lastPoint.copy(intersectionPoint);
       this.originalPosition.copy(this.currentGestureObject.position);
 
-      console.log(
-        "Pointer down on gesture-enabled object",
-        this.currentGestureObject
-      );
-      console.log("Initial Point:", this.initialPoint);
-      console.log("Original Position:", this.originalPosition);
       this.onGestureStart?.();
     } else {
       // Otherwise, enable camera controls
       this.cameraControls.enabled = true;
       this.currentGestureObject = null;
       this.gestureStarted = false; // Reset the gesture started flag
-      console.log("Pointer down on non-gesture area");
     }
 
     // Set up long tap detection
@@ -244,44 +245,45 @@ class GestureManager {
         // Perform raycasting to detect the new intersection points
         this.raycaster.setFromCamera(this.pointer, this.camera);
 
-        // Handle drag progress logic here
         const intersectionPointXZ = new Vector3();
         const intersectionPointY = new Vector3();
 
-        this.raycaster.ray.intersectPlane(
+        // Intersect with the XZ movement plane
+        const intersectXZ = this.raycaster.ray.intersectPlane(
           this.movementPlaneXZ,
           intersectionPointXZ
         );
-        this.raycaster.ray.intersectPlane(
+        // Intersect with the Y movement plane
+        const intersectY = this.raycaster.ray.intersectPlane(
           this.movementPlaneY,
           intersectionPointY
         );
 
-        // Construct the current point from XZ intersections (ignoring Y for now)
-        const currentPoint = new Vector3(
-          intersectionPointXZ.x,
-          this.initialPoint.y,
-          intersectionPointXZ.z
-        );
+        console.log("Intersection Point XZ:", intersectionPointXZ); // Log intersection point XZ
+        console.log("Intersection Point Y:", intersectionPointY); // Log intersection point Y
 
-        const delta = currentPoint.clone().sub(this.initialPoint);
+        if (intersectXZ && intersectY) {
+          // Construct the current point from XZ intersections
+          const currentPoint = new Vector3(
+            intersectionPointXZ.x,
+            this.initialPoint.y,
+            intersectionPointXZ.z
+          );
+          const delta = currentPoint.clone().sub(this.initialPoint);
 
-        console.log("Intersection Point XZ:", intersectionPointXZ);
-        console.log("Intersection Point Y:", intersectionPointY);
-        console.log("Delta:", delta);
+          // Pass the detailed drag progress data to the handler
+          this.onDragProgress?.({
+            initialPoint: this.initialPoint.clone(),
+            lastPoint: this.lastPoint.clone(),
+            currentPoint: currentPoint.clone(),
+            delta: delta.clone(),
+            originalPosition: this.originalPosition.clone(),
+            object: this.currentGestureObject,
+          });
 
-        // Pass the detailed drag progress data to the handler
-        this.onDragProgress?.({
-          initialPoint: this.initialPoint.clone(),
-          lastPoint: this.lastPoint.clone(),
-          currentPoint: currentPoint.clone(),
-          delta: delta.clone(),
-          originalPosition: this.originalPosition.clone(),
-          object: this.currentGestureObject,
-        });
-
-        // Update the last point
-        this.lastPoint.copy(currentPoint);
+          // Update the last point
+          this.lastPoint.copy(currentPoint);
+        }
       }
     }
   }

@@ -64,20 +64,16 @@ new GestureManager({
   camera,
   cameraControls,
   gestureEnabledObjects,
-  onDragStart: (intersection) => {
-    console.log("Drag Start", intersection);
+  onDragStart: () => {},
+  onDragProgress: ({
+    delta: { x: x1, z: z1 },
+    object,
+    originalPosition: { x: x0, y, z: z0 },
+  }) => {
+    object?.position.set(x0 + x1, y, z0 + z1);
+    console.log(object?.position.toArray());
   },
-  onDragProgress: (progress) => {
-    if (progress.object) {
-      progress.object.position.copy(
-        progress.originalPosition.clone().add(progress.delta)
-      );
-      console.log("Drag Progress", progress.currentPoint);
-    }
-  },
-  onDragEnd: (intersection) => {
-    console.log("Drag End", intersection);
-  },
+  onDragEnd: () => {},
 });
 
 function animate() {
