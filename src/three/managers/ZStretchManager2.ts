@@ -9,6 +9,7 @@ import {
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { DEFAULT_MAX_DEPTH } from "./ZStretchManager";
+import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 
 const linePoints = [new Vector3(-10, 0, 0), new Vector3(10, 0, 0)];
 
@@ -44,9 +45,23 @@ class ZStretchManager2 {
   debugGestureLine?: Line;
   debugColumnLines?: Line[];
 
+  handles: [StretchHandleGroup, StretchHandleGroup];
+
   constructor(columnLayoutGroup: ColumnLayoutGroup) {
     this.columnLayoutGroup = columnLayoutGroup;
     this.maxDepth = DEFAULT_MAX_DEPTH;
+    this.handles = [
+      new StretchHandleGroup({
+        axis: "z",
+        side: -1,
+        houseGroup: columnLayoutGroup.houseGroup,
+      }),
+      new StretchHandleGroup({
+        axis: "z",
+        side: 1,
+        houseGroup: columnLayoutGroup.houseGroup,
+      }),
+    ];
   }
 
   gestureEnd() {}
