@@ -120,6 +120,7 @@ export const defaultElementGroupCreator = ({
   element: BuildElement;
 }): ElementGroup => {
   const elementBrush = new FullElementBrush(geometry, threeMaterial);
+  elementBrush.castShadow = true;
   const elementGroup = new ElementGroup(element);
   elementGroup.add(elementBrush);
   return elementGroup;
