@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.2.1-experimental",
+  "version": "0.2.6-experimental",
   "type": "module",
   "main": "dist/buildx-core.js",
   "types": "dist/buildx-core.d.ts",
@@ -54,6 +54,7 @@
   },
   "peerDependencies": {
     "react": ">=18.2.0",
-    "three": ">=0.153.0"
+    "three": ">=0.153.0",
+    "three-bvh-csg": "^0.0.16"
   }
 }
