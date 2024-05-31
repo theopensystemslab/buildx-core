@@ -1,4 +1,3 @@
-// main.ts
 import {
   PerspectiveCamera,
   WebGLRenderer,
@@ -18,7 +17,7 @@ import {
   Raycaster,
 } from "three";
 import CameraControls from "camera-controls";
-import GestureManager from "./GestureManager";
+import GestureManager from "../../src/three/managers/GestureManager";
 
 const subsetOfTHREE = {
   Vector2,

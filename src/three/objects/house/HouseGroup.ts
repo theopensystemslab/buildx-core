@@ -6,6 +6,7 @@ import { someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Scene } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import ModeManager from "@/three/managers/ModeManager";
 
 export type HouseGroupUserData = {
   systemId: string;
@@ -20,6 +21,7 @@ export class HouseGroup extends Group {
   elementsManager: ElementsManager;
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
+  modeManager: ModeManager;
   // cutsManager: CutsManager;
 
   constructor({
@@ -35,6 +37,7 @@ export class HouseGroup extends Group {
     this.elementsManager = new ElementsManager(this);
     this.transformsManager = new TransformsManager(this);
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
+    this.modeManager = new ModeManager(this);
     // this.cutsManager = new CutsManager(this);
   }
 

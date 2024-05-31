@@ -1,3 +1,5 @@
+import { A, O } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
 import {
   Raycaster,
   Vector2,
@@ -8,10 +10,11 @@ import {
   Camera,
 } from "three";
 
-type GestureHandler = (intersection?: Intersection) => void;
-type DetailedDragHandler = (progress: DetailedDragProgress) => void;
+type TapHandler = (intersection: Intersection) => void;
 
-type DetailedDragProgress = {
+type DragHandler = (detail: DragDetail) => void;
+
+type DragDetail = {
   initialPoint: Vector3;
   lastPoint: Vector3;
   currentPoint: Vector3;
@@ -43,13 +46,13 @@ class GestureManager {
   private domElement: HTMLElement;
   private onGestureStart?: () => void;
   private onGestureEnd?: () => void;
-  private onSingleTap?: GestureHandler;
-  private onDoubleTap?: GestureHandler;
-  private onLongTap?: GestureHandler;
+  private onSingleTap?: TapHandler;
+  private onDoubleTap?: TapHandler;
+  private onLongTap?: TapHandler;
   private onTapMissed?: () => void;
-  private onDragStart?: GestureHandler;
-  private onDragProgress?: DetailedDragHandler;
-  private onDragEnd?: GestureHandler;
+  private onDragStart?: TapHandler;
+  private onDragProgress?: DragHandler;
+  private onDragEnd?: TapHandler;
   private gestureStarted = false; // Flag to track if a gesture has actually started
   private movementPlaneXZ = new Plane(new Vector3(0, 1, 0), 0); // The plane for XZ tracking
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
@@ -61,13 +64,13 @@ class GestureManager {
     gestureEnabledObjects?: Object3D[];
     onGestureStart?: () => void;
     onGestureEnd?: () => void;
-    onSingleTap?: GestureHandler;
-    onDoubleTap?: GestureHandler;
-    onLongTap?: GestureHandler;
+    onSingleTap?: TapHandler;
+    onDoubleTap?: TapHandler;
+    onLongTap?: TapHandler;
     onTapMissed?: () => void;
-    onDragStart?: GestureHandler;
-    onDragProgress?: DetailedDragHandler;
-    onDragEnd?: GestureHandler;
+    onDragStart?: TapHandler;
+    onDragProgress?: DragHandler;
+    onDragEnd?: TapHandler;
   }) {
     this.domElement = params.domElement;
     this.camera = params.camera;
@@ -137,7 +140,12 @@ class GestureManager {
     }
     this.longTapTimeoutId = setTimeout(() => {
       if (!this.pointerMoved && this.isLongTapOnGestureObject) {
-        this.onLongTap?.(intersects[0]);
+        this.currentGestureObject &&
+          pipe(
+            this.raycaster.intersectObject(this.currentGestureObject),
+            A.head,
+            O.map((ix) => this.onLongTap?.(ix))
+          );
       }
     }, this.longTapThreshold);
   }
@@ -150,19 +158,26 @@ class GestureManager {
       this.longTapTimeoutId = null;
     }
 
-    if (this.pointerMoved) {
-      this.onDragEnd?.(
-        this.isDraggingGestureEnabledObject
-          ? this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
-          : undefined
+    if (
+      this.pointerMoved &&
+      this.isDraggingGestureEnabledObject &&
+      this.currentGestureObject
+    ) {
+      pipe(
+        this.raycaster.intersectObject(this.currentGestureObject),
+        A.head,
+        O.map((ix) => this.onDragEnd?.(ix))
       );
     } else if (!this.pointerMoved) {
       if (duration < this.longTapThreshold) {
         this.tapCount++;
         if (this.tapCount === 1) {
-          this.onSingleTap?.(
-            this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
-          );
+          this.currentGestureObject &&
+            pipe(
+              this.raycaster.intersectObject(this.currentGestureObject),
+              A.head,
+              O.map((ix) => this.onSingleTap?.(ix))
+            );
           this.tapTimeoutId = setTimeout(() => {
             this.tapCount = 0;
           }, this.doubleTapThreshold);
@@ -171,9 +186,14 @@ class GestureManager {
             clearTimeout(this.tapTimeoutId);
             this.tapTimeoutId = null;
           }
-          this.onDoubleTap?.(
-            this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
-          );
+
+          this.currentGestureObject &&
+            pipe(
+              this.raycaster.intersectObject(this.currentGestureObject),
+              A.head,
+              O.map((ix) => this.onDoubleTap?.(ix))
+            );
+
           this.tapCount = 0;
         }
       }
@@ -196,11 +216,11 @@ class GestureManager {
       );
 
       if (moveDistance > this.dragThreshold) {
-        if (!this.pointerMoved) {
-          this.onDragStart?.(
-            this.isDraggingGestureEnabledObject
-              ? this.raycaster.intersectObjects(this.gestureEnabledObjects)[0]
-              : undefined
+        if (!this.pointerMoved && this.currentGestureObject) {
+          pipe(
+            this.raycaster.intersectObject(this.currentGestureObject),
+            A.head,
+            O.map((ix) => this.onDragStart?.(ix))
           );
         }
         this.pointerMoved = true;
