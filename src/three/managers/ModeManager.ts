@@ -30,6 +30,11 @@ class ModeManager {
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
         console.log("building -> level");
+        this.houseGroup.cutsManager.setClippingBrush({
+          rowIndex: 1,
+          x: false,
+          z: false,
+        });
         break;
       }
       // (up) Builing -> Site

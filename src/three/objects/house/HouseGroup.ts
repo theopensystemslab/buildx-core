@@ -8,6 +8,7 @@ import { Group, Scene } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import ModeManager from "@/three/managers/ModeManager";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
+import CutsManager2 from "@/three/managers/CutsManager2";
 
 export type HouseGroupUserData = {
   systemId: string;
@@ -23,7 +24,7 @@ export class HouseGroup extends Group {
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
   modeManager: ModeManager;
-  // cutsManager: CutsManager;
+  cutsManager: CutsManager2;
   zStretchManager: ZStretchManager2;
 
   constructor({
@@ -41,7 +42,7 @@ export class HouseGroup extends Group {
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
     this.zStretchManager = new ZStretchManager2(this);
     this.modeManager = new ModeManager(this);
-    // this.cutsManager = new CutsManager(this);
+    this.cutsManager = new CutsManager2(this);
   }
 
   get activeLayoutGroup(): ColumnLayoutGroup {
