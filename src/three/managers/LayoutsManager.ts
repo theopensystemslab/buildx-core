@@ -33,7 +33,7 @@ class LayoutsManager {
 
   constructor(initialLayoutGroup: ColumnLayoutGroup) {
     this.houseGroup = initialLayoutGroup.parent as HouseGroup;
-    this.houseTypeLayoutGroup = initialLayoutGroup;
+    this.houseTypeLayoutGroup = initialLayoutGroup.clone();
     this._activeLayoutGroup = initialLayoutGroup;
     this.init();
   }
@@ -132,16 +132,14 @@ class LayoutsManager {
 
   cycleWindowTypeLayout() {
     const t = this;
+    const { cutsManager } = this.houseGroup;
 
     pipe(
       this.changeWindowType,
       O.fromNullable,
       O.map(({ options }) => {
         if (options.length > 0) {
-          options[0].layoutGroup.cutsManager.setClippingBrush(
-            options[0].layoutGroup.houseGroup.activeLayoutGroup.cutsManager
-              .settings
-          );
+          cutsManager.setClippingBrush(cutsManager.settings);
           t.activeLayoutGroup = options[0].layoutGroup;
         }
       })
@@ -151,7 +149,10 @@ class LayoutsManager {
   async prepareAltWindowTypeLayouts(target: ScopeElement, side: Side) {
     const houseGroup = this.houseGroup;
     const activeLayoutGroup = this.activeLayoutGroup;
-    const { systemId } = houseGroup.userData;
+    const {
+      userData: { systemId },
+      cutsManager,
+    } = houseGroup;
     const { layout: currentLayout } = activeLayoutGroup.userData;
     const { columnIndex, rowIndex, moduleIndex } = target;
 
@@ -180,9 +181,7 @@ class LayoutsManager {
 
                 layoutGroup.updateOBB();
 
-                layoutGroup.cutsManager.setClippingBrush(
-                  activeLayoutGroup.cutsManager.settings
-                );
+                cutsManager.setClippingBrush(cutsManager.settings);
 
                 return {
                   candidate,

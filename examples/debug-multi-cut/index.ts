@@ -79,7 +79,7 @@ pipe(
               window.addEventListener("keydown", (ev) => {
                 switch (ev.key) {
                   case "c":
-                    houseGroup.activeLayoutGroup.cutsManager.cycleClippingBrush();
+                    houseGroup.cutsManager.cycleClippingBrush();
                     break;
                   case "s":
                     houseGroup.layoutsManager.cycleSectionTypeLayout();

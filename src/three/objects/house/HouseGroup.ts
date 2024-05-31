@@ -6,6 +6,9 @@ import { someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Scene } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import ModeManager from "@/three/managers/ModeManager";
+import ZStretchManager2 from "@/three/managers/ZStretchManager2";
+import CutsManager2 from "@/three/managers/CutsManager2";
 
 export type HouseGroupUserData = {
   systemId: string;
@@ -20,7 +23,9 @@ export class HouseGroup extends Group {
   elementsManager: ElementsManager;
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
-  // cutsManager: CutsManager;
+  modeManager: ModeManager;
+  cutsManager: CutsManager2;
+  zStretchManager: ZStretchManager2;
 
   constructor({
     userData,
@@ -35,7 +40,19 @@ export class HouseGroup extends Group {
     this.elementsManager = new ElementsManager(this);
     this.transformsManager = new TransformsManager(this);
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
-    // this.cutsManager = new CutsManager(this);
+    this.zStretchManager = new ZStretchManager2(this);
+    this.modeManager = new ModeManager(this);
+    this.cutsManager = new CutsManager2(this);
+  }
+
+  clone(recursive = true) {
+    if (!recursive)
+      throw new Error(`HouseGroup.clone called without recursive`);
+
+    return new HouseGroup({
+      userData: { ...this.userData },
+      initialColumnLayoutGroup: this.layoutsManager.activeLayoutGroup.clone(),
+    }) as this;
   }
 
   get activeLayoutGroup(): ColumnLayoutGroup {
