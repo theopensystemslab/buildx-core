@@ -278,11 +278,11 @@ class GestureManager {
     this.gestureEnabledObjects = newObjects;
   }
 
-  addGestureEnabledObject(object: Object3D) {
+  enableGesturesOnObject(object: Object3D) {
     this.gestureEnabledObjects.push(object);
   }
 
-  removeGestureEnabledObject(object: Object3D) {
+  disableGesturesOnObject(object: Object3D) {
     this.gestureEnabledObjects = this.gestureEnabledObjects.filter(
       (obj) => obj !== object
     );

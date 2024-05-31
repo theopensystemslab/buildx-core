@@ -29,6 +29,7 @@ class ModeManager {
       }
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
+        console.log("building -> level");
         break;
       }
       // (up) Builing -> Site

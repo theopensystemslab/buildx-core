@@ -62,15 +62,82 @@ class ZStretchManager2 {
         houseGroup,
       }),
     ];
+    this.init();
+  }
+
+  async init() {
+    this.cleanup();
+
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const {
+      userData: {
+        vanillaColumn: { positionedRows },
+        depth: layoutDepth,
+      },
+    } = columnLayoutGroup;
+
+    const templateVanillaColumnGroupCreator = defaultColumnGroupCreator({
+      positionedRows,
+      columnIndex: -1,
+    });
+
+    return pipe(
+      templateVanillaColumnGroupCreator,
+      TE.map((templateVanillaColumnGroup) => {
+        templateVanillaColumnGroup.visible = false;
+
+        const { depth: vanillaColumnDepth } =
+          templateVanillaColumnGroup.userData;
+
+        const maxDepth = this.maxDepth;
+
+        const maxMoreCols = floor(
+          (maxDepth - layoutDepth) / vanillaColumnDepth - 1
+        );
+
+        const vanillaColumnGroups = pipe(
+          A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
+        );
+
+        const { children } = columnLayoutGroup;
+
+        const { startColumnGroup, endColumnGroup } = (function () {
+          const columns = children.filter(
+            (x): x is ColumnGroup => x instanceof ColumnGroup
+          );
+
+          const startColumnGroup = columns[0];
+          const endColumnGroup = columns[columns.length - 1];
+
+          return { startColumnGroup, endColumnGroup };
+        })();
+
+        const midColumnGroups: ColumnGroup[] =
+          columnLayoutGroup.children.filter(
+            (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+          );
+
+        this.initData = {
+          templateVanillaColumnGroup,
+          vanillaColumnGroups,
+          startColumnGroup,
+          endColumnGroup,
+          midColumnGroups,
+        };
+
+        columnLayoutGroup.add(...vanillaColumnGroups);
+      })
+    )();
   }
 
   showHandles() {
-    const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
+    if (!this.initData) return;
 
-    this.handles.forEach((handle) => {
-      handle.visible = true;
-      activeLayoutGroup.add(handle);
-    });
+    const [handleDown, handleUp] = this.handles;
+
+    this.initData?.endColumnGroup.add(handleUp);
+    this.initData?.startColumnGroup.add(handleDown);
   }
 
   hideHandles() {
@@ -182,72 +249,6 @@ class ZStretchManager2 {
     }
 
     this.setColumnLines();
-  }
-
-  async init() {
-    this.cleanup();
-
-    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
-
-    const {
-      userData: {
-        vanillaColumn: { positionedRows },
-        depth: layoutDepth,
-      },
-    } = columnLayoutGroup;
-
-    const templateVanillaColumnGroupCreator = defaultColumnGroupCreator({
-      positionedRows,
-      columnIndex: -1,
-    });
-
-    return pipe(
-      templateVanillaColumnGroupCreator,
-      TE.map((templateVanillaColumnGroup) => {
-        templateVanillaColumnGroup.visible = false;
-
-        const { depth: vanillaColumnDepth } =
-          templateVanillaColumnGroup.userData;
-
-        const maxDepth = this.maxDepth;
-
-        const maxMoreCols = floor(
-          (maxDepth - layoutDepth) / vanillaColumnDepth - 1
-        );
-
-        const vanillaColumnGroups = pipe(
-          A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
-        );
-
-        const { children } = columnLayoutGroup;
-
-        const { startColumnGroup, endColumnGroup } = (function () {
-          const columns = children.filter(
-            (x): x is ColumnGroup => x instanceof ColumnGroup
-          );
-
-          const startColumnGroup = columns[0];
-          const endColumnGroup = columns[columns.length - 1];
-
-          return { startColumnGroup, endColumnGroup };
-        })();
-
-        const midColumnGroups: ColumnGroup[] =
-          columnLayoutGroup.children.filter(
-            (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
-          );
-
-        this.initData = {
-          templateVanillaColumnGroup,
-          vanillaColumnGroups,
-          startColumnGroup,
-          endColumnGroup,
-          midColumnGroups,
-        };
-
-        columnLayoutGroup.add(...vanillaColumnGroups);
-      })
-    )();
   }
 
   cleanup() {
