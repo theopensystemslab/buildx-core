@@ -4,7 +4,6 @@ import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
 import CutsManager2 from "@/three/managers/CutsManager2";
-import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
@@ -28,7 +27,6 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
-  zStretchManager: ZStretchManager2;
   cutsManager: CutsManager2;
 
   constructor(userData: ColumnLayoutGroupUserData) {
@@ -36,7 +34,6 @@ export class ColumnLayoutGroup extends Group {
     this.userData = userData;
     this.aabb = new Box3();
     this.obb = new OBB();
-    this.zStretchManager = new ZStretchManager2(this);
     this.cutsManager = new CutsManager2(this);
   }
 

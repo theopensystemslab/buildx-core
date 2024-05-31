@@ -2,14 +2,14 @@ import { A, TE, someOrError } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
+import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { DEFAULT_MAX_DEPTH } from "./ZStretchManager";
-import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 
 const linePoints = [new Vector3(-10, 0, 0), new Vector3(10, 0, 0)];
 
@@ -19,7 +19,7 @@ const gestureLineMat = new LineBasicMaterial({ color: 0xff0000 }); // Red
 const columnLineMat = new LineBasicMaterial({ color: 0x0000ff }); // Blue
 
 class ZStretchManager2 {
-  columnLayoutGroup: ColumnLayoutGroup;
+  houseGroup: HouseGroup;
   maxDepth: number;
 
   initData?: {
@@ -47,21 +47,39 @@ class ZStretchManager2 {
 
   handles: [StretchHandleGroup, StretchHandleGroup];
 
-  constructor(columnLayoutGroup: ColumnLayoutGroup) {
-    this.columnLayoutGroup = columnLayoutGroup;
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
     this.maxDepth = DEFAULT_MAX_DEPTH;
     this.handles = [
       new StretchHandleGroup({
         axis: "z",
         side: -1,
-        houseGroup: columnLayoutGroup.houseGroup,
+        houseGroup,
       }),
       new StretchHandleGroup({
         axis: "z",
         side: 1,
-        houseGroup: columnLayoutGroup.houseGroup,
+        houseGroup,
       }),
     ];
+  }
+
+  showHandles() {
+    const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    this.handles.forEach((handle) => {
+      handle.visible = true;
+      activeLayoutGroup.add(handle);
+    });
+  }
+
+  hideHandles() {
+    const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    this.handles.forEach((handle) => {
+      handle.visible = false;
+      activeLayoutGroup.remove(handle);
+    });
   }
 
   gestureEnd() {}
@@ -169,12 +187,14 @@ class ZStretchManager2 {
   async init() {
     this.cleanup();
 
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
     const {
       userData: {
         vanillaColumn: { positionedRows },
         depth: layoutDepth,
       },
-    } = this.columnLayoutGroup;
+    } = columnLayoutGroup;
 
     const templateVanillaColumnGroupCreator = defaultColumnGroupCreator({
       positionedRows,
@@ -199,7 +219,7 @@ class ZStretchManager2 {
           A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
         );
 
-        const { children } = this.columnLayoutGroup;
+        const { children } = columnLayoutGroup;
 
         const { startColumnGroup, endColumnGroup } = (function () {
           const columns = children.filter(
@@ -213,7 +233,7 @@ class ZStretchManager2 {
         })();
 
         const midColumnGroups: ColumnGroup[] =
-          this.columnLayoutGroup.children.filter(
+          columnLayoutGroup.children.filter(
             (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
           );
 
@@ -225,21 +245,24 @@ class ZStretchManager2 {
           midColumnGroups,
         };
 
-        this.columnLayoutGroup.add(...vanillaColumnGroups);
+        columnLayoutGroup.add(...vanillaColumnGroups);
       })
     )();
   }
 
   cleanup() {
-    const invisibleColumnGroups = this.columnLayoutGroup.children.filter(
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const invisibleColumnGroups = columnLayoutGroup.children.filter(
       (x) => x instanceof ColumnGroup && !x.visible
     );
-    this.columnLayoutGroup.remove(...invisibleColumnGroups);
+
+    columnLayoutGroup.remove(...invisibleColumnGroups);
   }
 
   getScene() {
     return pipe(
-      this.columnLayoutGroup,
+      this.houseGroup.activeLayoutGroup,
       findFirstGuardUp((o): o is Scene => o instanceof Scene),
       someOrError(`scene not found above ZStretchManager's columnLayoutGroup`)
     );

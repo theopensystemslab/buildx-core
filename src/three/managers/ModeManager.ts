@@ -23,9 +23,8 @@ class ModeManager {
     switch (true) {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
-        // stretch handles enabled
-        console.log("right place");
-        // this.houseGroup.activeLayoutGroup.zStretchManager;
+        console.log("site -> building");
+        this.houseGroup.zStretchManager.showHandles();
         break;
       }
       // (down) Building -> Level
@@ -34,7 +33,8 @@ class ModeManager {
       }
       // (up) Builing -> Site
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.SITE: {
-        // stretch handles disabled
+        console.log("building -> site");
+        this.houseGroup.zStretchManager.hideHandles();
         break;
       }
       // (up) Level -> Building
@@ -43,6 +43,8 @@ class ModeManager {
       }
       // (up, up) Level -> Site
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.SITE: {
+        console.log("level -> site");
+        this.houseGroup.zStretchManager.hideHandles();
         break;
       }
       default: {

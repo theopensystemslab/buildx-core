@@ -79,19 +79,18 @@ const gestureManager = new GestureManager({
   onGestureEnd: () => {
     cameraControls.enabled = true;
   },
-  onDragProgress: ({
-    delta: { x: x1, z: z1 },
-    object,
-    originalPosition: { x: x0, y, z: z0 },
-  }) => {
-    object?.position.set(x0 + x1, y, z0 + z1);
-  },
+  // onDragProgress: ({
+  //   delta: { x: x1, z: z1 },
+  //   object,
+  //   originalPosition: { x: x0, y, z: z0 },
+  // }) => {
+  //   object?.position.set(x0 + x1, y, z0 + z1);
+  // },
   // onSingleTap: (v) => {
   //   console.log(v);
   // },
   onDoubleTap: ({ object }) => {
     if (object instanceof ElementBrush) {
-      console.log(object.houseGroup);
       object.houseGroup.modeManager.down();
     }
   },
@@ -124,7 +123,6 @@ pipe(
     })
   ),
   TE.map((houseGroup) => {
-    console.log(houseGroup);
     scene.add(houseGroup);
     gestureManager.addGestureEnabledObject(houseGroup);
   })

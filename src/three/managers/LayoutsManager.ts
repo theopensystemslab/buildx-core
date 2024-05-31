@@ -33,7 +33,7 @@ class LayoutsManager {
 
   constructor(initialLayoutGroup: ColumnLayoutGroup) {
     this.houseGroup = initialLayoutGroup.parent as HouseGroup;
-    this.houseTypeLayoutGroup = initialLayoutGroup;
+    this.houseTypeLayoutGroup = initialLayoutGroup.clone();
     this._activeLayoutGroup = initialLayoutGroup;
     this.init();
   }

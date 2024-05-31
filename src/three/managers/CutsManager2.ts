@@ -247,7 +247,6 @@ class CutsManager2 {
       compareProps(x, this.settings)
     );
     const nextIndex = (currentIndex + 1) % settings.length;
-    console.log({ currentIndex, nextIndex });
     const nextSetting = settings[nextIndex];
     this.setClippingBrush(nextSetting);
   }
