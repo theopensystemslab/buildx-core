@@ -17,9 +17,9 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
-import { HouseGroup } from "../house/HouseGroup";
+import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
-import HandleMesh from "../handles/HandleMesh";
+import { HouseGroup } from "../house/HouseGroup";
 
 const subsetOfTHREE = {
   Vector2,
@@ -96,8 +96,19 @@ class BuildXScene extends Scene {
         }
       },
       onDragStart: ({ object }) => {
-        if (object instanceof HandleMesh) {
-          console.log(object);
+        if (object instanceof StretchHandleMesh) {
+          object.manager.gestureStart(object.side);
+        }
+      },
+      onDragProgress: ({ object }) => {
+        const z = 1;
+        if (object instanceof StretchHandleMesh) {
+          object.manager.gestureProgress(z);
+        }
+      },
+      onDragEnd: ({ object }) => {
+        if (object instanceof StretchHandleMesh) {
+          object.manager.gestureEnd();
         }
       },
     });

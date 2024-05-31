@@ -3,11 +3,11 @@ import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, SphereGeometry } from "three";
 import { HouseGroup } from "../house/HouseGroup";
 import HandleGroup from "./HandleGroup";
-import HandleMesh from "./HandleMesh";
+import StretchHandleMesh from "./StretchHandleMesh";
 import handleMaterial from "./handleMaterial";
 
-type StretchAxis = "x" | "z";
-type StretchSide = 1 | -1;
+export type StretchAxis = "x" | "z";
+export type StretchSide = 1 | -1;
 
 const sphereGeom = new SphereGeometry(0.5);
 const boxGeom = new BoxGeometry(1, 1, 1);
@@ -20,8 +20,8 @@ class StretchHandleGroup extends HandleGroup {
     side: StretchSide;
   };
   houseGroup: HouseGroup;
-  boxMesh: HandleMesh;
-  sphereMeshes: [HandleMesh, HandleMesh];
+  boxMesh: StretchHandleMesh;
+  sphereMeshes: [StretchHandleMesh, StretchHandleMesh];
 
   constructor({
     axis,
@@ -44,21 +44,21 @@ class StretchHandleGroup extends HandleGroup {
     this.syncDimensions();
   }
 
-  private createBoxMesh(): HandleMesh {
-    const boxMesh = new HandleMesh(boxGeom, handleMaterial);
+  private createBoxMesh(): StretchHandleMesh {
+    const boxMesh = new StretchHandleMesh(boxGeom, handleMaterial);
     boxMesh.scale.setY(0.001);
     return boxMesh;
   }
 
-  private createSphereMeshes(): [HandleMesh, HandleMesh] {
+  private createSphereMeshes(): [StretchHandleMesh, StretchHandleMesh] {
     return pipe(
       A.replicate(2, sphereGeom),
-      A.map((geom): HandleMesh => {
-        const mesh = new HandleMesh(geom, handleMaterial);
+      A.map((geom): StretchHandleMesh => {
+        const mesh = new StretchHandleMesh(geom, handleMaterial);
         mesh.scale.setY(0.001);
         return mesh;
       })
-    ) as [HandleMesh, HandleMesh];
+    ) as [StretchHandleMesh, StretchHandleMesh];
   }
 
   syncDimensions() {
