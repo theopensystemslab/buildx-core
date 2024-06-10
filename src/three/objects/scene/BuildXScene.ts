@@ -44,6 +44,8 @@ class BuildXScene extends Scene {
   constructor(canvas?: HTMLCanvasElement) {
     super();
 
+    console.log("scene constructor");
+
     this.clock = new Clock();
 
     const camera = new PerspectiveCamera(
@@ -53,13 +55,15 @@ class BuildXScene extends Scene {
       1000
     );
 
-    if (canvas) {
-      this.renderer = new WebGLRenderer({ canvas });
-    } else {
-      this.renderer = new WebGLRenderer();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    const antialias = true;
+
+    this.renderer = new WebGLRenderer({ canvas, antialias });
+    if (!canvas) {
       document.body.appendChild(this.renderer.domElement);
     }
+
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
     // renderer.setClearColor("white");
 
     this.cameraControls = new CameraControls(camera, this.renderer.domElement);
@@ -78,7 +82,8 @@ class BuildXScene extends Scene {
 
     this.cameraControls.setLookAt(d, d, d, 0, 0, 0);
 
-    const light = new AmbientLight(0xffffff, 4);
+    const light = new AmbientLight(0xffffff, 1);
+
     this.add(light);
 
     this.gestureManager = new GestureManager({
@@ -133,10 +138,12 @@ class BuildXScene extends Scene {
     }
   }
 
-  addHouse(houseGroup: HouseGroup) {
+  addHouseGroup(houseGroup: HouseGroup) {
     this.gestureManager.enableGesturesOnObject(houseGroup);
     this.add(houseGroup);
   }
+
+  addHouseType() {}
 }
 
 export default BuildXScene;
