@@ -24,6 +24,6 @@ pipe(
     })
   ),
   TE.map((houseGroup) => {
-    scene.addHouse(houseGroup);
+    scene.addHouseGroup(houseGroup);
   })
 )();

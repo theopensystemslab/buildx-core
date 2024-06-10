@@ -45,6 +45,16 @@ export class HouseGroup extends Group {
     this.cutsManager = new CutsManager2(this);
   }
 
+  clone(recursive = true) {
+    if (!recursive)
+      throw new Error(`HouseGroup.clone called without recursive`);
+
+    return new HouseGroup({
+      userData: { ...this.userData },
+      initialColumnLayoutGroup: this.layoutsManager.activeLayoutGroup.clone(),
+    }) as this;
+  }
+
   get activeLayoutGroup(): ColumnLayoutGroup {
     return this.layoutsManager.activeLayoutGroup;
   }
