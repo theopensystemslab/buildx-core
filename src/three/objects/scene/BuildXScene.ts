@@ -17,7 +17,7 @@ import {
   Scene,
   ShadowMaterial,
 } from "three";
-
+import { ModeEnum } from "@/three/managers/ModeManager";
 import {
   AmbientLight,
   Box3,
@@ -36,6 +36,8 @@ import {
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
+import { ScopeElement } from "../types";
+import ZStretchManager from "@/three/managers/ZStretchManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -60,6 +62,9 @@ type BuildXSceneConfig = {
   enableShadows?: boolean;
   cameraDistance?: number;
   antialias?: boolean;
+  onLongTapBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
+  onRightClickBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
+  onTapMissed?: () => void;
 };
 
 class BuildXScene extends Scene {
@@ -67,6 +72,8 @@ class BuildXScene extends Scene {
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
+  selectedElement: ScopeElement | null;
+  hoveredElement: ScopeElement | null;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -80,6 +87,9 @@ class BuildXScene extends Scene {
       enableShadows = true,
       cameraDistance = 15,
       antialias = true,
+      onLongTapBuildElement,
+      onRightClickBuildElement,
+      onTapMissed,
     } = config;
 
     this.clock = new Clock();
@@ -129,6 +139,12 @@ class BuildXScene extends Scene {
       this.enableGroundObjects();
     }
 
+    this.selectedElement = null;
+    this.hoveredElement = null;
+
+    let dragProgress: ((delta: Vector3) => void) | undefined = undefined,
+      dragEnd: (() => void) | undefined = undefined;
+
     if (enableGestures)
       this.gestureManager = new GestureManager({
         domElement: this.renderer.domElement,
@@ -141,25 +157,58 @@ class BuildXScene extends Scene {
         },
         onDoubleTap: ({ object }) => {
           if (object instanceof ElementBrush) {
-            object.houseGroup.modeManager.down();
+            object.houseGroup.modeManager?.down();
+          }
+        },
+        onLongTap: ({ object }, pointer) => {
+          if (object instanceof ElementBrush) {
+            onLongTapBuildElement?.(object.scopeElement, pointer);
+          }
+        },
+        onRightClick: ({ object }, pointer) => {
+          if (object instanceof ElementBrush) {
+            onRightClickBuildElement?.(object.scopeElement, pointer);
           }
         },
         onDragStart: ({ object }) => {
           if (object instanceof StretchHandleMesh) {
-            object.manager.gestureStart(object.side);
+            const stretchManager = object.manager;
+            stretchManager.gestureStart(object.side);
+
+            const yAxis = new Vector3(0, 1, 0);
+
+            dragProgress = (delta: Vector3) => {
+              const normalizedDelta = delta
+                .clone()
+                .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
+              stretchManager.gestureProgress(
+                stretchManager instanceof ZStretchManager
+                  ? normalizedDelta.z
+                  : normalizedDelta.x
+              );
+            };
+
+            dragEnd = () => {
+              stretchManager.gestureEnd();
+              dragProgress = undefined;
+            };
+          } else if (object instanceof ElementBrush) {
+            const houseGroup = object.houseGroup;
+            const mode = object.houseGroup.modeManager?.mode;
+
+            if (mode === ModeEnum.Enum.SITE) {
+              dragProgress = (delta: Vector3) => {
+                houseGroup.move(delta);
+              };
+              dragEnd = () => {
+                dragProgress = undefined;
+              };
+            }
           }
         },
-        onDragProgress: ({ object }) => {
-          const z = 1;
-          if (object instanceof StretchHandleMesh) {
-            object.manager.gestureProgress(z);
-          }
-        },
-        onDragEnd: ({ object }) => {
-          if (object instanceof StretchHandleMesh) {
-            object.manager.gestureEnd();
-          }
-        },
+        onDragProgress: (v) => dragProgress?.(v.delta),
+        onDragEnd: () => dragEnd?.(),
+        onTapMissed,
       });
 
     this.animate();

@@ -1,25 +1,67 @@
 import { BuildElement } from "@/build-systems/remote/elements";
 import { ThreeMaterial } from "@/three/materials/types";
+import { hideObject, showObject } from "@/three/utils/layers";
 import { BufferGeometry, Group, NormalBufferAttributes } from "three";
-import { Brush } from "three-bvh-csg";
-import { ModuleGroup } from "./ModuleGroup";
+import { Brush, SUBTRACTION } from "three-bvh-csg";
 import { ScopeElement } from "../types";
-import { RowGroup } from "./RowGroup";
 import { ColumnGroup } from "./ColumnGroup";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { HouseGroup } from "./HouseGroup";
+import { ModuleGroup } from "./ModuleGroup";
+import { RowGroup } from "./RowGroup";
+import { evaluator } from "@/three/managers/CutsManager";
 
 export class ElementGroup extends Group {
   userData: {
     element: BuildElement;
   };
+  fullBrush: FullElementBrush;
+  clippedBrush?: ClippedElementBrush;
 
-  constructor(element: BuildElement) {
+  constructor(element: BuildElement, fullBrush: FullElementBrush) {
     super();
-
     this.userData = {
       element,
     };
+    this.fullBrush = fullBrush;
+  }
+
+  createClippedBrush(clippingBrush: Brush) {
+    if (!this.fullBrush) return;
+
+    if (this.clippedBrush) {
+      this.clippedBrush.removeFromParent();
+    }
+
+    this.clippedBrush = new ClippedElementBrush();
+    hideObject(this.clippedBrush);
+    this.add(this.clippedBrush);
+
+    this.fullBrush.updateMatrixWorld();
+
+    evaluator.evaluate(
+      this.fullBrush,
+      clippingBrush,
+      SUBTRACTION,
+      this.clippedBrush
+    );
+
+    this.clippedBrush.geometry.applyMatrix4(this.matrixWorld.invert());
+    this.clippedBrush.updateMatrixWorld();
+  }
+
+  showClippedBrush() {
+    if (this.clippedBrush) {
+      showObject(this.clippedBrush);
+      hideObject(this.fullBrush);
+    }
+  }
+
+  showFullBrush() {
+    showObject(this.fullBrush);
+    if (this.clippedBrush) {
+      hideObject(this.clippedBrush);
+    }
   }
 
   get moduleGroup(): ModuleGroup {
@@ -33,6 +75,14 @@ export class ElementGroup extends Group {
 
   get columnGroup(): ColumnGroup {
     return this.rowGroup.columnGroup;
+  }
+
+  get columnLayoutGroup(): ColumnLayoutGroup {
+    return this.columnGroup.columnLayoutGroup;
+  }
+
+  get houseGroup(): HouseGroup {
+    return this.columnLayoutGroup.houseGroup;
   }
 }
 
@@ -119,9 +169,9 @@ export const defaultElementGroupCreator = ({
   threeMaterial: ThreeMaterial;
   element: BuildElement;
 }): ElementGroup => {
-  const elementBrush = new FullElementBrush(geometry, threeMaterial);
-  elementBrush.castShadow = true;
-  const elementGroup = new ElementGroup(element);
-  elementGroup.add(elementBrush);
+  const fullElementBrush = new FullElementBrush(geometry, threeMaterial);
+  fullElementBrush.castShadow = true;
+  const elementGroup = new ElementGroup(element, fullElementBrush);
+  elementGroup.add(fullElementBrush);
   return elementGroup;
 };

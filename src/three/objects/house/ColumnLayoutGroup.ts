@@ -6,10 +6,14 @@ import { createVanillaColumn } from "@/tasks/vanilla";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group, Scene } from "three";
+import { Box3, Group, Matrix3, Matrix4, Scene, Vector3 } from "three";
 import { OBB } from "three-stdlib";
-import { defaultColumnGroupCreator } from "./ColumnGroup";
+import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
+import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
+import { RowGroup } from "./RowGroup";
+
+export const AABB_OFFSET = 10;
 
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
@@ -55,6 +59,156 @@ export class ColumnLayoutGroup extends Group {
       (x): x is ColumnLayoutGroup =>
         x instanceof ColumnLayoutGroup && x.uuid !== uuid
     );
+  }
+
+  getVisibleColumnGroups(sort: boolean = true): ColumnGroup[] {
+    const visibleColumnGroups = this.children.filter(
+      (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+    );
+
+    return sort
+      ? visibleColumnGroups.sort(
+          (a, b) => a.userData.columnIndex - b.userData.columnIndex
+        )
+      : visibleColumnGroups;
+  }
+
+  updateDnas() {
+    let result: string[][] = [];
+    pipe(
+      this.getVisibleColumnGroups(),
+      A.map((v) => {
+        v.traverse((node) => {
+          if (node instanceof ModuleGroup && node.visible) {
+            const {
+              module: { dna },
+            } = node.userData as ModuleGroupUserData;
+            if (!(node.parent instanceof RowGroup))
+              throw new Error("non-RowGroup parent of ModuleGroup");
+
+            const rowIndex = node.parent.userData.rowIndex;
+
+            if (!result[rowIndex]) {
+              result[rowIndex] = [];
+            }
+            result[rowIndex].push(dna);
+          }
+        });
+      })
+    );
+    this.userData.dnas = result.flat();
+  }
+
+  updateDepth() {
+    const originalDepth = this.userData.depth;
+
+    const nextDepth = this.getVisibleColumnGroups(false).reduce(
+      (acc, v) => acc + v.userData.depth,
+      0
+    );
+
+    this.userData.depth = nextDepth;
+
+    this.position.setZ(-nextDepth / 2);
+
+    this.houseGroup.position.add(
+      new Vector3(0, 0, (nextDepth - originalDepth) / 2).applyAxisAngle(
+        new Vector3(0, 1, 0),
+        this.houseGroup.rotation.y
+      )
+    );
+
+    this.updateBBs();
+  }
+
+  updateBBs() {
+    const { width, height, depth } = this.userData;
+
+    const { x, y, z } = this.houseGroup.position;
+
+    const scaleFactor = 1.08;
+
+    const center = new Vector3(x, y + height / 2, z);
+    const halfSize = new Vector3(
+      width / 2,
+      height / 2,
+      depth / 2
+    ).multiplyScalar(scaleFactor);
+
+    this.houseGroup.updateMatrix();
+
+    const rotationMatrix4 = new Matrix4().extractRotation(
+      this.houseGroup.matrix
+    );
+
+    this.obb.set(
+      center,
+      halfSize,
+      new Matrix3().setFromMatrix4(rotationMatrix4)
+    );
+
+    // Initialize min and max vectors to extreme values
+    let min = new Vector3(Infinity, Infinity, Infinity);
+    let max = new Vector3(-Infinity, -Infinity, -Infinity);
+
+    // AABB corners, DELTA to make it bigger so we can pre-empt
+    // which houses to OBB-intersect-check
+    [
+      new Vector3(
+        halfSize.x + AABB_OFFSET,
+        halfSize.y + AABB_OFFSET,
+        halfSize.z + AABB_OFFSET
+      ),
+      new Vector3(
+        -(halfSize.x + AABB_OFFSET),
+        halfSize.y + AABB_OFFSET,
+        halfSize.z + AABB_OFFSET
+      ),
+      new Vector3(
+        halfSize.x + AABB_OFFSET,
+        -(halfSize.y + AABB_OFFSET),
+        halfSize.z + AABB_OFFSET
+      ),
+      new Vector3(
+        halfSize.x + AABB_OFFSET,
+        halfSize.y + AABB_OFFSET,
+        -(halfSize.z + AABB_OFFSET)
+      ),
+      new Vector3(
+        -(halfSize.x + AABB_OFFSET),
+        -(halfSize.y + AABB_OFFSET),
+        halfSize.z + AABB_OFFSET
+      ),
+      new Vector3(
+        -(halfSize.x + AABB_OFFSET),
+        halfSize.y + AABB_OFFSET,
+        -(halfSize.z + AABB_OFFSET)
+      ),
+      new Vector3(
+        halfSize.x + AABB_OFFSET,
+        -(halfSize.y + AABB_OFFSET),
+        -(halfSize.z + AABB_OFFSET)
+      ),
+      new Vector3(
+        -(halfSize.x + AABB_OFFSET),
+        -(halfSize.y + AABB_OFFSET),
+        -(halfSize.z + AABB_OFFSET)
+      ),
+    ].forEach((offset) => {
+      offset.applyMatrix4(rotationMatrix4);
+      offset.add(center);
+      min.min(offset);
+      max.max(offset);
+    });
+
+    // Set the AABB
+    this.aabb.set(min, max);
+
+    // if (DEBUG) {
+    //   renderBBs();
+    // }
+
+    // invalidate();
   }
 }
 
@@ -145,6 +299,8 @@ export const createColumnLayoutGroup = ({
           const columnLayoutGroup = new ColumnLayoutGroup(userData);
 
           columnLayoutGroup.add(...columnGroups);
+
+          columnLayoutGroup.position.setZ(-depth / 2);
 
           columnLayoutGroup.updateOBB();
 
