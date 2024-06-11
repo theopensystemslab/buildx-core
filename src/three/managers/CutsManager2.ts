@@ -208,6 +208,8 @@ class CutsManager2 {
     }
 
     if (brush !== null) {
+      brush.applyMatrix4(this.houseGroup.matrixWorld);
+      brush.updateMatrixWorld();
       this.createClippedBrushes(brush);
       this.showClippedBrushes();
     } else {
