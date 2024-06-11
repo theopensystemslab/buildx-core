@@ -1,11 +1,15 @@
-import { cachedModulesTE, cachedWindowTypesTE } from "@/build-systems/cache";
+import {
+  CachedWindowType,
+  cachedModulesTE,
+  cachedWindowTypesTE,
+} from "@/build-systems/cache";
 import {
   BuildModule,
   StructuredDna,
   parseDna,
 } from "@/build-systems/remote/modules";
-import { WindowType } from "@/build-systems/remote/windowTypes";
 import { getVanillaModule } from "@/tasks/vanilla";
+import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { Side } from "@/three/utils/camera";
 import { A, O, TE, compareProps, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
@@ -17,25 +21,35 @@ import { ColumnLayout } from "./types";
 type AltWindowTypeLayout = {
   layout: ColumnLayout;
   dnas: string[];
-  windowType: WindowType;
+  windowType: CachedWindowType;
   candidate: BuildModule;
 };
 
+export type AltWindowTypeLayoutGroupOption = Omit<
+  AltWindowTypeLayout,
+  "layout" | "dnas"
+> & {
+  layoutGroup: ColumnLayoutGroup;
+};
+
 export const getAltWindowTypeLayouts = ({
-  systemId,
   columnIndex,
   rowIndex,
   moduleIndex,
   side,
   currentLayout,
+  currentDnas,
 }: {
-  systemId: string;
   currentLayout: ColumnLayout;
+  currentDnas: string[];
   columnIndex: number;
   rowIndex: number;
   moduleIndex: number;
   side: Side;
-}): TE.TaskEither<Error, AltWindowTypeLayout[]> =>
+}): TE.TaskEither<
+  Error,
+  { alts: AltWindowTypeLayout[]; current: AltWindowTypeLayout }
+> =>
   pipe(
     cachedWindowTypesTE,
     TE.chain((windowTypes) =>
@@ -47,31 +61,7 @@ export const getAltWindowTypeLayouts = ({
             positionedRows,
             A.lookup(rowIndex),
             O.chain(({ positionedModules }) =>
-              pipe(
-                positionedModules,
-                A.lookup(moduleIndex),
-                O.map(
-                  ({
-                    module: {
-                      dna,
-                      structuredDna: {
-                        sectionType,
-                        positionType,
-                        gridType,
-                        levelType,
-                      },
-                    },
-                  }) => ({
-                    systemId,
-                    dna,
-                    side,
-                    sectionType,
-                    positionType,
-                    gridType,
-                    levelType,
-                  })
-                )
-              )
+              pipe(positionedModules, A.lookup(moduleIndex))
             )
           )
         ),
@@ -84,35 +74,48 @@ export const getAltWindowTypeLayouts = ({
             )}`
           )
         ),
-        TE.chain(
-          ({
+        // current module
+        TE.chain((positionedModule) => {
+          const {
+            module,
+            module: {
+              dna,
+              systemId,
+              structuredDna: { sectionType, positionType, levelType, gridType },
+            },
+          } = positionedModule;
+          const moduleWindowTypeAlts = getModuleWindowTypeAlts({
             systemId,
             dna,
             side,
+          });
+          const vanillaModule = getVanillaModule({
+            systemId,
             sectionType,
             positionType,
-            levelType,
             gridType,
-          }) => {
-            const moduleWindowTypeAlts = getModuleWindowTypeAlts({
-              systemId,
-              dna,
-              side,
-            });
-            const vanillaModule = getVanillaModule({
-              systemId,
-              sectionType,
-              positionType,
-              gridType,
-              levelType,
-            });
-            return sequenceT(TE.ApplicativePar)(
-              moduleWindowTypeAlts,
-              vanillaModule
-            );
-          }
-        ),
-        TE.map(([alts, vanillaModule]) =>
+            levelType,
+          });
+
+          const currentWindowType = pipe(
+            getWindowType(windowTypes, module.structuredDna, side),
+            someOrError(`no window type`)
+          );
+
+          const currentAltWindowTypeLayout: AltWindowTypeLayout = {
+            candidate: module,
+            dnas: currentDnas,
+            layout: currentLayout,
+            windowType: currentWindowType,
+          };
+
+          return sequenceT(TE.ApplicativePar)(
+            moduleWindowTypeAlts,
+            vanillaModule,
+            TE.of(currentAltWindowTypeLayout)
+          );
+        }),
+        TE.map(([alts, vanillaModule, currentAltWindowTypeLayout]) =>
           pipe(
             alts,
             A.map((candidate) => {
@@ -140,7 +143,13 @@ export const getAltWindowTypeLayouts = ({
                   };
                 }
               );
-            })
+            }),
+            (alts) => {
+              // const foo = alts[0]
+              // const bar = currentLayout
+              // getWindowType(windowTypes, )
+              return { alts, current: currentAltWindowTypeLayout };
+            }
           )
         )
       )
@@ -211,7 +220,7 @@ export const getModuleWindowTypeAlts = ({
 };
 
 export const getWindowType = (
-  windowTypes: WindowType[],
+  windowTypes: CachedWindowType[],
   structuredDna: StructuredDna,
   side: Side
 ) =>

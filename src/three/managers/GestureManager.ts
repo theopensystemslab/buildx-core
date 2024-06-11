@@ -1,16 +1,21 @@
 import { A, O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import {
+  Camera,
+  Intersection,
+  Object3D,
+  Plane,
   Raycaster,
   Vector2,
   Vector3,
-  Object3D,
-  Plane,
-  Intersection,
-  Camera,
 } from "three";
+import {
+  CAMERA_ONLY_LAYER,
+  HIDDEN_LAYER,
+  RAYCAST_ONLY_LAYER,
+} from "../utils/layers";
 
-type TapHandler = (intersection: Intersection) => void;
+type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
 type DragHandler = (detail: DragDetail) => void;
 
@@ -24,10 +29,10 @@ type DragDetail = {
 };
 
 class GestureManager {
-  private raycaster = new Raycaster();
+  raycaster = new Raycaster();
+  camera: Camera;
   private pointer = new Vector2();
   private gestureEnabledObjects: Object3D[];
-  private camera: Camera;
   private pointerDownTime = 0;
   private pointerIsDown = false;
   private pointerMoved = false;
@@ -53,7 +58,8 @@ class GestureManager {
   private onTapMissed?: () => void;
   private onDragStart?: TapHandler;
   private onDragProgress?: DragHandler;
-  private onDragEnd?: TapHandler;
+  private onDragEnd?: () => void;
+  private onRightClick?: TapHandler;
   private gestureStarted = false; // Flag to track if a gesture has actually started
   private movementPlaneXZ = new Plane(new Vector3(0, 1, 0), 0); // The plane for XZ tracking
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
@@ -71,7 +77,8 @@ class GestureManager {
     onTapMissed?: () => void;
     onDragStart?: TapHandler;
     onDragProgress?: DragHandler;
-    onDragEnd?: TapHandler;
+    onDragEnd?: () => void;
+    onRightClick?: TapHandler;
   }) {
     this.domElement = params.domElement;
     this.camera = params.camera;
@@ -88,7 +95,15 @@ class GestureManager {
     this.onDragProgress = params.onDragProgress;
     this.onDragEnd = params.onDragEnd;
 
+    this.onRightClick = params.onRightClick;
+
     this.attachEventListeners();
+
+    this.camera.layers.enable(CAMERA_ONLY_LAYER);
+    this.raycaster.layers.enable(RAYCAST_ONLY_LAYER);
+
+    this.camera.layers.disable(HIDDEN_LAYER);
+    this.raycaster.layers.disable(HIDDEN_LAYER);
   }
 
   private attachEventListeners() {
@@ -101,11 +116,27 @@ class GestureManager {
       "pointermove",
       this.onPointerMove.bind(this)
     );
+    this.domElement.addEventListener(
+      "contextmenu",
+      this.onContextMenu.bind(this)
+    );
     window.addEventListener("resize", this.onResize.bind(this));
   }
 
   private onResize() {
     this.domRect = this.domElement.getBoundingClientRect();
+  }
+
+  private onContextMenu(ev: MouseEvent) {
+    ev.preventDefault();
+    const intersects = this.raycaster.intersectObjects(
+      this.gestureEnabledObjects
+    );
+
+    if (intersects.length > 0) {
+      const intersection = intersects[0];
+      this.onRightClick?.(intersection, new Vector2(ev.clientX, ev.clientY));
+    }
   }
 
   private onPointerDown(event: PointerEvent) {
@@ -120,9 +151,9 @@ class GestureManager {
     this.pointer.y =
       -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const intersects = this.raycaster.intersectObjects(
-      this.gestureEnabledObjects
-    );
+    const intersects = this.raycaster
+      .intersectObjects(this.gestureEnabledObjects)
+      .filter((x) => x.object.visible);
 
     if (intersects.length > 0) {
       this.isDraggingGestureEnabledObject = true;
@@ -153,10 +184,20 @@ class GestureManager {
           pipe(
             this.raycaster.intersectObject(this.currentGestureObject),
             A.head,
-            O.map((ix) => this.onLongTap?.(ix))
+            O.map((ix) => this.onLongTap?.(ix, this.pointer))
           );
       }
     }, this.longTapThreshold);
+  }
+
+  private cleanup() {
+    this.currentGestureObject = null;
+    this.pointerMoved = false;
+    this.isDraggingGestureEnabledObject = false;
+
+    this.initialPointerPosition = new Vector2();
+    this.initialPoint = new Vector3();
+    this.lastPoint = new Vector3();
   }
 
   private onPointerUp(_event: PointerEvent) {
@@ -172,11 +213,7 @@ class GestureManager {
       this.isDraggingGestureEnabledObject &&
       this.currentGestureObject
     ) {
-      pipe(
-        this.raycaster.intersectObject(this.currentGestureObject),
-        A.head,
-        O.map((ix) => this.onDragEnd?.(ix))
-      );
+      this.onDragEnd?.();
     } else if (!this.pointerMoved) {
       if (duration < this.longTapThreshold) {
         this.tapCount++;
@@ -185,7 +222,7 @@ class GestureManager {
             pipe(
               this.raycaster.intersectObject(this.currentGestureObject),
               A.head,
-              O.map((ix) => this.onSingleTap?.(ix))
+              O.map((ix) => this.onSingleTap?.(ix, this.pointer))
             );
           this.tapTimeoutId = setTimeout(() => {
             this.tapCount = 0;
@@ -200,7 +237,7 @@ class GestureManager {
             pipe(
               this.raycaster.intersectObject(this.currentGestureObject),
               A.head,
-              O.map((ix) => this.onDoubleTap?.(ix))
+              O.map((ix) => this.onDoubleTap?.(ix, this.pointer))
             );
 
           this.tapCount = 0;
@@ -212,10 +249,13 @@ class GestureManager {
     }
 
     this.pointerIsDown = false;
+
     if (this.gestureStarted && this.onGestureEnd) {
       this.onGestureEnd();
       this.gestureStarted = false; // Reset the gesture started flag
     }
+
+    this.cleanup();
   }
 
   private onPointerMove(event: PointerEvent) {
@@ -229,10 +269,12 @@ class GestureManager {
           pipe(
             this.raycaster.intersectObject(this.currentGestureObject),
             A.head,
-            O.map((ix) => this.onDragStart?.(ix))
+            O.map((ix) => {
+              this.pointerMoved = true;
+              this.onDragStart?.(ix, this.pointer);
+            })
           );
         }
-        this.pointerMoved = true;
 
         if (this.longTapTimeoutId) {
           clearTimeout(this.longTapTimeoutId);
@@ -247,24 +289,27 @@ class GestureManager {
         this.raycaster.setFromCamera(this.pointer, this.camera);
 
         const intersectionPointXZ = new Vector3();
-        const intersectionPointY = new Vector3();
+        // const intersectionPointY = new Vector3();
 
         const intersectXZ = this.raycaster.ray.intersectPlane(
           this.movementPlaneXZ,
           intersectionPointXZ
         );
-        const intersectY = this.raycaster.ray.intersectPlane(
-          this.movementPlaneY,
-          intersectionPointY
-        );
+        // const intersectY = this.raycaster.ray.intersectPlane(
+        //   this.movementPlaneY,
+        //   intersectionPointY
+        // );
 
-        if (intersectXZ && intersectY) {
+        if (
+          intersectXZ
+          // && intersectY
+        ) {
           const currentPoint = new Vector3(
             intersectionPointXZ.x,
             this.initialPoint.y,
             intersectionPointXZ.z
           );
-          const delta = currentPoint.clone().sub(this.initialPoint);
+          const delta = currentPoint.clone().sub(this.lastPoint);
 
           this.onDragProgress?.({
             initialPoint: this.initialPoint.clone(),
@@ -276,6 +321,7 @@ class GestureManager {
           });
 
           this.lastPoint.copy(currentPoint);
+        } else {
         }
       }
     }

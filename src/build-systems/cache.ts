@@ -27,20 +27,24 @@ export type CachedBuildModel = {
 };
 
 export type BlobbedImage<T> = Omit<T, "imageUrl"> & {
-  imageBlob: Blob;
+  imageBlob?: Blob;
 };
 
 export type CachedHouseType = BlobbedImage<HouseType>;
+
+export type CachedBuildMaterial = BlobbedImage<BuildMaterial>;
+
+export type CachedWindowType = BlobbedImage<WindowType>;
 
 class BuildSystemsCache extends Dexie {
   modules: Dexie.Table<BuildModule, string>;
   houseTypes: Dexie.Table<CachedHouseType, string>;
   elements: Dexie.Table<BuildElement, string>;
-  materials: Dexie.Table<BuildMaterial, string>;
+  materials: Dexie.Table<CachedBuildMaterial, string>;
   models: Dexie.Table<CachedBuildModel, string>;
   sectionTypes: Dexie.Table<SectionType, string>;
   levelTypes: Dexie.Table<LevelType, string>;
-  windowTypes: Dexie.Table<WindowType, string>;
+  windowTypes: Dexie.Table<CachedWindowType, string>;
   // blocks: Dexie.Table<Block, string>
   // blockModuleEntries: Dexie.Table<BlockModulesEntry, string>
   // spaceTypes: Dexie.Table<SpaceType, string>
@@ -49,7 +53,8 @@ class BuildSystemsCache extends Dexie {
 
   constructor() {
     super("BuildSystemsDatabase");
-    this.version(2).stores({
+
+    this.version(3).stores({
       modules: "[systemId+dna]",
       houseTypes: "id",
       elements: "[systemId+ifcTag]",
@@ -149,7 +154,7 @@ export const cachedModulesTE = runUntilFirstSuccess([
 
 // MATERIALS
 
-export const localMaterialsTE: TE.TaskEither<Error, BuildMaterial[]> =
+export const localMaterialsTE: TE.TaskEither<Error, CachedBuildMaterial[]> =
   TE.tryCatch(
     () =>
       buildSystemsCache.materials.toArray().then((materials) => {
@@ -161,14 +166,37 @@ export const localMaterialsTE: TE.TaskEither<Error, BuildMaterial[]> =
     (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
   );
 
+const tryCatchImageBlob = (imageUrl: string | undefined) =>
+  TE.tryCatch(
+    () => {
+      return typeof imageUrl === "undefined"
+        ? Promise.resolve(undefined)
+        : fetchImageAsBlob(imageUrl);
+    },
+    (reason) => {
+      return reason instanceof Error ? reason : new Error(String(reason));
+    }
+  );
+
 export const cachedMaterialsTE = runUntilFirstSuccess([
   localMaterialsTE,
   pipe(
     remoteMaterialsTE,
-    TE.map((materials) => {
-      buildSystemsCache.materials.bulkPut(materials);
-      return materials;
-    })
+    TE.chain((remoteMaterials) =>
+      pipe(
+        remoteMaterials,
+        A.traverse(TE.ApplicativePar)(({ imageUrl, ...material }) =>
+          pipe(
+            tryCatchImageBlob(imageUrl),
+            TE.map((imageBlob) => ({ ...material, imageBlob }))
+          )
+        ),
+        TE.map((materials) => {
+          buildSystemsCache.materials.bulkPut(materials);
+          return materials;
+        })
+      )
+    )
   ),
 ]);
 
@@ -180,7 +208,7 @@ type MaterialGetters = {
   getMaterial: (
     systemId: string,
     specification: string
-  ) => E.Either<Error, BuildMaterial>;
+  ) => E.Either<Error, CachedBuildMaterial>;
   getInitialThreeMaterial: (
     systemId: string,
     ifcTag: string
@@ -214,7 +242,11 @@ export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
       const getInitialThreeMaterial = flow(
         getElement,
         E.chain(({ systemId, defaultMaterial: specification }) =>
-          pipe(getMaterial(systemId, specification), E.map(getThreeMaterial))
+          pipe(
+            getMaterial(systemId, specification),
+            (x) => x,
+            E.map((x) => getThreeMaterial(x))
+          )
         )
       );
 
@@ -250,11 +282,7 @@ export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
           remoteHouseTypes,
           A.traverse(TE.ApplicativePar)(({ imageUrl, ...houseType }) =>
             pipe(
-              TE.tryCatch(
-                () => fetchImageAsBlob(imageUrl),
-                (reason) =>
-                  reason instanceof Error ? reason : new Error(String(reason))
-              ),
+              tryCatchImageBlob(imageUrl),
               TE.map((imageBlob) => ({ ...houseType, imageBlob }))
             )
           ),
@@ -445,7 +473,7 @@ export const getLevelType = ({
 
 // WINDOW TYPES
 
-export const localWindowTypesTE: TE.TaskEither<Error, WindowType[]> =
+export const localWindowTypesTE: TE.TaskEither<Error, CachedWindowType[]> =
   TE.tryCatch(
     () =>
       buildSystemsCache.windowTypes.toArray().then((windowTypes) => {
@@ -461,10 +489,21 @@ export const cachedWindowTypesTE = runUntilFirstSuccess([
   localWindowTypesTE,
   pipe(
     remoteWindowTypesTE,
-    TE.map((windowTypes) => {
-      buildSystemsCache.windowTypes.bulkPut(windowTypes);
-      return windowTypes;
-    })
+    TE.chain((remoteWindowTypes) =>
+      pipe(
+        remoteWindowTypes,
+        A.traverse(TE.ApplicativePar)(({ imageUrl, ...windowType }) =>
+          pipe(
+            tryCatchImageBlob(imageUrl),
+            TE.map((imageBlob) => ({ ...windowType, imageBlob }))
+          )
+        ),
+        TE.map((materials) => {
+          buildSystemsCache.windowTypes.bulkPut(materials);
+          return materials;
+        })
+      )
+    )
   ),
 ]);
 

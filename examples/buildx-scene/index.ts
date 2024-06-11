@@ -10,7 +10,7 @@ pipe(
   cachedHouseTypesTE,
   TE.chain(
     flow(
-      A.lookup(0),
+      A.lookup(2),
       TE.fromOption(() => Error())
     )
   ),
@@ -25,5 +25,26 @@ pipe(
   ),
   TE.map((houseGroup) => {
     scene.addHouseGroup(houseGroup);
+
+    window.addEventListener("keydown", (ev) => {
+      if (ev.key === "m") {
+        houseGroup.modeManager?.up();
+      }
+      if (ev.key === "d") {
+        houseGroup.cutsManager?.debugClippingBrush();
+      }
+      if (ev.key === "x") {
+        houseGroup.cutsManager?.toggleXCut();
+        houseGroup.cutsManager?.syncActiveLayout();
+      }
+      if (ev.key === "z") {
+        houseGroup.cutsManager?.toggleZCut();
+        houseGroup.cutsManager?.syncActiveLayout();
+      }
+      if (ev.key === "y") {
+        houseGroup.cutsManager?.toggleGroundCut();
+        houseGroup.cutsManager?.syncActiveLayout();
+      }
+    });
   })
 )();

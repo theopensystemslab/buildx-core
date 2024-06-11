@@ -1,7 +1,7 @@
-import { BuildMaterial } from "@/build-systems/remote/materials";
+import { CachedBuildMaterial } from "@/build-systems/cache";
 import { DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from "three";
 
-const createThreeMaterial = (material: BuildMaterial) => {
+const createThreeMaterial = (material: CachedBuildMaterial) => {
   if (material.specification === "Glass") {
     return new MeshPhysicalMaterial({
       // -- thickness of the clear coat layer, from 0.0 to 1.0

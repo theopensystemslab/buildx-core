@@ -1,19 +1,19 @@
 import { Mesh } from "three";
 import HandleMesh from "./HandleMesh";
-import ZStretchManager2 from "@/three/managers/ZStretchManager2";
 import StretchHandleGroup, {
   StretchAxis,
   StretchSide,
 } from "./StretchHandleGroup";
+import StretchManager from "@/three/managers/StretchManager";
 
 class StretchHandleMesh extends HandleMesh {
   constructor(...args: ConstructorParameters<typeof Mesh>) {
     super(...args);
   }
 
-  get manager(): ZStretchManager2 {
+  get manager(): StretchManager {
     if (this.parent instanceof StretchHandleGroup) {
-      return this.parent.houseGroup.zStretchManager;
+      return this.parent.manager;
     } else {
       throw new Error(`no stretch manager for handle mesh`);
     }

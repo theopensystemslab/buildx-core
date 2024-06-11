@@ -1,201 +1,78 @@
-import { LevelType } from "@/build-systems/remote/levelTypes";
-import { SectionType } from "@/build-systems/remote/sectionTypes";
-import { WindowType } from "@/build-systems/remote/windowTypes";
-import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
-import { columnLayoutToDnas } from "@/layouts/init";
-import { A, O, S, TE } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
-import {
-  ColumnLayoutGroup,
-  createColumnLayoutGroup,
-} from "../objects/house/ColumnLayoutGroup";
+import { O } from "@/utils/functions";
+import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { ScopeElement } from "../objects/types";
-import { getAltWindowTypeLayouts } from "@/layouts/changeWindowType";
-import { Side } from "../utils/camera";
+import { hideObject, showObject } from "../utils/layers";
+import { pipe } from "fp-ts/lib/function";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
-  houseTypeLayoutGroup: ColumnLayoutGroup;
-  private _activeLayoutGroup: ColumnLayoutGroup;
-  sectionTypeLayouts: Array<{
-    sectionType: SectionType;
-    layoutGroup: ColumnLayoutGroup;
-  }> = [];
-  changeLevelType?: {
-    target: ScopeElement;
-    options: Array<{ layoutGroup: ColumnLayoutGroup; levelType: LevelType }>;
-  };
-  changeWindowType?: {
-    target: ScopeElement;
-    options: Array<{ layoutGroup: ColumnLayoutGroup; windowType: WindowType }>;
-  };
 
-  constructor(initialLayoutGroup: ColumnLayoutGroup) {
-    this.houseGroup = initialLayoutGroup.parent as HouseGroup;
-    this.houseTypeLayoutGroup = initialLayoutGroup.clone();
-    this._activeLayoutGroup = initialLayoutGroup;
-    this.init();
+  private _activeLayoutGroup: O.Option<ColumnLayoutGroup>;
+  private _previewLayoutGroup: O.Option<ColumnLayoutGroup>;
+
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
+    this._activeLayoutGroup = O.none;
+    this._previewLayoutGroup = O.none;
   }
 
-  private init() {
-    this.prepareAltSectionTypeLayouts();
-  }
-
-  get activeLayoutGroup(): ColumnLayoutGroup {
+  get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
     return this._activeLayoutGroup;
   }
 
-  get currentSectionType(): SectionType {
-    return this.activeLayoutGroup.userData.sectionType;
-  }
-
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
-    this._activeLayoutGroup.visible = false;
-    layoutGroup.visible = true;
-    this._activeLayoutGroup = layoutGroup;
-    this._activeLayoutGroup.updateOBB();
+    const previewNone = () => {
+      pipe(this.activeLayoutGroup, O.map(hideObject));
+      showObject(layoutGroup);
+      this._activeLayoutGroup = O.some(layoutGroup);
+    };
+
+    const previewSome = (previewLayoutGroup: ColumnLayoutGroup) => {
+      if (previewLayoutGroup !== layoutGroup)
+        throw new Error(
+          `unexpected setting active layout group different than preivew`
+        );
+      this._activeLayoutGroup = this._previewLayoutGroup;
+      this._previewLayoutGroup = O.none;
+    };
+
+    pipe(this.previewLayoutGroup, O.match(previewNone, previewSome));
   }
 
-  cycleSectionTypeLayout() {
-    const { currentSectionType, sectionTypeLayouts } = this;
+  get previewLayoutGroup(): O.Option<ColumnLayoutGroup> {
+    return this._previewLayoutGroup;
+  }
 
+  set previewLayoutGroup(incoming: O.Option<ColumnLayoutGroup>) {
     pipe(
-      sectionTypeLayouts,
-      O.fromNullable,
-      O.chain(
-        A.findIndex((x) => x.sectionType.code === currentSectionType.code)
-      ),
-      O.fold(
-        () => console.warn("Current section type layout not found"),
-        (currentIndex) => {
-          const nextIndex = (currentIndex + 1) % sectionTypeLayouts.length;
-          this.activeLayoutGroup = sectionTypeLayouts[nextIndex].layoutGroup;
-        }
-      )
-    );
-  }
-
-  private async prepareAltSectionTypeLayouts() {
-    const { systemId } = this.houseGroup.userData;
-    const { layout, sectionType } = this.activeLayoutGroup.userData;
-
-    this.clearPreviousLayouts();
-
-    const layouts = await pipe(
-      getAltSectionTypeLayouts({ systemId, layout, sectionType }),
-      TE.chain(
-        A.traverse(TE.ApplicativePar)(({ layout, sectionType }) =>
+      this.activeLayoutGroup,
+      O.map((activeLayoutGroup: ColumnLayoutGroup) => {
+        if (activeLayoutGroup.visible) {
           pipe(
-            createColumnLayoutGroup({
-              systemId,
-              dnas: columnLayoutToDnas(layout),
-              layout,
-            }),
-            TE.map((layoutGroup) => ({ layoutGroup, sectionType }))
-          )
-        )
-      ),
-      TE.getOrElse(() => [] as any)
-    )();
+            incoming,
+            O.map((previewLayoutGroup) => {
+              hideObject(activeLayoutGroup);
+              showObject(previewLayoutGroup);
+              this._previewLayoutGroup = O.some(previewLayoutGroup);
+            })
+          );
+        } else {
+          const incomingNone = () => {
+            pipe(this._activeLayoutGroup, O.map(showObject));
+            pipe(this._previewLayoutGroup, O.map(hideObject));
+            this._previewLayoutGroup = O.none;
+          };
 
-    this.updateSectionTypeLayouts(layouts);
-  }
+          const incomingSome = (incoming: ColumnLayoutGroup) => {
+            showObject(incoming);
+            pipe(this._previewLayoutGroup, O.map(hideObject));
+            this._previewLayoutGroup = O.some(incoming);
+          };
 
-  private clearPreviousLayouts() {
-    this.sectionTypeLayouts.forEach((x) => {
-      if (x.layoutGroup.uuid !== this._activeLayoutGroup.uuid) {
-        x.layoutGroup.removeFromParent();
-      }
-    });
-  }
-
-  private updateSectionTypeLayouts(
-    newLayouts: Array<{
-      layoutGroup: ColumnLayoutGroup;
-      sectionType: SectionType;
-    }>
-  ) {
-    this.sectionTypeLayouts = [
-      {
-        layoutGroup: this._activeLayoutGroup,
-        sectionType: this.currentSectionType,
-      },
-      ...newLayouts,
-    ].sort((a, b) => S.Ord.compare(a.sectionType.code, b.sectionType.code));
-
-    newLayouts.forEach(({ layoutGroup }) => {
-      layoutGroup.visible = false;
-      this.houseGroup.add(layoutGroup);
-    });
-  }
-
-  cycleWindowTypeLayout() {
-    const t = this;
-    const { cutsManager } = this.houseGroup;
-
-    pipe(
-      this.changeWindowType,
-      O.fromNullable,
-      O.map(({ options }) => {
-        if (options.length > 0) {
-          cutsManager.setClippingBrush(cutsManager.settings);
-          t.activeLayoutGroup = options[0].layoutGroup;
+          pipe(incoming, O.match(incomingNone, incomingSome));
         }
       })
     );
-  }
-
-  async prepareAltWindowTypeLayouts(target: ScopeElement, side: Side) {
-    const houseGroup = this.houseGroup;
-    const activeLayoutGroup = this.activeLayoutGroup;
-    const {
-      userData: { systemId },
-      cutsManager,
-    } = houseGroup;
-    const { layout: currentLayout } = activeLayoutGroup.userData;
-    const { columnIndex, rowIndex, moduleIndex } = target;
-
-    const options = await pipe(
-      getAltWindowTypeLayouts({
-        systemId,
-        columnIndex,
-        currentLayout,
-        rowIndex,
-        moduleIndex,
-        side,
-      }),
-      TE.chain(
-        A.traverse(TE.ApplicativePar)(
-          ({ dnas, layout, candidate, windowType }) =>
-            pipe(
-              createColumnLayoutGroup({
-                systemId,
-                dnas,
-                layout,
-              }),
-              TE.map((layoutGroup) => {
-                layoutGroup.visible = false;
-
-                houseGroup.add(layoutGroup);
-
-                layoutGroup.updateOBB();
-
-                cutsManager.setClippingBrush(cutsManager.settings);
-
-                return {
-                  candidate,
-                  windowType,
-                  layoutGroup,
-                };
-              })
-            )
-        )
-      ),
-      TE.getOrElse(() => [] as any)
-    )();
-
-    this.changeWindowType = { options, target };
   }
 }
 
