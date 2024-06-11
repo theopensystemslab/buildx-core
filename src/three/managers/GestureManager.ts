@@ -264,7 +264,7 @@ class GestureManager {
             this.initialPoint.y,
             intersectionPointXZ.z
           );
-          const delta = currentPoint.clone().sub(this.initialPoint);
+          const delta = currentPoint.clone().sub(this.lastPoint);
 
           this.onDragProgress?.({
             initialPoint: this.initialPoint.clone(),

@@ -36,6 +36,7 @@ import {
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
+import { ModeEnum } from "@/three/managers/ModeManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -129,6 +130,13 @@ class BuildXScene extends Scene {
       this.enableGroundObjects();
     }
 
+    type DragStart = {
+      mode: typeof ModeEnum.Enum.SITE;
+      houseGroup: HouseGroup;
+    };
+
+    let dragStart: DragStart | null = null;
+
     if (enableGestures)
       this.gestureManager = new GestureManager({
         domElement: this.renderer.domElement,
@@ -147,15 +155,29 @@ class BuildXScene extends Scene {
         onDragStart: ({ object }) => {
           if (object instanceof StretchHandleMesh) {
             object.manager.gestureStart(object.side);
+          } else if (object instanceof ElementBrush) {
+            const houseGroup = object.houseGroup;
+            const mode = object.houseGroup.modeManager.mode;
+            if (mode === ModeEnum.Enum.SITE) {
+              dragStart = {
+                houseGroup,
+                mode,
+              };
+            }
           }
         },
-        onDragProgress: ({ object }) => {
-          const z = 1;
-          if (object instanceof StretchHandleMesh) {
-            object.manager.gestureProgress(z);
+        onDragProgress: ({ delta }) => {
+          if (dragStart !== null) {
+            if (dragStart.mode === ModeEnum.Enum.SITE) {
+              const { houseGroup } = dragStart;
+              houseGroup.move(delta);
+            }
           }
         },
         onDragEnd: ({ object }) => {
+          if (dragStart !== null) {
+            dragStart = null;
+          }
           if (object instanceof StretchHandleMesh) {
             object.manager.gestureEnd();
           }

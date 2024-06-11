@@ -25,5 +25,11 @@ pipe(
   ),
   TE.map((houseGroup) => {
     scene.addHouseGroup(houseGroup);
+
+    window.addEventListener("keydown", (ev) => {
+      if (ev.key === "m") {
+        houseGroup.modeManager.up();
+      }
+    });
   })
 )();

@@ -45,12 +45,20 @@ class ModeManager {
       }
       // (up) Level -> Building
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.BUILDING: {
+        this.houseGroup.cutsManager.setClippingBrush({
+          ...this.houseGroup.cutsManager.settings,
+          rowIndex: null,
+        });
         break;
       }
       // (up, up) Level -> Site
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.SITE: {
         console.log("level -> site");
         this.houseGroup.zStretchManager.hideHandles();
+        this.houseGroup.cutsManager.setClippingBrush({
+          ...this.houseGroup.cutsManager.settings,
+          rowIndex: null,
+        });
         break;
       }
       default: {

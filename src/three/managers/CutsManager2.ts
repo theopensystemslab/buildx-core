@@ -215,6 +215,10 @@ class CutsManager2 {
     }
   }
 
+  recomputeClipping() {
+    this.setClippingBrush(this.settings);
+  }
+
   cycleClippingBrush() {
     const settings: Array<typeof this.settings> = [
       {

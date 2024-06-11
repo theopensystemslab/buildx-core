@@ -10,6 +10,7 @@ import {
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { DEFAULT_MAX_DEPTH } from "./ZStretchManager";
+import { ModeEnum } from "./ModeManager";
 
 const linePoints = [new Vector3(-10, 0, 0), new Vector3(10, 0, 0)];
 
@@ -127,6 +128,14 @@ class ZStretchManager2 {
         };
 
         columnLayoutGroup.add(...vanillaColumnGroups);
+
+        const [handleDown, handleUp] = this.handles;
+        endColumnGroup.add(handleUp);
+        startColumnGroup.add(handleDown);
+
+        if (this.houseGroup.modeManager.mode === ModeEnum.Enum.SITE) {
+          this.hideHandles();
+        }
       })
     )();
   }
@@ -134,18 +143,14 @@ class ZStretchManager2 {
   showHandles() {
     if (!this.initData) return;
 
-    const [handleDown, handleUp] = this.handles;
-
-    this.initData?.endColumnGroup.add(handleUp);
-    this.initData?.startColumnGroup.add(handleDown);
+    this.handles.forEach((handle) => {
+      handle.visible = true;
+    });
   }
 
   hideHandles() {
-    const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
-
     this.handles.forEach((handle) => {
       handle.visible = false;
-      activeLayoutGroup.remove(handle);
     });
   }
 

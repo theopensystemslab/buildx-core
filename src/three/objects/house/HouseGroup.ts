@@ -4,7 +4,7 @@ import TransformsManager from "@/three/managers/TransformsManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Scene } from "three";
+import { Group, Scene, Vector3 } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import ModeManager from "@/three/managers/ModeManager";
 import ZStretchManager2 from "@/three/managers/ZStretchManager2";
@@ -65,5 +65,10 @@ export class HouseGroup extends Group {
       findFirstGuardUp((o): o is Scene => o instanceof Scene),
       someOrError(`scene not found above HouseGroup`)
     );
+  }
+
+  move(v: Vector3) {
+    this.position.add(v);
+    this.cutsManager.recomputeClipping();
   }
 }
