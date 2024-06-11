@@ -44,6 +44,7 @@ class GestureManager {
   private isLongTapOnGestureObject = false;
   private tapCount = 0;
   private domElement: HTMLElement;
+  private domRect: DOMRect;
   private onGestureStart?: () => void;
   private onGestureEnd?: () => void;
   private onSingleTap?: TapHandler;
@@ -75,6 +76,7 @@ class GestureManager {
     this.domElement = params.domElement;
     this.camera = params.camera;
     this.gestureEnabledObjects = params.gestureEnabledObjects ?? [];
+    this.domRect = this.domElement.getBoundingClientRect();
 
     this.onGestureStart = params.onGestureStart;
     this.onGestureEnd = params.onGestureEnd;
@@ -99,6 +101,11 @@ class GestureManager {
       "pointermove",
       this.onPointerMove.bind(this)
     );
+    window.addEventListener("resize", this.onResize.bind(this));
+  }
+
+  private onResize() {
+    this.domRect = this.domElement.getBoundingClientRect();
   }
 
   private onPointerDown(event: PointerEvent) {
@@ -108,8 +115,10 @@ class GestureManager {
     this.isLongTapOnGestureObject = false;
     this.pointerDownTime = performance.now();
     this.initialPointerPosition.set(event.clientX, event.clientY);
-    this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    this.pointer.x =
+      ((event.clientX - this.domRect.left) / this.domRect.width) * 2 - 1;
+    this.pointer.y =
+      -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
     const intersects = this.raycaster.intersectObjects(
       this.gestureEnabledObjects
@@ -230,8 +239,10 @@ class GestureManager {
           this.longTapTimeoutId = null;
         }
 
-        this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        this.pointer.x =
+          ((event.clientX - this.domRect.left) / this.domRect.width) * 2 - 1;
+        this.pointer.y =
+          -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
 
         this.raycaster.setFromCamera(this.pointer, this.camera);
 
