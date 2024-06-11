@@ -1,6 +1,6 @@
 import { Material } from "three";
 import createThreeMaterial from "./createThreeMaterial";
-import { BuildMaterial } from "@/build-systems/remote/materials";
+import { CachedBuildMaterial } from "@/build-systems/cache";
 
 // Define the cache type
 type MaterialCache = Map<string, Material>;
@@ -13,7 +13,7 @@ const generateMaterialKey = (systemId: string, specification: string): string =>
   `${systemId}|${specification}`;
 
 // Function to get or create a Three.js material
-export const getThreeMaterial = (material: BuildMaterial): Material => {
+export const getThreeMaterial = (material: CachedBuildMaterial): Material => {
   const key = generateMaterialKey(material.systemId, material.specification);
 
   // Attempt to retrieve the material from the cache
