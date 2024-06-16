@@ -6,7 +6,8 @@ import { PngSnapshotsWorker } from "./three/workers";
 import type { CachedHouseType } from "./build-systems/cache";
 import BuildXScene from "./three/objects/scene/BuildXScene";
 import houseGroupTE from "./tasks/houseGroupTE";
-import type { HouseGroup } from "./three/objects/house/HouseGroup";
+import { HouseGroup } from "./three/objects/house/HouseGroup";
+import type { ScopeElement } from "./three/objects/types";
 
 export {
   createBasicScene,
@@ -15,6 +16,7 @@ export {
   cachedHouseTypesTE,
   houseGroupTE,
   BuildXScene,
+  ScopeElement,
+  CachedHouseType,
+  HouseGroup,
 };
-
-export type { CachedHouseType, HouseGroup };

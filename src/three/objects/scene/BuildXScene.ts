@@ -17,7 +17,7 @@ import {
   Scene,
   ShadowMaterial,
 } from "three";
-
+import { ModeEnum } from "@/three/managers/ModeManager";
 import {
   AmbientLight,
   Box3,
@@ -36,7 +36,7 @@ import {
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
-import { ModeEnum } from "@/three/managers/ModeManager";
+import { ScopeElement } from "../types";
 
 const subsetOfTHREE = {
   Vector2,
@@ -61,6 +61,9 @@ type BuildXSceneConfig = {
   enableShadows?: boolean;
   cameraDistance?: number;
   antialias?: boolean;
+  onLongTapBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
+  onRightClickBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
+  onTapMissed?: () => void;
 };
 
 class BuildXScene extends Scene {
@@ -68,6 +71,8 @@ class BuildXScene extends Scene {
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
+  selectedElement: ScopeElement | null;
+  hoveredElement: ScopeElement | null;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -81,6 +86,9 @@ class BuildXScene extends Scene {
       enableShadows = true,
       cameraDistance = 15,
       antialias = true,
+      onLongTapBuildElement,
+      onRightClickBuildElement,
+      onTapMissed,
     } = config;
 
     this.clock = new Clock();
@@ -130,12 +138,10 @@ class BuildXScene extends Scene {
       this.enableGroundObjects();
     }
 
-    type DragStart = {
-      mode: typeof ModeEnum.Enum.SITE;
-      houseGroup: HouseGroup;
-    };
+    this.selectedElement = null;
+    this.hoveredElement = null;
 
-    let dragStart: DragStart | null = null;
+    let dragProgress: ((delta: Vector3) => void) | null = null;
 
     if (enableGestures)
       this.gestureManager = new GestureManager({
@@ -152,36 +158,51 @@ class BuildXScene extends Scene {
             object.houseGroup.modeManager.down();
           }
         },
+        onLongTap: ({ object }, pointer) => {
+          if (object instanceof ElementBrush) {
+            onLongTapBuildElement?.(object.scopeElement, pointer);
+          }
+        },
+        onRightClick: ({ object }, pointer) => {
+          if (object instanceof ElementBrush) {
+            onRightClickBuildElement?.(object.scopeElement, pointer);
+          }
+        },
         onDragStart: ({ object }) => {
           if (object instanceof StretchHandleMesh) {
-            object.manager.gestureStart(object.side);
+            const stretchManager = object.manager;
+            stretchManager.gestureStart(object.side);
+
+            const yAxis = new Vector3(0, 1, 0);
+
+            dragProgress = (delta: Vector3) => {
+              const normalizedDelta = delta
+                .clone()
+                .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
+              stretchManager.gestureProgress(normalizedDelta.z);
+            };
           } else if (object instanceof ElementBrush) {
             const houseGroup = object.houseGroup;
             const mode = object.houseGroup.modeManager.mode;
+
             if (mode === ModeEnum.Enum.SITE) {
-              dragStart = {
-                houseGroup,
-                mode,
+              dragProgress = (delta: Vector3) => {
+                houseGroup.move(delta);
               };
+              console.log(`drag progress set init`);
             }
           }
         },
         onDragProgress: ({ delta }) => {
-          if (dragStart !== null) {
-            if (dragStart.mode === ModeEnum.Enum.SITE) {
-              const { houseGroup } = dragStart;
-              houseGroup.move(delta);
-            }
-          }
+          dragProgress?.(delta);
         },
         onDragEnd: ({ object }) => {
-          if (dragStart !== null) {
-            dragStart = null;
-          }
           if (object instanceof StretchHandleMesh) {
             object.manager.gestureEnd();
           }
+          dragProgress = null;
         },
+        onTapMissed,
       });
 
     this.animate();

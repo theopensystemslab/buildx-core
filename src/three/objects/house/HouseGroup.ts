@@ -7,8 +7,9 @@ import { pipe } from "fp-ts/lib/function";
 import { Group, Scene, Vector3 } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import ModeManager from "@/three/managers/ModeManager";
-import ZStretchManager2 from "@/three/managers/ZStretchManager2";
-import CutsManager2 from "@/three/managers/CutsManager2";
+import XStretchManager from "@/three/managers/XStretchManager";
+import ZStretchManager from "@/three/managers/ZStretchManager";
+import CutsManager from "@/three/managers/CutsManager";
 
 export type HouseGroupUserData = {
   systemId: string;
@@ -24,8 +25,9 @@ export class HouseGroup extends Group {
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
   modeManager: ModeManager;
-  cutsManager: CutsManager2;
-  zStretchManager: ZStretchManager2;
+  cutsManager: CutsManager;
+  zStretchManager: ZStretchManager;
+  xStretchManager: XStretchManager;
 
   constructor({
     userData,
@@ -40,9 +42,10 @@ export class HouseGroup extends Group {
     this.elementsManager = new ElementsManager(this);
     this.transformsManager = new TransformsManager(this);
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
-    this.zStretchManager = new ZStretchManager2(this);
+    this.zStretchManager = new ZStretchManager(this);
+    this.xStretchManager = new XStretchManager(this);
     this.modeManager = new ModeManager(this);
-    this.cutsManager = new CutsManager2(this);
+    this.cutsManager = new CutsManager(this);
   }
 
   clone(recursive = true) {

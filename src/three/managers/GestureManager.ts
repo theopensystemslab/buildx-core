@@ -10,7 +10,7 @@ import {
   Camera,
 } from "three";
 
-type TapHandler = (intersection: Intersection) => void;
+type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
 type DragHandler = (detail: DragDetail) => void;
 
@@ -54,6 +54,7 @@ class GestureManager {
   private onDragStart?: TapHandler;
   private onDragProgress?: DragHandler;
   private onDragEnd?: TapHandler;
+  private onRightClick?: TapHandler;
   private gestureStarted = false; // Flag to track if a gesture has actually started
   private movementPlaneXZ = new Plane(new Vector3(0, 1, 0), 0); // The plane for XZ tracking
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
@@ -72,6 +73,7 @@ class GestureManager {
     onDragStart?: TapHandler;
     onDragProgress?: DragHandler;
     onDragEnd?: TapHandler;
+    onRightClick?: TapHandler;
   }) {
     this.domElement = params.domElement;
     this.camera = params.camera;
@@ -88,6 +90,8 @@ class GestureManager {
     this.onDragProgress = params.onDragProgress;
     this.onDragEnd = params.onDragEnd;
 
+    this.onRightClick = params.onRightClick;
+
     this.attachEventListeners();
   }
 
@@ -101,11 +105,27 @@ class GestureManager {
       "pointermove",
       this.onPointerMove.bind(this)
     );
+    this.domElement.addEventListener(
+      "contextmenu",
+      this.onContextMenu.bind(this)
+    );
     window.addEventListener("resize", this.onResize.bind(this));
   }
 
   private onResize() {
     this.domRect = this.domElement.getBoundingClientRect();
+  }
+
+  private onContextMenu(ev: MouseEvent) {
+    ev.preventDefault();
+    const intersects = this.raycaster.intersectObjects(
+      this.gestureEnabledObjects
+    );
+
+    if (intersects.length > 0) {
+      const intersection = intersects[0];
+      this.onRightClick?.(intersection, this.pointer);
+    }
   }
 
   private onPointerDown(event: PointerEvent) {
@@ -153,7 +173,7 @@ class GestureManager {
           pipe(
             this.raycaster.intersectObject(this.currentGestureObject),
             A.head,
-            O.map((ix) => this.onLongTap?.(ix))
+            O.map((ix) => this.onLongTap?.(ix, this.pointer))
           );
       }
     }, this.longTapThreshold);
@@ -175,7 +195,7 @@ class GestureManager {
       pipe(
         this.raycaster.intersectObject(this.currentGestureObject),
         A.head,
-        O.map((ix) => this.onDragEnd?.(ix))
+        O.map((ix) => this.onDragEnd?.(ix, this.pointer))
       );
     } else if (!this.pointerMoved) {
       if (duration < this.longTapThreshold) {
@@ -185,7 +205,7 @@ class GestureManager {
             pipe(
               this.raycaster.intersectObject(this.currentGestureObject),
               A.head,
-              O.map((ix) => this.onSingleTap?.(ix))
+              O.map((ix) => this.onSingleTap?.(ix, this.pointer))
             );
           this.tapTimeoutId = setTimeout(() => {
             this.tapCount = 0;
@@ -200,7 +220,7 @@ class GestureManager {
             pipe(
               this.raycaster.intersectObject(this.currentGestureObject),
               A.head,
-              O.map((ix) => this.onDoubleTap?.(ix))
+              O.map((ix) => this.onDoubleTap?.(ix, this.pointer))
             );
 
           this.tapCount = 0;
@@ -229,7 +249,7 @@ class GestureManager {
           pipe(
             this.raycaster.intersectObject(this.currentGestureObject),
             A.head,
-            O.map((ix) => this.onDragStart?.(ix))
+            O.map((ix) => this.onDragStart?.(ix, this.pointer))
           );
         }
         this.pointerMoved = true;
