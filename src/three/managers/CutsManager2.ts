@@ -10,7 +10,7 @@ import { pipe } from "fp-ts/lib/function";
 import { A, O, compareProps, someOrError } from "@/utils/functions";
 import { HouseGroup } from "../objects/house/HouseGroup";
 
-const PAD = 3;
+const PAD = 5;
 
 const clippingMaterial = new MeshBasicMaterial({
   color: "white",
@@ -120,6 +120,7 @@ class CutsManager2 {
       ),
       O.map((levelHeight) => {
         const width = halfSize.x * 2 + PAD;
+
         const height = halfSize.y * 2 + PAD;
         const depth = 999;
 
