@@ -11,6 +11,12 @@ import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import CutsManager from "@/three/managers/CutsManager";
 
+type HouseGroupHooks = {
+  onCreate?: (houseGroup: HouseGroup) => void;
+  onUpdate?: (houseGroup: HouseGroup) => void;
+  onDelete?: (houseGroup: HouseGroup) => void;
+};
+
 export type HouseGroupUserData = {
   systemId: string;
   houseId: string;
@@ -29,12 +35,16 @@ export class HouseGroup extends Group {
   zStretchManager: ZStretchManager;
   xStretchManager: XStretchManager;
 
+  hooks?: HouseGroupHooks;
+
   constructor({
     userData,
     initialColumnLayoutGroup,
+    hooks,
   }: {
     userData: HouseGroupUserData;
     initialColumnLayoutGroup: ColumnLayoutGroup;
+    hooks?: HouseGroupHooks;
   }) {
     super();
     this.add(initialColumnLayoutGroup);
@@ -46,8 +56,10 @@ export class HouseGroup extends Group {
     this.xStretchManager = new XStretchManager(this);
     this.modeManager = new ModeManager(this);
     this.cutsManager = new CutsManager(this);
+    this.hooks = hooks;
   }
 
+  // questionable
   clone(recursive = true) {
     if (!recursive)
       throw new Error(`HouseGroup.clone called without recursive`);
@@ -73,5 +85,11 @@ export class HouseGroup extends Group {
   move(v: Vector3) {
     this.position.add(v);
     this.cutsManager.recomputeClipping();
+  }
+
+  delete() {
+    this.removeFromParent();
+    this.hooks?.onDelete?.(this);
+    // how is the housesDB managed?
   }
 }

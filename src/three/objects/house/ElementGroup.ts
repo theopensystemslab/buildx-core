@@ -34,6 +34,14 @@ export class ElementGroup extends Group {
   get columnGroup(): ColumnGroup {
     return this.rowGroup.columnGroup;
   }
+
+  get columnLayoutGroup(): ColumnLayoutGroup {
+    return this.columnGroup.columnLayoutGroup;
+  }
+
+  get houseGroup(): HouseGroup {
+    return this.columnLayoutGroup.houseGroup;
+  }
 }
 
 export class ElementBrush extends Brush {
