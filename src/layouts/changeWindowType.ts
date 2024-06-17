@@ -13,6 +13,7 @@ import { pipe } from "fp-ts/lib/function";
 import { columnLayoutToDnas } from "./init";
 import { modifyLayoutAt } from "./mutations";
 import { ColumnLayout } from "./types";
+import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 
 type AltWindowTypeLayout = {
   layout: ColumnLayout;
@@ -21,21 +22,29 @@ type AltWindowTypeLayout = {
   candidate: BuildModule;
 };
 
+export type AltWindowTypeLayoutGroupOption = {
+  layoutGroup: ColumnLayoutGroup;
+  windowType: WindowType;
+};
+
 export const getAltWindowTypeLayouts = ({
-  systemId,
   columnIndex,
   rowIndex,
   moduleIndex,
   side,
   currentLayout,
+  currentDnas,
 }: {
-  systemId: string;
   currentLayout: ColumnLayout;
+  currentDnas: string[];
   columnIndex: number;
   rowIndex: number;
   moduleIndex: number;
   side: Side;
-}): TE.TaskEither<Error, AltWindowTypeLayout[]> =>
+}): TE.TaskEither<
+  Error,
+  { alts: AltWindowTypeLayout[]; current: AltWindowTypeLayout }
+> =>
   pipe(
     cachedWindowTypesTE,
     TE.chain((windowTypes) =>
@@ -47,31 +56,7 @@ export const getAltWindowTypeLayouts = ({
             positionedRows,
             A.lookup(rowIndex),
             O.chain(({ positionedModules }) =>
-              pipe(
-                positionedModules,
-                A.lookup(moduleIndex),
-                O.map(
-                  ({
-                    module: {
-                      dna,
-                      structuredDna: {
-                        sectionType,
-                        positionType,
-                        gridType,
-                        levelType,
-                      },
-                    },
-                  }) => ({
-                    systemId,
-                    dna,
-                    side,
-                    sectionType,
-                    positionType,
-                    gridType,
-                    levelType,
-                  })
-                )
-              )
+              pipe(positionedModules, A.lookup(moduleIndex))
             )
           )
         ),
@@ -84,35 +69,48 @@ export const getAltWindowTypeLayouts = ({
             )}`
           )
         ),
-        TE.chain(
-          ({
+        // current module
+        TE.chain((positionedModule) => {
+          const {
+            module,
+            module: {
+              dna,
+              systemId,
+              structuredDna: { sectionType, positionType, levelType, gridType },
+            },
+          } = positionedModule;
+          const moduleWindowTypeAlts = getModuleWindowTypeAlts({
             systemId,
             dna,
             side,
+          });
+          const vanillaModule = getVanillaModule({
+            systemId,
             sectionType,
             positionType,
-            levelType,
             gridType,
-          }) => {
-            const moduleWindowTypeAlts = getModuleWindowTypeAlts({
-              systemId,
-              dna,
-              side,
-            });
-            const vanillaModule = getVanillaModule({
-              systemId,
-              sectionType,
-              positionType,
-              gridType,
-              levelType,
-            });
-            return sequenceT(TE.ApplicativePar)(
-              moduleWindowTypeAlts,
-              vanillaModule
-            );
-          }
-        ),
-        TE.map(([alts, vanillaModule]) =>
+            levelType,
+          });
+
+          const currentWindowType = pipe(
+            getWindowType(windowTypes, module.structuredDna, side),
+            someOrError(`no window type`)
+          );
+
+          const currentAltWindowTypeLayout: AltWindowTypeLayout = {
+            candidate: module,
+            dnas: currentDnas,
+            layout: currentLayout,
+            windowType: currentWindowType,
+          };
+
+          return sequenceT(TE.ApplicativePar)(
+            moduleWindowTypeAlts,
+            vanillaModule,
+            TE.of(currentAltWindowTypeLayout)
+          );
+        }),
+        TE.map(([alts, vanillaModule, currentAltWindowTypeLayout]) =>
           pipe(
             alts,
             A.map((candidate) => {
@@ -140,7 +138,13 @@ export const getAltWindowTypeLayouts = ({
                   };
                 }
               );
-            })
+            }),
+            (alts) => {
+              // const foo = alts[0]
+              // const bar = currentLayout
+              // getWindowType(windowTypes, )
+              return { alts, current: currentAltWindowTypeLayout };
+            }
           )
         )
       )

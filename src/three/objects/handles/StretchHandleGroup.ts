@@ -97,6 +97,11 @@ class StretchHandleGroup extends HandleGroup {
         }
         break;
     }
+
+    const scale = 0.6;
+
+    this.position.setY(0.01);
+    this.scale.set(scale, 1, scale);
   }
 }
 
