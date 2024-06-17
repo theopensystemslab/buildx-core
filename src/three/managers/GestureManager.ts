@@ -124,7 +124,7 @@ class GestureManager {
 
     if (intersects.length > 0) {
       const intersection = intersects[0];
-      this.onRightClick?.(intersection, this.pointer);
+      this.onRightClick?.(intersection, new Vector2(ev.clientX, ev.clientY));
     }
   }
 

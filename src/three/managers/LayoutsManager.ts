@@ -196,6 +196,8 @@ class LayoutsManager {
     )();
 
     this.changeWindowType = { options, target };
+
+    return this.changeWindowType;
   }
 }
 
