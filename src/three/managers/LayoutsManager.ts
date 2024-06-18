@@ -53,24 +53,53 @@ class LayoutsManager {
   }
 
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
-    this._activeLayoutGroup.visible = false;
-    layoutGroup.visible = true;
-    this._activeLayoutGroup = layoutGroup;
+    if (this._previewLayoutGroup === null) {
+      this._activeLayoutGroup.visible = false;
+      layoutGroup.visible = true;
+      this._activeLayoutGroup = layoutGroup;
+    } else {
+      if (this._previewLayoutGroup !== layoutGroup)
+        throw new Error(
+          `unexpected setting active layout group different than preivew`
+        );
+      this._activeLayoutGroup = this._previewLayoutGroup;
+      this._previewLayoutGroup = null;
+    }
   }
 
   get previewLayoutGroup(): ColumnLayoutGroup | null {
     return this._previewLayoutGroup;
   }
 
-  set previewLayoutGroup(input: ColumnLayoutGroup | null) {
-    if (input === null) {
-      if (this._previewLayoutGroup !== null) {
-        this._previewLayoutGroup.visible = false;
+  set previewLayoutGroup(incoming: ColumnLayoutGroup | null) {
+    if (this._activeLayoutGroup.visible) {
+      if (incoming === null) {
+        return;
       }
-      this._activeLayoutGroup.visible = true;
-    } else {
+      // incoming is a thing
       this._activeLayoutGroup.visible = false;
-      input.visible = true;
+      incoming.visible = true;
+      this._previewLayoutGroup = incoming;
+      return;
+    } else {
+      // active invisible; preview showing hopefully
+      if (
+        this._previewLayoutGroup === null ||
+        !this._previewLayoutGroup.visible
+      ) {
+        throw new Error(`unexpected state`);
+      }
+
+      if (incoming === null) {
+        this._activeLayoutGroup.visible = true;
+        this._previewLayoutGroup.visible = false;
+        this._previewLayoutGroup = null;
+      } else {
+        // new preview vs. old preview
+        incoming.visible = true;
+        this._previewLayoutGroup.visible = false;
+        this._previewLayoutGroup = incoming;
+      }
     }
   }
 

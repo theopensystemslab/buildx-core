@@ -1,11 +1,15 @@
-import { cachedModulesTE, cachedWindowTypesTE } from "@/build-systems/cache";
+import {
+  CachedWindowType,
+  cachedModulesTE,
+  cachedWindowTypesTE,
+} from "@/build-systems/cache";
 import {
   BuildModule,
   StructuredDna,
   parseDna,
 } from "@/build-systems/remote/modules";
-import { WindowType } from "@/build-systems/remote/windowTypes";
 import { getVanillaModule } from "@/tasks/vanilla";
+import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { Side } from "@/three/utils/camera";
 import { A, O, TE, compareProps, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
@@ -13,18 +17,17 @@ import { pipe } from "fp-ts/lib/function";
 import { columnLayoutToDnas } from "./init";
 import { modifyLayoutAt } from "./mutations";
 import { ColumnLayout } from "./types";
-import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 
 type AltWindowTypeLayout = {
   layout: ColumnLayout;
   dnas: string[];
-  windowType: WindowType;
+  windowType: CachedWindowType;
   candidate: BuildModule;
 };
 
 export type AltWindowTypeLayoutGroupOption = {
   layoutGroup: ColumnLayoutGroup;
-  windowType: WindowType;
+  windowType: CachedWindowType;
 };
 
 export const getAltWindowTypeLayouts = ({
@@ -215,7 +218,7 @@ export const getModuleWindowTypeAlts = ({
 };
 
 export const getWindowType = (
-  windowTypes: WindowType[],
+  windowTypes: CachedWindowType[],
   structuredDna: StructuredDna,
   side: Side
 ) =>
