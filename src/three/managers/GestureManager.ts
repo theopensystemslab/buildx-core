@@ -1,13 +1,13 @@
 import { A, O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import {
+  Camera,
+  Intersection,
+  Object3D,
+  Plane,
   Raycaster,
   Vector2,
   Vector3,
-  Object3D,
-  Plane,
-  Intersection,
-  Camera,
 } from "three";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
@@ -53,7 +53,7 @@ class GestureManager {
   private onTapMissed?: () => void;
   private onDragStart?: TapHandler;
   private onDragProgress?: DragHandler;
-  private onDragEnd?: TapHandler;
+  private onDragEnd?: () => void;
   private onRightClick?: TapHandler;
   private gestureStarted = false; // Flag to track if a gesture has actually started
   private movementPlaneXZ = new Plane(new Vector3(0, 1, 0), 0); // The plane for XZ tracking
@@ -72,7 +72,7 @@ class GestureManager {
     onTapMissed?: () => void;
     onDragStart?: TapHandler;
     onDragProgress?: DragHandler;
-    onDragEnd?: TapHandler;
+    onDragEnd?: () => void;
     onRightClick?: TapHandler;
   }) {
     this.domElement = params.domElement;
@@ -179,6 +179,16 @@ class GestureManager {
     }, this.longTapThreshold);
   }
 
+  private cleanup() {
+    this.currentGestureObject = null;
+    this.pointerMoved = false;
+    this.isDraggingGestureEnabledObject = false;
+
+    this.initialPointerPosition = new Vector2();
+    this.initialPoint = new Vector3();
+    this.lastPoint = new Vector3();
+  }
+
   private onPointerUp(_event: PointerEvent) {
     const pointerUpTime = performance.now();
     const duration = pointerUpTime - this.pointerDownTime;
@@ -192,11 +202,7 @@ class GestureManager {
       this.isDraggingGestureEnabledObject &&
       this.currentGestureObject
     ) {
-      pipe(
-        this.raycaster.intersectObject(this.currentGestureObject),
-        A.head,
-        O.map((ix) => this.onDragEnd?.(ix, this.pointer))
-      );
+      this.onDragEnd?.();
     } else if (!this.pointerMoved) {
       if (duration < this.longTapThreshold) {
         this.tapCount++;
@@ -232,10 +238,13 @@ class GestureManager {
     }
 
     this.pointerIsDown = false;
+
     if (this.gestureStarted && this.onGestureEnd) {
       this.onGestureEnd();
       this.gestureStarted = false; // Reset the gesture started flag
     }
+
+    this.cleanup();
   }
 
   private onPointerMove(event: PointerEvent) {
@@ -249,10 +258,12 @@ class GestureManager {
           pipe(
             this.raycaster.intersectObject(this.currentGestureObject),
             A.head,
-            O.map((ix) => this.onDragStart?.(ix, this.pointer))
+            O.map((ix) => {
+              this.pointerMoved = true;
+              this.onDragStart?.(ix, this.pointer);
+            })
           );
         }
-        this.pointerMoved = true;
 
         if (this.longTapTimeoutId) {
           clearTimeout(this.longTapTimeoutId);

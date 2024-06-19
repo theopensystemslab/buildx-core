@@ -141,7 +141,8 @@ class BuildXScene extends Scene {
     this.selectedElement = null;
     this.hoveredElement = null;
 
-    let dragProgress: ((delta: Vector3) => void) | null = null;
+    let dragProgress: ((delta: Vector3) => void) | undefined = undefined,
+      dragEnd: (() => void) | undefined = undefined;
 
     if (enableGestures)
       this.gestureManager = new GestureManager({
@@ -181,6 +182,11 @@ class BuildXScene extends Scene {
                 .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
               stretchManager.gestureProgress(normalizedDelta.z);
             };
+
+            dragEnd = () => {
+              stretchManager.gestureEnd();
+              dragProgress = undefined;
+            };
           } else if (object instanceof ElementBrush) {
             const houseGroup = object.houseGroup;
             const mode = object.houseGroup.modeManager.mode;
@@ -189,19 +195,14 @@ class BuildXScene extends Scene {
               dragProgress = (delta: Vector3) => {
                 houseGroup.move(delta);
               };
-              console.log(`drag progress set init`);
+              dragEnd = () => {
+                dragProgress = undefined;
+              };
             }
           }
         },
-        onDragProgress: ({ delta }) => {
-          dragProgress?.(delta);
-        },
-        onDragEnd: ({ object }) => {
-          if (object instanceof StretchHandleMesh) {
-            object.manager.gestureEnd();
-          }
-          dragProgress = null;
-        },
+        onDragProgress: (v) => dragProgress?.(v.delta),
+        onDragEnd: () => dragEnd?.(),
         onTapMissed,
       });
 

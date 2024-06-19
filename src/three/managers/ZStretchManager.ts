@@ -158,14 +158,17 @@ class ZStretchManager implements StretchManager {
 
   gestureEnd() {}
 
-  gestureProgress(z: number) {
+  gestureProgress(delta: number) {
     if (!this.startData)
       throw new Error(`gestureProgress called without startData`);
 
-    const { z0, bookendColumn } = this.startData;
+    const {
+      // z0,
+      bookendColumn,
+    } = this.startData;
 
-    this.setGestureLine(z0 + z);
-    bookendColumn.position.z = z0 + z;
+    this.debugGestureLine?.position.add(new Vector3(0, 0, delta));
+    bookendColumn.position.z += delta;
   }
 
   gestureStart(side: 1 | -1) {

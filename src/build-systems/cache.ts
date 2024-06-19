@@ -53,7 +53,8 @@ class BuildSystemsCache extends Dexie {
 
   constructor() {
     super("BuildSystemsDatabase");
-    this.version(2).stores({
+
+    this.version(3).stores({
       modules: "[systemId+dna]",
       houseTypes: "id",
       elements: "[systemId+ifcTag]",

@@ -23,13 +23,11 @@ class ModeManager {
     switch (true) {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
-        console.log("site -> building");
         this.houseGroup.zStretchManager.showHandles();
         break;
       }
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
-        console.log("building -> level");
         this.houseGroup.cutsManager.setClippingBrush({
           rowIndex: 1,
           x: false,
@@ -39,7 +37,6 @@ class ModeManager {
       }
       // (up) Builing -> Site
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.SITE: {
-        console.log("building -> site");
         this.houseGroup.zStretchManager.hideHandles();
         break;
       }
@@ -53,7 +50,6 @@ class ModeManager {
       }
       // (up, up) Level -> Site
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.SITE: {
-        console.log("level -> site");
         this.houseGroup.zStretchManager.hideHandles();
         this.houseGroup.cutsManager.setClippingBrush({
           ...this.houseGroup.cutsManager.settings,
