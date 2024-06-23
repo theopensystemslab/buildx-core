@@ -1,5 +1,5 @@
 import { compareProps } from "@/utils/functions";
-import { Material } from "three";
+import { Material, Object3D } from "three";
 import { ScopeElement } from "../objects/types";
 
 export const applyToMaterial = (
@@ -23,3 +23,11 @@ export const compareScopeElement = (a: ScopeElement, b: ScopeElement) =>
     "dna",
     "ifcTag",
   ]);
+
+export const setVisibilityDown = (object: Object3D, value: boolean) => {
+  object.visible = value;
+
+  object.traverse((child) => {
+    child.visible = value;
+  });
+};

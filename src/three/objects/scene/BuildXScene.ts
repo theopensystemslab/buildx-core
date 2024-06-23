@@ -170,7 +170,9 @@ class BuildXScene extends Scene {
           }
         },
         onDragStart: ({ object }) => {
+          console.log(`hello?`, object);
           if (object instanceof StretchHandleMesh) {
+            console.log(`here we go`);
             const stretchManager = object.manager;
             stretchManager.gestureStart(object.side);
 

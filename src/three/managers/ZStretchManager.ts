@@ -11,6 +11,7 @@ import { HouseGroup } from "../objects/house/HouseGroup";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
+import { setVisibilityDown } from "../utils";
 
 const DEFAULT_MAX_DEPTH = 10;
 
@@ -46,6 +47,7 @@ class ZStretchManager implements StretchManager {
   };
 
   debugGestureLine?: Line;
+  debugColumnLine?: Line;
   debugColumnLines?: Line[];
 
   handles: [StretchHandleGroup, StretchHandleGroup];
@@ -88,7 +90,7 @@ class ZStretchManager implements StretchManager {
     return pipe(
       templateVanillaColumnGroupCreator,
       TE.map((templateVanillaColumnGroup) => {
-        templateVanillaColumnGroup.visible = false;
+        setVisibilityDown(templateVanillaColumnGroup, false);
 
         const { depth: vanillaColumnDepth } =
           templateVanillaColumnGroup.userData;
@@ -149,13 +151,13 @@ class ZStretchManager implements StretchManager {
     if (!this.initData) return;
 
     this.handles.forEach((handle) => {
-      handle.visible = true;
+      setVisibilityDown(handle, true);
     });
   }
 
   hideHandles() {
     this.handles.forEach((handle) => {
-      handle.visible = false;
+      setVisibilityDown(handle, false);
     });
   }
 
@@ -176,8 +178,12 @@ class ZStretchManager implements StretchManager {
       endColumnGroup,
     ];
 
-    const z0 =
-      side === 1 ? endColumnGroup.position.z : startColumnGroup.position.z;
+    const bookendColumn =
+      side === 1
+        ? allColumnGroups[allColumnGroups.length - 1]
+        : allColumnGroups[0];
+
+    const z0 = bookendColumn.position.z;
 
     this.setGestureLine(z0);
 
@@ -225,8 +231,6 @@ class ZStretchManager implements StretchManager {
         lastVisibleMidColumnIndex: 0,
       };
     }
-
-    this.setColumnLines();
   }
 
   gestureProgress(delta: number) {
@@ -239,21 +243,31 @@ class ZStretchManager implements StretchManager {
 
     const { lastVisibleMidColumnIndex } = this.progressData;
 
-    this.debugGestureLine?.position.add(new Vector3(0, 0, delta));
-    bookendColumn.position.z += delta;
+    const maybeNextPosition = bookendColumn.position.z + delta;
 
     if (side === 1) {
+      const maxPosition =
+        midColumnGroups[midColumnGroups.length - 1].position.z +
+        midColumnGroups[midColumnGroups.length - 1].userData.depth;
+
+      const minPosition =
+        midColumnGroups[0].position.z + midColumnGroups[0].userData.depth;
+
       if (delta > 0) {
+        if (maybeNextPosition > maxPosition) return;
+
         pipe(
           midColumnGroups,
           A.lookup(lastVisibleMidColumnIndex + 1),
           O.map((firstInvisibleColumn) => {
-            if (
-              bookendColumn.position.z >
+            const target =
               firstInvisibleColumn.position.z +
-                firstInvisibleColumn.userData.depth / 2
-            ) {
-              firstInvisibleColumn.visible = true;
+              firstInvisibleColumn.userData.depth / 2;
+
+            this.setColumnLine(target);
+
+            if (bookendColumn.position.z > target) {
+              setVisibilityDown(firstInvisibleColumn, true);
               this.progressData!.lastVisibleMidColumnIndex++;
             }
           })
@@ -261,31 +275,43 @@ class ZStretchManager implements StretchManager {
       } else if (delta < 0) {
         if (lastVisibleMidColumnIndex === 0) return;
 
+        if (maybeNextPosition <= minPosition) return;
+
         pipe(
           midColumnGroups,
           A.lookup(lastVisibleMidColumnIndex),
           O.map((finalVisibleColumn) => {
-            if (
-              bookendColumn.position.z <
+            const target =
               finalVisibleColumn.position.z +
-                finalVisibleColumn.userData.depth / 2
-            ) {
+              finalVisibleColumn.userData.depth / 2;
+
+            this.setColumnLine(target);
+
+            if (bookendColumn.position.z < target) {
               console.log(
                 this.progressData?.lastVisibleMidColumnIndex,
                 finalVisibleColumn
               );
-              finalVisibleColumn.visible = false;
+              setVisibilityDown(finalVisibleColumn, false);
               this.progressData!.lastVisibleMidColumnIndex--;
             }
           })
         );
       }
     }
+
+    bookendColumn.position.z += delta;
+    this.setGestureLine(bookendColumn.position.z);
   }
 
-  gestureEnd() {}
+  gestureEnd() {
+    this.init();
+  }
 
   cleanup() {
+    delete this.startData;
+    delete this.progressData;
+
     const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const invisibleColumnGroups = columnLayoutGroup.children.filter(
@@ -315,6 +341,24 @@ class ZStretchManager implements StretchManager {
     }
   }
 
+  moveGestureLine(delta: number) {
+    if (this.debugGestureLine) this.debugGestureLine.position.z += delta;
+  }
+
+  setColumnLine(z: number) {
+    const scene = this.getScene();
+
+    if (this.progressData) {
+      if (!this.debugColumnLine) {
+        this.debugColumnLine = new Line(lineGeometry, gestureLineMat);
+        scene.add(this.debugColumnLine);
+      }
+      if (this.startData?.midColumnGroups) {
+        this.debugColumnLine.position.z = z;
+      }
+    }
+  }
+
   setColumnLines() {
     if (!this.startData) return;
 
@@ -336,7 +380,6 @@ class ZStretchManager implements StretchManager {
 
         return line;
       });
-      this.setColumnLines();
     }
   }
 }
