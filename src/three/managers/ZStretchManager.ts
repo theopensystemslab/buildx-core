@@ -30,19 +30,19 @@ class ZStretchManager implements StretchManager {
     vanillaColumnGroups: ColumnGroup[];
     startColumnGroup: ColumnGroup;
     endColumnGroup: ColumnGroup;
-    midColumnGroups: ColumnGroup[];
+    midColumnGroups: ColumnGroup[]; // doesn't include vanilla
   };
 
   startData?: {
     side: 1 | -1;
     allColumnGroups: ColumnGroup[];
+    midColumnGroups: ColumnGroup[]; // includes vanilla
     bookendColumn: ColumnGroup;
     z0: number;
   };
 
   progressData?: {
-    lastDepth: number;
-    finalVisibleColumnIndex: number;
+    lastVisibleMidColumnIndex: number; // of mid
   };
 
   debugGestureLine?: Line;
@@ -118,7 +118,10 @@ class ZStretchManager implements StretchManager {
 
         const midColumnGroups: ColumnGroup[] =
           columnLayoutGroup.children.filter(
-            (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+            (x): x is ColumnGroup =>
+              x instanceof ColumnGroup &&
+              x.visible &&
+              ![startColumnGroup, endColumnGroup].includes(x)
           );
 
         this.initData = {
@@ -159,27 +162,19 @@ class ZStretchManager implements StretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) throw new Error(`gestureStart called without initData`);
 
-    const {
-      startColumnGroup,
-      endColumnGroup,
-      midColumnGroups,
-      vanillaColumnGroups,
-    } = this.initData;
+    const { startColumnGroup, endColumnGroup, vanillaColumnGroups } =
+      this.initData;
 
-    const allColumnGroups =
+    const midColumnGroups =
       side === 1
-        ? [
-            startColumnGroup,
-            ...midColumnGroups,
-            ...vanillaColumnGroups,
-            endColumnGroup,
-          ]
-        : [
-            startColumnGroup,
-            ...vanillaColumnGroups,
-            ...midColumnGroups,
-            endColumnGroup,
-          ];
+        ? [...this.initData.midColumnGroups, ...vanillaColumnGroups]
+        : [...vanillaColumnGroups, ...this.initData.midColumnGroups];
+
+    const allColumnGroups = [
+      startColumnGroup,
+      ...midColumnGroups,
+      endColumnGroup,
+    ];
 
     const z0 =
       side === 1 ? endColumnGroup.position.z : startColumnGroup.position.z;
@@ -188,6 +183,7 @@ class ZStretchManager implements StretchManager {
 
     this.startData = {
       allColumnGroups,
+      midColumnGroups,
       bookendColumn:
         side === 1
           ? allColumnGroups[allColumnGroups.length - 1]
@@ -207,11 +203,8 @@ class ZStretchManager implements StretchManager {
         );
       });
 
-      const columnIndex = midColumnGroups.length;
-
       this.progressData = {
-        finalVisibleColumnIndex: columnIndex,
-        lastDepth: 0,
+        lastVisibleMidColumnIndex: this.initData.midColumnGroups.length - 1,
       };
     }
 
@@ -229,56 +222,31 @@ class ZStretchManager implements StretchManager {
       });
 
       this.progressData = {
-        finalVisibleColumnIndex: 1,
-        lastDepth: 0,
+        lastVisibleMidColumnIndex: 0,
       };
     }
-
-    // vanillaColumnGroups.forEach((cg, i) => {
-    //   cg.visible = true;
-    // });
-    // setTimeout(() => {
-    //   vanillaColumnGroups.forEach((cg) => {
-    //     cg.visible = false;
-    //   });
-    // }, 2000);
 
     this.setColumnLines();
   }
 
   gestureProgress(delta: number) {
-    // if (!this.initData)
-    //   throw new Error(`gestureProgress called without initData`);
     if (!this.startData)
       throw new Error(`gestureProgress called without startData`);
     if (!this.progressData)
       throw new Error(`gestureProgress called without progressData`);
 
-    const {
-      // z0,
-      bookendColumn,
-      side,
-      allColumnGroups,
-    } = this.startData;
+    const { bookendColumn, side, midColumnGroups } = this.startData;
 
-    const { finalVisibleColumnIndex } = this.progressData;
+    const { lastVisibleMidColumnIndex } = this.progressData;
 
     this.debugGestureLine?.position.add(new Vector3(0, 0, delta));
     bookendColumn.position.z += delta;
 
-    // "position" is the beginning
-
     if (side === 1) {
       if (delta > 0) {
-        // we're pushing away up the z-axis (additive)
-        // checking collisions
-        // checking maxing
-        // checking if need to show an extra column
-        // if our end column z goes over the dormant vanilla column
-
         pipe(
-          allColumnGroups,
-          A.lookup(finalVisibleColumnIndex + 1),
+          midColumnGroups,
+          A.lookup(lastVisibleMidColumnIndex + 1),
           O.map((firstInvisibleColumn) => {
             if (
               bookendColumn.position.z >
@@ -286,24 +254,28 @@ class ZStretchManager implements StretchManager {
                 firstInvisibleColumn.userData.depth / 2
             ) {
               firstInvisibleColumn.visible = true;
-              this.progressData!.finalVisibleColumnIndex++;
+              this.progressData!.lastVisibleMidColumnIndex++;
             }
           })
         );
       } else if (delta < 0) {
-        if (finalVisibleColumnIndex === 1) return;
+        if (lastVisibleMidColumnIndex === 0) return;
 
         pipe(
-          allColumnGroups,
-          A.lookup(finalVisibleColumnIndex),
+          midColumnGroups,
+          A.lookup(lastVisibleMidColumnIndex),
           O.map((finalVisibleColumn) => {
             if (
               bookendColumn.position.z <
               finalVisibleColumn.position.z +
                 finalVisibleColumn.userData.depth / 2
             ) {
+              console.log(
+                this.progressData?.lastVisibleMidColumnIndex,
+                finalVisibleColumn
+              );
               finalVisibleColumn.visible = false;
-              this.progressData!.finalVisibleColumnIndex--;
+              this.progressData!.lastVisibleMidColumnIndex--;
             }
           })
         );
