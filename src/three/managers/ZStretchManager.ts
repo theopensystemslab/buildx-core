@@ -1,4 +1,4 @@
-import { A, TE, someOrError } from "@/utils/functions";
+import { A, O, TE, someOrError } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
@@ -42,7 +42,7 @@ class ZStretchManager implements StretchManager {
 
   progressData?: {
     lastDepth: number;
-    columnIndex: number;
+    finalVisibleColumnIndex: number;
   };
 
   debugGestureLine?: Line;
@@ -156,21 +156,6 @@ class ZStretchManager implements StretchManager {
     });
   }
 
-  gestureEnd() {}
-
-  gestureProgress(delta: number) {
-    if (!this.startData)
-      throw new Error(`gestureProgress called without startData`);
-
-    const {
-      // z0,
-      bookendColumn,
-    } = this.startData;
-
-    this.debugGestureLine?.position.add(new Vector3(0, 0, delta));
-    bookendColumn.position.z += delta;
-  }
-
   gestureStart(side: 1 | -1) {
     if (!this.initData) throw new Error(`gestureStart called without initData`);
 
@@ -199,6 +184,8 @@ class ZStretchManager implements StretchManager {
     const z0 =
       side === 1 ? endColumnGroup.position.z : startColumnGroup.position.z;
 
+    this.setGestureLine(z0);
+
     this.startData = {
       allColumnGroups,
       bookendColumn:
@@ -209,57 +196,122 @@ class ZStretchManager implements StretchManager {
       z0,
     };
 
-    this.setGestureLine(z0);
+    if (side === 1) {
+      const startDepth = endColumnGroup.position.z;
 
-    switch (side) {
-      case 1: {
-        const startDepth = endColumnGroup.position.z;
-
-        vanillaColumnGroups.forEach((columnGroup, index) => {
-          columnGroup.position.set(
-            0,
-            0,
-            startDepth + index * columnGroup.userData.depth
-          );
-        });
-
-        const columnIndex = midColumnGroups.length;
-
-        this.progressData = {
-          columnIndex,
-          lastDepth: 0,
-        };
-
-        break;
-      }
-      case -1: {
-        const startDepth = startColumnGroup.userData.depth;
-
-        vanillaColumnGroups.forEach((columnGroup, index) => {
-          columnGroup.position.set(
-            0,
-            0,
-            startDepth -
-              index * columnGroup.userData.depth -
-              columnGroup.userData.depth
-          );
-        });
-
-        this.progressData = {
-          columnIndex: 1,
-          lastDepth: 0,
-        };
-
-        break;
-      }
-      default:
-        throw new Error(
-          "direction other than 1 or -1 in ZStretchManager.first"
+      vanillaColumnGroups.forEach((columnGroup, index) => {
+        columnGroup.position.set(
+          0,
+          0,
+          startDepth + index * columnGroup.userData.depth
         );
+      });
+
+      const columnIndex = midColumnGroups.length;
+
+      this.progressData = {
+        finalVisibleColumnIndex: columnIndex,
+        lastDepth: 0,
+      };
     }
+
+    if (side === -1) {
+      const startDepth = startColumnGroup.userData.depth;
+
+      vanillaColumnGroups.forEach((columnGroup, index) => {
+        columnGroup.position.set(
+          0,
+          0,
+          startDepth -
+            index * columnGroup.userData.depth -
+            columnGroup.userData.depth
+        );
+      });
+
+      this.progressData = {
+        finalVisibleColumnIndex: 1,
+        lastDepth: 0,
+      };
+    }
+
+    // vanillaColumnGroups.forEach((cg, i) => {
+    //   cg.visible = true;
+    // });
+    // setTimeout(() => {
+    //   vanillaColumnGroups.forEach((cg) => {
+    //     cg.visible = false;
+    //   });
+    // }, 2000);
 
     this.setColumnLines();
   }
+
+  gestureProgress(delta: number) {
+    // if (!this.initData)
+    //   throw new Error(`gestureProgress called without initData`);
+    if (!this.startData)
+      throw new Error(`gestureProgress called without startData`);
+    if (!this.progressData)
+      throw new Error(`gestureProgress called without progressData`);
+
+    const {
+      // z0,
+      bookendColumn,
+      side,
+      allColumnGroups,
+    } = this.startData;
+
+    const { finalVisibleColumnIndex } = this.progressData;
+
+    this.debugGestureLine?.position.add(new Vector3(0, 0, delta));
+    bookendColumn.position.z += delta;
+
+    // "position" is the beginning
+
+    if (side === 1) {
+      if (delta > 0) {
+        // we're pushing away up the z-axis (additive)
+        // checking collisions
+        // checking maxing
+        // checking if need to show an extra column
+        // if our end column z goes over the dormant vanilla column
+
+        pipe(
+          allColumnGroups,
+          A.lookup(finalVisibleColumnIndex + 1),
+          O.map((firstInvisibleColumn) => {
+            if (
+              bookendColumn.position.z >
+              firstInvisibleColumn.position.z +
+                firstInvisibleColumn.userData.depth / 2
+            ) {
+              firstInvisibleColumn.visible = true;
+              this.progressData!.finalVisibleColumnIndex++;
+            }
+          })
+        );
+      } else if (delta < 0) {
+        if (finalVisibleColumnIndex === 1) return;
+
+        pipe(
+          allColumnGroups,
+          A.lookup(finalVisibleColumnIndex),
+          O.map((finalVisibleColumn) => {
+            if (
+              bookendColumn.position.z <
+              finalVisibleColumn.position.z +
+                finalVisibleColumn.userData.depth / 2
+            ) {
+              finalVisibleColumn.visible = false;
+              this.progressData!.finalVisibleColumnIndex--;
+            }
+          })
+        );
+      }
+    }
+  }
+
+  gestureEnd() {}
 
   cleanup() {
     const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
