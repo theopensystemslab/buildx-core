@@ -41,11 +41,6 @@ class LayoutsManager {
     this.houseTypeLayoutGroup = initialLayoutGroup.clone();
     this._activeLayoutGroup = initialLayoutGroup;
     this._previewLayoutGroup = null;
-    this.init();
-  }
-
-  private init() {
-    this.prepareAltSectionTypeLayouts();
   }
 
   get activeLayoutGroup(): ColumnLayoutGroup {
@@ -172,7 +167,7 @@ class LayoutsManager {
         sectionType: this.currentSectionType,
       },
       ...newLayouts,
-    ].sort((a, b) => S.Ord.compare(a.sectionType.code, b.sectionType.code));
+    ].sort((a, b) => S.Ord.compare(b.sectionType.code, a.sectionType.code));
 
     newLayouts.forEach(({ layoutGroup }) => {
       layoutGroup.visible = false;

@@ -347,6 +347,7 @@ class ZStretchManager implements StretchManager {
   gestureEnd() {
     this.finalize();
     this.init();
+    this.houseGroup.xStretchManager.init();
   }
 
   getScene() {
