@@ -49,12 +49,12 @@ export class HouseGroup extends Group {
     super();
     this.add(initialColumnLayoutGroup);
     this.userData = userData;
+    this.modeManager = new ModeManager(this);
     this.elementsManager = new ElementsManager(this);
     this.transformsManager = new TransformsManager(this);
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
     this.zStretchManager = new ZStretchManager(this);
     this.xStretchManager = new XStretchManager(this);
-    this.modeManager = new ModeManager(this);
     this.cutsManager = new CutsManager(this);
     this.hooks = hooks;
   }

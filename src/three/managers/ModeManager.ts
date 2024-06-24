@@ -24,6 +24,7 @@ class ModeManager {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
         this.houseGroup.zStretchManager.showHandles();
+        this.houseGroup.xStretchManager.showHandles();
         break;
       }
       // (down) Building -> Level
@@ -38,6 +39,7 @@ class ModeManager {
       // (up) Builing -> Site
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.SITE: {
         this.houseGroup.zStretchManager.hideHandles();
+        this.houseGroup.xStretchManager.hideHandles();
         break;
       }
       // (up) Level -> Building

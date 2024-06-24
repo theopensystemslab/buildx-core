@@ -53,6 +53,7 @@ class LayoutsManager {
   }
 
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
+    console.log(`set active layout group`);
     if (this._previewLayoutGroup === null) {
       this._activeLayoutGroup.visible = false;
       layoutGroup.visible = true;
@@ -126,7 +127,7 @@ class LayoutsManager {
     );
   }
 
-  private async prepareAltSectionTypeLayouts() {
+  async prepareAltSectionTypeLayouts() {
     const { systemId } = this.houseGroup.userData;
     const { layout, sectionType } = this.activeLayoutGroup.userData;
 
@@ -149,7 +150,7 @@ class LayoutsManager {
       TE.getOrElse(() => [] as any)
     )();
 
-    this.updateSectionTypeLayouts(layouts);
+    return this.updateSectionTypeLayouts(layouts);
   }
 
   private clearPreviousLayouts() {
@@ -178,6 +179,8 @@ class LayoutsManager {
       layoutGroup.visible = false;
       this.houseGroup.add(layoutGroup);
     });
+
+    return this.sectionTypeLayouts;
   }
 
   cycleWindowTypeLayout() {

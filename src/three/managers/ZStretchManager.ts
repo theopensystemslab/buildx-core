@@ -170,8 +170,6 @@ class ZStretchManager implements StretchManager {
   }
 
   showHandles() {
-    if (!this.initData) return;
-
     this.handles.forEach((handle) => {
       setVisibilityDown(handle, true);
     });

@@ -10,7 +10,7 @@ pipe(
   cachedHouseTypesTE,
   TE.chain(
     flow(
-      A.lookup(0),
+      A.lookup(1),
       TE.fromOption(() => Error())
     )
   ),
