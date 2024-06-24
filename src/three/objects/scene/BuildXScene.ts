@@ -37,6 +37,7 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
+import ZStretchManager from "@/three/managers/ZStretchManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -170,9 +171,7 @@ class BuildXScene extends Scene {
           }
         },
         onDragStart: ({ object }) => {
-          console.log(`hello?`, object);
           if (object instanceof StretchHandleMesh) {
-            console.log(`here we go`);
             const stretchManager = object.manager;
             stretchManager.gestureStart(object.side);
 
@@ -182,7 +181,11 @@ class BuildXScene extends Scene {
               const normalizedDelta = delta
                 .clone()
                 .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
-              stretchManager.gestureProgress(normalizedDelta.z);
+              stretchManager.gestureProgress(
+                stretchManager instanceof ZStretchManager
+                  ? normalizedDelta.z
+                  : normalizedDelta.x
+              );
             };
 
             dragEnd = () => {

@@ -53,7 +53,6 @@ class LayoutsManager {
   }
 
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
-    console.log(`set active layout group`);
     if (this._previewLayoutGroup === null) {
       this._activeLayoutGroup.visible = false;
       layoutGroup.visible = true;

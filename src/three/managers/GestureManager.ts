@@ -278,18 +278,21 @@ class GestureManager {
         this.raycaster.setFromCamera(this.pointer, this.camera);
 
         const intersectionPointXZ = new Vector3();
-        const intersectionPointY = new Vector3();
+        // const intersectionPointY = new Vector3();
 
         const intersectXZ = this.raycaster.ray.intersectPlane(
           this.movementPlaneXZ,
           intersectionPointXZ
         );
-        const intersectY = this.raycaster.ray.intersectPlane(
-          this.movementPlaneY,
-          intersectionPointY
-        );
+        // const intersectY = this.raycaster.ray.intersectPlane(
+        //   this.movementPlaneY,
+        //   intersectionPointY
+        // );
 
-        if (intersectXZ && intersectY) {
+        if (
+          intersectXZ
+          // && intersectY
+        ) {
           const currentPoint = new Vector3(
             intersectionPointXZ.x,
             this.initialPoint.y,
@@ -307,6 +310,7 @@ class GestureManager {
           });
 
           this.lastPoint.copy(currentPoint);
+        } else {
         }
       }
     }
