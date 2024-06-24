@@ -1,4 +1,4 @@
-import { A, Num, O, Ord, TE, pipeLog, someOrError } from "@/utils/functions";
+import { A, Num, O, Ord, TE, someOrError } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
@@ -8,10 +8,10 @@ import {
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
+import { setVisibilityDown } from "../utils";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
-import { setVisibilityDown } from "../utils";
 
 const DEFAULT_MAX_DEPTH = 10;
 
@@ -68,6 +68,19 @@ class ZStretchManager implements StretchManager {
       }),
     ];
     this.init();
+  }
+
+  cleanup() {
+    delete this.startData;
+    delete this.progressData;
+
+    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    const invisibleColumnGroups = columnLayoutGroup.children.filter(
+      (x) => x instanceof ColumnGroup && !x.visible
+    );
+
+    columnLayoutGroup.remove(...invisibleColumnGroups);
   }
 
   async init() {
@@ -297,10 +310,6 @@ class ZStretchManager implements StretchManager {
             this.setColumnLine(target);
 
             if (bookendColumn.position.z < target) {
-              console.log(
-                this.progressData?.lastVisibleMidColumnIndex,
-                finalVisibleColumn
-              );
               setVisibilityDown(finalVisibleColumn, false);
               this.progressData!.lastVisibleMidColumnIndex--;
             }
@@ -313,21 +322,33 @@ class ZStretchManager implements StretchManager {
     this.setGestureLine(bookendColumn.position.z);
   }
 
-  gestureEnd() {
-    this.init();
+  finalize() {
+    if (!this.initData)
+      throw new Error(
+        `no ZStretchManager.initData in ZStretchManager.finalize`
+      );
+    if (!this.startData)
+      throw new Error(
+        `no ZStretchManager.startData in ZStretchManager.finalize`
+      );
+    if (!this.progressData)
+      throw new Error(
+        `no ZStretchManager.progressData in ZStretchManager.finalize`
+      );
+
+    const { bookendColumn, midColumnGroups, side } = this.startData;
+    const { lastVisibleMidColumnIndex } = this.progressData;
+
+    if (side === 1) {
+      bookendColumn.position.z =
+        midColumnGroups[lastVisibleMidColumnIndex].position.z +
+        midColumnGroups[lastVisibleMidColumnIndex].userData.depth;
+    }
   }
 
-  cleanup() {
-    delete this.startData;
-    delete this.progressData;
-
-    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
-
-    const invisibleColumnGroups = columnLayoutGroup.children.filter(
-      (x) => x instanceof ColumnGroup && !x.visible
-    );
-
-    columnLayoutGroup.remove(...invisibleColumnGroups);
+  gestureEnd() {
+    this.finalize();
+    this.init();
   }
 
   getScene() {
