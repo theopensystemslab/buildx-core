@@ -1,4 +1,4 @@
-import { A, O, TE, someOrError } from "@/utils/functions";
+import { A, Num, O, Ord, TE, pipeLog, someOrError } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
@@ -43,7 +43,7 @@ class ZStretchManager implements StretchManager {
   };
 
   progressData?: {
-    lastVisibleMidColumnIndex: number; // of mid
+    lastVisibleMidColumnIndex: number;
   };
 
   debugGestureLine?: Line;
@@ -107,16 +107,25 @@ class ZStretchManager implements StretchManager {
 
         const { children } = columnLayoutGroup;
 
-        const { startColumnGroup, endColumnGroup } = (function () {
-          const columns = children.filter(
-            (x): x is ColumnGroup => x instanceof ColumnGroup
-          );
+        const sortedVisibleColumnGroups = pipe(
+          children,
+          A.filter(
+            (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+          ),
+          A.sort(
+            pipe(
+              Num.Ord,
+              Ord.contramap(
+                ({ userData: { columnIndex } }: ColumnGroup): number =>
+                  columnIndex
+              )
+            )
+          )
+        );
 
-          const startColumnGroup = columns[0];
-          const endColumnGroup = columns[columns.length - 1];
-
-          return { startColumnGroup, endColumnGroup };
-        })();
+        const startColumnGroup = sortedVisibleColumnGroups[0];
+        const endColumnGroup =
+          sortedVisibleColumnGroups[sortedVisibleColumnGroups.length - 1];
 
         const midColumnGroups: ColumnGroup[] =
           columnLayoutGroup.children.filter(
