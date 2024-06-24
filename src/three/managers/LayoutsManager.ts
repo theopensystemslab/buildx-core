@@ -144,6 +144,8 @@ class LayoutsManager {
       TE.getOrElse(() => [] as any)
     )();
 
+    this.houseGroup.cutsManager.recomputeClipping();
+
     return this.updateSectionTypeLayouts(layouts);
   }
 

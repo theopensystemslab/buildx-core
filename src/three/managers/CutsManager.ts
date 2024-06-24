@@ -153,32 +153,47 @@ class CutsManager {
     });
   }
 
+  private get layoutGroupsActiveFirst(): ColumnLayoutGroup[] {
+    const otherLayoutGroups = this.houseGroup.children.filter(
+      (x): x is ColumnLayoutGroup =>
+        x instanceof ColumnLayoutGroup && x !== this.activeLayoutGroup
+    );
+
+    return [this.activeLayoutGroup, ...otherLayoutGroups];
+  }
+
   private createClippedBrushes(clippingBrush: Brush) {
-    this.activeLayoutGroup.traverse((node) => {
-      if (isModuleGroup(node)) {
-        node.createClippedBrushes(clippingBrush);
-      }
+    this.layoutGroupsActiveFirst.forEach((layoutGroup) => {
+      layoutGroup.traverse((node) => {
+        if (isModuleGroup(node)) {
+          node.createClippedBrushes(clippingBrush);
+        }
+      });
     });
   }
 
   private showClippedBrushes() {
-    this.activeLayoutGroup.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        node.visible = false;
-      } else if (node instanceof ClippedElementBrush) {
-        node.visible = true;
-      }
-    });
+    this.layoutGroupsActiveFirst.forEach((x) =>
+      x.traverse((node) => {
+        if (node instanceof FullElementBrush) {
+          node.visible = false;
+        } else if (node instanceof ClippedElementBrush) {
+          node.visible = true;
+        }
+      })
+    );
   }
 
   private showElementBrushes() {
-    this.activeLayoutGroup.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        node.visible = true;
-      } else if (node instanceof ClippedElementBrush) {
-        node.visible = false;
-      }
-    });
+    this.layoutGroupsActiveFirst.forEach((x) =>
+      x.traverse((node) => {
+        if (node instanceof FullElementBrush) {
+          node.visible = true;
+        } else if (node instanceof ClippedElementBrush) {
+          node.visible = false;
+        }
+      })
+    );
   }
 
   setClippingBrush(settings: typeof this.settings) {

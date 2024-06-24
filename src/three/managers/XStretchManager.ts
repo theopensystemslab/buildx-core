@@ -80,6 +80,7 @@ class XStretchManager implements StretchManager {
     this.startData = {
       side,
     };
+    this.houseGroup.zStretchManager.hideHandles();
   }
   gestureProgress(delta: number) {
     const { initialLayoutWidth: currentWidth, alts } = this.initData!;
@@ -101,7 +102,6 @@ class XStretchManager implements StretchManager {
             const targetWidth = nextWiderLayout.sectionType.width;
 
             if (v >= targetWidth) {
-              console.log("swap up");
               this.houseGroup.layoutsManager.activeLayoutGroup =
                 nextWiderLayout.layoutGroup;
               this.progressData!.currentLayoutIndex++;
@@ -120,8 +120,6 @@ class XStretchManager implements StretchManager {
             const targetWidth = nextShorterLayout.sectionType.width;
 
             if (v <= targetWidth) {
-              console.log(`swap down`);
-
               this.houseGroup.layoutsManager.activeLayoutGroup =
                 nextShorterLayout.layoutGroup;
               this.progressData!.currentLayoutIndex--;
@@ -151,6 +149,7 @@ class XStretchManager implements StretchManager {
   }
   gestureEnd() {
     this.houseGroup.zStretchManager.init();
+    // this.houseGroup.zStretchManager.showHandles()
   }
 
   showHandles() {
