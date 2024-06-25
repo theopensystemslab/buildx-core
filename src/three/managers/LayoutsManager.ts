@@ -15,6 +15,7 @@ import {
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ScopeElement } from "../objects/types";
 import { Side } from "../utils/camera";
+import { setVisibilityDown } from "../utils";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
@@ -49,8 +50,8 @@ class LayoutsManager {
 
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
     if (this._previewLayoutGroup === null) {
-      this._activeLayoutGroup.visible = false;
-      layoutGroup.visible = true;
+      setVisibilityDown(this._activeLayoutGroup, false);
+      setVisibilityDown(layoutGroup, true);
       this._activeLayoutGroup = layoutGroup;
     } else {
       if (this._previewLayoutGroup !== layoutGroup)
@@ -72,8 +73,8 @@ class LayoutsManager {
         return;
       }
       // incoming is a thing
-      this._activeLayoutGroup.visible = false;
-      incoming.visible = true;
+      setVisibilityDown(this._activeLayoutGroup, false);
+      setVisibilityDown(incoming, true);
       this._previewLayoutGroup = incoming;
       return;
     } else {
@@ -86,13 +87,13 @@ class LayoutsManager {
       }
 
       if (incoming === null) {
-        this._activeLayoutGroup.visible = true;
-        this._previewLayoutGroup.visible = false;
+        setVisibilityDown(this._activeLayoutGroup, true);
+        setVisibilityDown(this._previewLayoutGroup, false);
         this._previewLayoutGroup = null;
       } else {
         // new preview vs. old preview
-        incoming.visible = true;
-        this._previewLayoutGroup.visible = false;
+        setVisibilityDown(incoming, true);
+        setVisibilityDown(this._previewLayoutGroup, false);
         this._previewLayoutGroup = incoming;
       }
     }
@@ -137,14 +138,17 @@ class LayoutsManager {
               dnas: columnLayoutToDnas(layout),
               layout,
             }),
-            TE.map((layoutGroup) => ({ layoutGroup, sectionType }))
+            TE.map((layoutGroup) => {
+              layoutGroup.cutsManager.setClippingBrush(
+                this.activeLayoutGroup.cutsManager.settings
+              );
+              return { layoutGroup, sectionType };
+            })
           )
         )
       ),
       TE.getOrElse(() => [] as any)
     )();
-
-    this.houseGroup.cutsManager.recomputeClipping();
 
     return this.updateSectionTypeLayouts(layouts);
   }
@@ -172,7 +176,7 @@ class LayoutsManager {
     ].sort((a, b) => S.Ord.compare(b.sectionType.code, a.sectionType.code));
 
     newLayouts.forEach(({ layoutGroup }) => {
-      layoutGroup.visible = false;
+      setVisibilityDown(layoutGroup, false);
       this.houseGroup.add(layoutGroup);
     });
 
@@ -180,16 +184,15 @@ class LayoutsManager {
   }
 
   cycleWindowTypeLayout() {
-    const t = this;
-    const { cutsManager } = this.houseGroup;
-
     pipe(
       this.changeWindowType,
       O.fromNullable,
       O.map(({ options }) => {
         if (options.length > 0) {
-          cutsManager.setClippingBrush(cutsManager.settings);
-          t.activeLayoutGroup = options[0].layoutGroup;
+          options[0].layoutGroup.cutsManager.setClippingBrush(
+            this.activeLayoutGroup.cutsManager.settings
+          );
+          this.activeLayoutGroup = options[0].layoutGroup;
         }
       })
     );
@@ -200,7 +203,6 @@ class LayoutsManager {
     const activeLayoutGroup = this.activeLayoutGroup;
     const {
       userData: { systemId },
-      cutsManager,
     } = houseGroup;
     const { layout: currentLayout, dnas: currentDnas } =
       activeLayoutGroup.userData;
@@ -227,13 +229,15 @@ class LayoutsManager {
                   layout,
                 }),
                 TE.map((layoutGroup) => {
-                  layoutGroup.visible = false;
+                  setVisibilityDown(layoutGroup, false);
 
                   houseGroup.add(layoutGroup);
 
                   layoutGroup.updateOBB();
 
-                  cutsManager.setClippingBrush(cutsManager.settings);
+                  layoutGroup.cutsManager.setClippingBrush(
+                    activeLayoutGroup.cutsManager.settings
+                  );
 
                   return {
                     candidate,

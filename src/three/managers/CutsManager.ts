@@ -1,14 +1,14 @@
-import { Brush, Evaluator, ADDITION } from "three-bvh-csg";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
+import { A, O, compareProps, someOrError } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
+import { ADDITION, Brush, Evaluator } from "three-bvh-csg";
+import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import {
   ClippedElementBrush,
   FullElementBrush,
 } from "../objects/house/ElementGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
-import { pipe } from "fp-ts/lib/function";
-import { A, O, compareProps, someOrError } from "@/utils/functions";
-import { HouseGroup } from "../objects/house/HouseGroup";
+import { setVisibilityDown } from "../utils";
 
 const PAD = 5;
 
@@ -18,7 +18,7 @@ const clippingMaterial = new MeshBasicMaterial({
 });
 
 class CutsManager {
-  private houseGroup: HouseGroup;
+  private layoutGroup: ColumnLayoutGroup;
   private evaluator: Evaluator;
   private clippingBrushes: {
     x?: Brush;
@@ -31,8 +31,8 @@ class CutsManager {
     rowIndex: number | null;
   };
 
-  constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+  constructor(layoutGroup: ColumnLayoutGroup) {
+    this.layoutGroup = layoutGroup;
     this.evaluator = new Evaluator();
     this.clippingBrushes = {};
     this.settings = {
@@ -42,14 +42,10 @@ class CutsManager {
     };
   }
 
-  get activeLayoutGroup(): ColumnLayoutGroup {
-    return this.houseGroup.activeLayoutGroup;
-  }
-
   private createClippingBrushX() {
     const {
       obb: { halfSize },
-    } = this.activeLayoutGroup;
+    } = this.layoutGroup;
 
     const width = halfSize.x + PAD;
     const height = halfSize.y * 2 + PAD;
@@ -74,7 +70,7 @@ class CutsManager {
   private createClippingBrushZ() {
     const {
       obb: { halfSize },
-    } = this.activeLayoutGroup;
+    } = this.layoutGroup;
 
     const width = halfSize.x * 2 + PAD;
     const height = halfSize.y * 2 + PAD;
@@ -100,7 +96,7 @@ class CutsManager {
     const {
       userData: { layout },
       obb: { halfSize },
-    } = this.activeLayoutGroup;
+    } = this.layoutGroup;
 
     const clippingBrush = pipe(
       layout,
@@ -146,54 +142,39 @@ class CutsManager {
   }
 
   private destroyClippedBrushes() {
-    this.activeLayoutGroup.traverse((node) => {
+    this.layoutGroup.traverse((node) => {
       if (node instanceof ClippedElementBrush) {
         node.removeFromParent();
       }
     });
   }
 
-  private get layoutGroupsActiveFirst(): ColumnLayoutGroup[] {
-    const otherLayoutGroups = this.houseGroup.children.filter(
-      (x): x is ColumnLayoutGroup =>
-        x instanceof ColumnLayoutGroup && x !== this.activeLayoutGroup
-    );
-
-    return [this.activeLayoutGroup, ...otherLayoutGroups];
-  }
-
   private createClippedBrushes(clippingBrush: Brush) {
-    this.layoutGroupsActiveFirst.forEach((layoutGroup) => {
-      layoutGroup.traverse((node) => {
-        if (isModuleGroup(node)) {
-          node.createClippedBrushes(clippingBrush);
-        }
-      });
+    this.layoutGroup.traverse((node) => {
+      if (isModuleGroup(node)) {
+        node.createClippedBrushes(clippingBrush);
+      }
     });
   }
 
   private showClippedBrushes() {
-    this.layoutGroupsActiveFirst.forEach((x) =>
-      x.traverse((node) => {
-        if (node instanceof FullElementBrush) {
-          node.visible = false;
-        } else if (node instanceof ClippedElementBrush) {
-          node.visible = true;
-        }
-      })
-    );
+    this.layoutGroup.traverse((node) => {
+      if (node instanceof FullElementBrush) {
+        setVisibilityDown(node, false);
+      } else if (node instanceof ClippedElementBrush) {
+        setVisibilityDown(node, true);
+      }
+    });
   }
 
   private showElementBrushes() {
-    this.layoutGroupsActiveFirst.forEach((x) =>
-      x.traverse((node) => {
-        if (node instanceof FullElementBrush) {
-          node.visible = true;
-        } else if (node instanceof ClippedElementBrush) {
-          node.visible = false;
-        }
-      })
-    );
+    this.layoutGroup.traverse((node) => {
+      if (node instanceof FullElementBrush) {
+        setVisibilityDown(node, true);
+      } else if (node instanceof ClippedElementBrush) {
+        setVisibilityDown(node, false);
+      }
+    });
   }
 
   setClippingBrush(settings: typeof this.settings) {
@@ -224,7 +205,7 @@ class CutsManager {
     }
 
     if (brush !== null) {
-      brush.applyMatrix4(this.houseGroup.matrixWorld);
+      brush.applyMatrix4(this.layoutGroup.houseGroup.matrixWorld);
       brush.updateMatrixWorld();
       this.createClippedBrushes(brush);
       this.showClippedBrushes();

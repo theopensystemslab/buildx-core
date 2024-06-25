@@ -71,6 +71,7 @@ class ZStretchManager implements StretchManager {
   }
 
   cleanup() {
+    delete this.initData;
     delete this.startData;
     delete this.progressData;
 
@@ -184,6 +185,8 @@ class ZStretchManager implements StretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) throw new Error(`gestureStart called without initData`);
 
+    this.houseGroup.xStretchManager.hideHandles();
+
     const { startColumnGroup, endColumnGroup, vanillaColumnGroups } =
       this.initData;
 
@@ -229,8 +232,11 @@ class ZStretchManager implements StretchManager {
         );
       });
 
+      const lastVisibleMidColumnIndex =
+        this.initData.midColumnGroups.length - 1;
+
       this.progressData = {
-        lastVisibleMidColumnIndex: this.initData.midColumnGroups.length - 1,
+        lastVisibleMidColumnIndex,
       };
     }
 
@@ -334,6 +340,8 @@ class ZStretchManager implements StretchManager {
         `no ZStretchManager.progressData in ZStretchManager.finalize`
       );
 
+    const { endColumnGroup } = this.initData;
+
     const { bookendColumn, midColumnGroups, side } = this.startData;
     const { lastVisibleMidColumnIndex } = this.progressData;
 
@@ -342,6 +350,14 @@ class ZStretchManager implements StretchManager {
         midColumnGroups[lastVisibleMidColumnIndex].position.z +
         midColumnGroups[lastVisibleMidColumnIndex].userData.depth;
     }
+
+    const visibleMidColumnGroups = midColumnGroups.filter((x) => x.visible);
+
+    visibleMidColumnGroups.forEach((v, i) => {
+      v.userData.columnIndex = i + 1;
+    });
+
+    endColumnGroup.userData.columnIndex = visibleMidColumnGroups.length + 1;
   }
 
   gestureEnd() {

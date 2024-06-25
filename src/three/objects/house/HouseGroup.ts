@@ -1,14 +1,14 @@
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
+import ModeManager from "@/three/managers/ModeManager";
 import TransformsManager from "@/three/managers/TransformsManager";
+import XStretchManager from "@/three/managers/XStretchManager";
+import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Scene, Vector3 } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import ModeManager from "@/three/managers/ModeManager";
-import XStretchManager from "@/three/managers/XStretchManager";
-import ZStretchManager from "@/three/managers/ZStretchManager";
 import CutsManager from "@/three/managers/CutsManager";
 
 type HouseGroupHooks = {
@@ -31,7 +31,6 @@ export class HouseGroup extends Group {
   layoutsManager: LayoutsManager;
   transformsManager: TransformsManager;
   modeManager: ModeManager;
-  cutsManager: CutsManager;
   zStretchManager: ZStretchManager;
   xStretchManager: XStretchManager;
 
@@ -55,7 +54,6 @@ export class HouseGroup extends Group {
     this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
     this.zStretchManager = new ZStretchManager(this);
     this.xStretchManager = new XStretchManager(this);
-    this.cutsManager = new CutsManager(this);
     this.hooks = hooks;
   }
 
@@ -72,6 +70,10 @@ export class HouseGroup extends Group {
 
   get activeLayoutGroup(): ColumnLayoutGroup {
     return this.layoutsManager.activeLayoutGroup;
+  }
+
+  get cutsManager(): CutsManager {
+    return this.activeLayoutGroup.cutsManager;
   }
 
   get scene(): Scene {

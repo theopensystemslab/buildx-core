@@ -10,6 +10,7 @@ import { Box3, Group, Scene } from "three";
 import { OBB } from "three-stdlib";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
+import CutsManager from "@/three/managers/CutsManager";
 
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
@@ -26,12 +27,14 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
+  cutsManager: CutsManager;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
     this.userData = userData;
     this.aabb = new Box3();
     this.obb = new OBB();
+    this.cutsManager = new CutsManager(this);
   }
 
   get houseGroup(): HouseGroup {

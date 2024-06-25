@@ -10,6 +10,7 @@ import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { ClippedElementBrush, FullElementBrush } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
+import { setVisibilityDown } from "@/three/utils";
 
 export type RowGroupUserData = {
   rowIndex: number;
@@ -52,9 +53,9 @@ export class RowGroup extends Group {
   showClippedBrushes() {
     this.traverse((node) => {
       if (node instanceof FullElementBrush) {
-        node.visible = false;
+        setVisibilityDown(node, false);
       } else if (node instanceof ClippedElementBrush) {
-        node.visible = true;
+        setVisibilityDown(node, true);
       }
     });
   }
@@ -70,9 +71,9 @@ export class RowGroup extends Group {
   showElementBrushes() {
     this.traverse((node) => {
       if (node instanceof FullElementBrush) {
-        node.visible = true;
+        setVisibilityDown(node, true);
       } else if (node instanceof ClippedElementBrush) {
-        node.visible = false;
+        setVisibilityDown(node, false);
       }
     });
   }

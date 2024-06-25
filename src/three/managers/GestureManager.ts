@@ -140,9 +140,9 @@ class GestureManager {
     this.pointer.y =
       -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const intersects = this.raycaster.intersectObjects(
-      this.gestureEnabledObjects
-    );
+    const intersects = this.raycaster
+      .intersectObjects(this.gestureEnabledObjects)
+      .filter((x) => x.object.visible);
 
     if (intersects.length > 0) {
       this.isDraggingGestureEnabledObject = true;
