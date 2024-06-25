@@ -8,7 +8,6 @@ import {
   FullElementBrush,
 } from "../objects/house/ElementGroup";
 import { isModuleGroup } from "../objects/house/ModuleGroup";
-import { setVisibilityDown } from "../utils";
 
 const PAD = 5;
 
@@ -164,9 +163,9 @@ class CutsManager {
   private showClippedBrushes() {
     this.layoutGroup.traverse((node) => {
       if (node instanceof FullElementBrush) {
-        setVisibilityDown(node, false);
+        node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
-        setVisibilityDown(node, true);
+        node.visible = true;
       }
     });
   }
@@ -174,9 +173,9 @@ class CutsManager {
   private showElementBrushes() {
     this.layoutGroup.traverse((node) => {
       if (node instanceof FullElementBrush) {
-        setVisibilityDown(node, true);
+        node.visible = true;
       } else if (node instanceof ClippedElementBrush) {
-        setVisibilityDown(node, false);
+        node.visible = false;
       }
     });
   }

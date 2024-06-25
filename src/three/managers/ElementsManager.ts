@@ -1,6 +1,5 @@
 import { ElementGroup } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { setVisibilityDown } from "../utils";
 
 class ElementsManager {
   houseGroup: HouseGroup;
@@ -12,7 +11,7 @@ class ElementsManager {
   setAllElementsVisibility(visible: boolean) {
     this.houseGroup.traverse((node) => {
       if (node instanceof ElementGroup) {
-        setVisibilityDown(node, visible);
+        node.visible = visible;
       }
     });
   }
@@ -23,7 +22,7 @@ class ElementsManager {
         node instanceof ElementGroup &&
         node.userData.element.category === category
       ) {
-        setVisibilityDown(node, visible);
+        node.visible = visible;
       }
     });
   }

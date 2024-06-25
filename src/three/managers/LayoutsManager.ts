@@ -15,7 +15,7 @@ import {
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ScopeElement } from "../objects/types";
 import { Side } from "../utils/camera";
-import { setVisibilityDown } from "../utils";
+import { hideObject, showObject } from "../utils/layers";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
@@ -50,8 +50,8 @@ class LayoutsManager {
 
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
     if (this._previewLayoutGroup === null) {
-      setVisibilityDown(this._activeLayoutGroup, false);
-      setVisibilityDown(layoutGroup, true);
+      hideObject(this._activeLayoutGroup);
+      showObject(layoutGroup);
       this._activeLayoutGroup = layoutGroup;
     } else {
       if (this._previewLayoutGroup !== layoutGroup)
@@ -73,8 +73,8 @@ class LayoutsManager {
         return;
       }
       // incoming is a thing
-      setVisibilityDown(this._activeLayoutGroup, false);
-      setVisibilityDown(incoming, true);
+      hideObject(this._activeLayoutGroup);
+      showObject(incoming);
       this._previewLayoutGroup = incoming;
       return;
     } else {
@@ -87,13 +87,13 @@ class LayoutsManager {
       }
 
       if (incoming === null) {
-        setVisibilityDown(this._activeLayoutGroup, true);
-        setVisibilityDown(this._previewLayoutGroup, false);
+        showObject(this._activeLayoutGroup);
+        hideObject(this._previewLayoutGroup);
         this._previewLayoutGroup = null;
       } else {
         // new preview vs. old preview
-        setVisibilityDown(incoming, true);
-        setVisibilityDown(this._previewLayoutGroup, false);
+        showObject(incoming);
+        hideObject(this._previewLayoutGroup);
         this._previewLayoutGroup = incoming;
       }
     }
@@ -148,7 +148,7 @@ class LayoutsManager {
                 layout,
               }),
               TE.map((layoutGroup) => {
-                setVisibilityDown(layoutGroup, false);
+                hideObject(layoutGroup);
                 this.houseGroup.add(layoutGroup);
                 layoutGroup.cutsManager.setClippingBrush(
                   this.activeLayoutGroup.cutsManager.settings
@@ -221,7 +221,7 @@ class LayoutsManager {
                   layout,
                 }),
                 TE.map((layoutGroup) => {
-                  setVisibilityDown(layoutGroup, false);
+                  hideObject(layoutGroup);
 
                   houseGroup.add(layoutGroup);
 

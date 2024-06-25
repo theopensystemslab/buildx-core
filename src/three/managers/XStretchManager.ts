@@ -4,7 +4,7 @@ import { pipe } from "fp-ts/lib/function";
 import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { setVisibilityDown } from "../utils";
+import { hideObject, showObject } from "../utils/layers";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
 
@@ -155,15 +155,11 @@ class XStretchManager implements StretchManager {
   }
 
   showHandles() {
-    this.handles.forEach((handle) => {
-      setVisibilityDown(handle, true);
-    });
+    this.handles.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach((handle) => {
-      setVisibilityDown(handle, false);
-    });
+    this.handles.forEach(hideObject);
   }
 }
 

@@ -9,6 +9,7 @@ import {
   Vector2,
   Vector3,
 } from "three";
+import { CAMERA_ONLY_LAYER, RAYCAST_ONLY_LAYER } from "../utils/layers";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
@@ -93,6 +94,9 @@ class GestureManager {
     this.onRightClick = params.onRightClick;
 
     this.attachEventListeners();
+
+    this.raycaster.layers.enable(RAYCAST_ONLY_LAYER);
+    this.camera.layers.enable(CAMERA_ONLY_LAYER);
   }
 
   private attachEventListeners() {

@@ -15,7 +15,6 @@ import {
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import { setVisibilityDown } from "@/three/utils";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -69,7 +68,8 @@ export class ModuleGroup extends Group {
 
         clippedBrush.geometry.applyMatrix4(inverseMatrix);
 
-        setVisibilityDown(clippedBrush, false);
+        clippedBrush.visible = false;
+
         clippedBrush.updateMatrixWorld();
 
         this.lastClippingBrush = clippingBrush;
@@ -80,9 +80,9 @@ export class ModuleGroup extends Group {
   showClippedBrushes() {
     this.traverse((node) => {
       if (node instanceof FullElementBrush) {
-        setVisibilityDown(node, false);
+        node.visible = false;
       } else if (node instanceof ClippedElementBrush) {
-        setVisibilityDown(node, true);
+        node.visible = true;
       }
     });
   }
@@ -97,9 +97,9 @@ export class ModuleGroup extends Group {
   showElementBrushes() {
     this.traverse((node) => {
       if (node instanceof FullElementBrush) {
-        setVisibilityDown(node, true);
+        node.visible = true;
       } else if (node instanceof ClippedElementBrush) {
-        setVisibilityDown(node, false);
+        node.visible = false;
       }
     });
   }

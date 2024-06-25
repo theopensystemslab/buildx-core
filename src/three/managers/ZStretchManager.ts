@@ -20,10 +20,10 @@ import {
   FullElementBrush,
 } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { setVisibilityDown } from "../utils";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
+import { hideObject, showObject } from "../utils/layers";
 
 const DEFAULT_MAX_DEPTH = 10;
 
@@ -191,15 +191,11 @@ class ZStretchManager implements StretchManager {
   }
 
   showHandles() {
-    this.handles.forEach((handle) => {
-      setVisibilityDown(handle, true);
-    });
+    this.handles.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach((handle) => {
-      setVisibilityDown(handle, false);
-    });
+    this.handles.forEach(hideObject);
   }
 
   gestureStart(side: 1 | -1) {
