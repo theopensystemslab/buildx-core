@@ -35,6 +35,9 @@ class ModeManager {
           x: false,
           z: false,
         });
+        this.houseGroup.cutsManager.syncObjectCuts(
+          this.houseGroup.activeLayoutGroup
+        );
         break;
       }
       // (up) Builing -> Site
@@ -49,6 +52,9 @@ class ModeManager {
           ...this.houseGroup.cutsManager.settings,
           rowIndex: null,
         });
+        this.houseGroup.cutsManager.syncObjectCuts(
+          this.houseGroup.activeLayoutGroup
+        );
         break;
       }
       // (up, up) Level -> Site

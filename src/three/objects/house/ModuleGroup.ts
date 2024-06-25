@@ -6,15 +6,10 @@ import { BuildModule } from "@/build-systems/remote/modules";
 import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
-import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
-import {
-  ClippedElementBrush,
-  FullElementBrush,
-  defaultElementGroupCreator,
-} from "./ElementGroup";
+import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import { defaultElementGroupCreator } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
-import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -28,13 +23,10 @@ export type ModuleGroupUserData = {
 
 export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
-  evaluator: Evaluator;
-  lastClippingBrush?: Brush;
 
   constructor(userData: ModuleGroupUserData) {
     super();
     this.userData = userData;
-    this.evaluator = new Evaluator();
   }
 
   get rowGroup(): RowGroup {
@@ -51,57 +43,6 @@ export class ModuleGroup extends Group {
 
   get columnLayoutGroup(): ColumnLayoutGroup {
     return this.rowGroup.columnLayoutGroup;
-  }
-
-  createClippedBrushes(clippingBrush: Brush) {
-    if (clippingBrush === this.lastClippingBrush) return;
-
-    const inverseMatrix = this.matrixWorld.invert();
-
-    this.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        const clippedBrush = new ClippedElementBrush();
-        node.parent?.add(clippedBrush);
-
-        node.updateMatrixWorld();
-        this.evaluator.evaluate(node, clippingBrush, SUBTRACTION, clippedBrush);
-
-        clippedBrush.geometry.applyMatrix4(inverseMatrix);
-
-        clippedBrush.visible = false;
-
-        clippedBrush.updateMatrixWorld();
-
-        this.lastClippingBrush = clippingBrush;
-      }
-    });
-  }
-
-  showClippedBrushes() {
-    this.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        node.visible = false;
-      } else if (node instanceof ClippedElementBrush) {
-        node.visible = true;
-      }
-    });
-  }
-
-  destroyClippedBrushes() {
-    this.traverse((node) => {
-      if (!(node instanceof ClippedElementBrush)) return;
-      node.removeFromParent();
-    });
-  }
-
-  showElementBrushes() {
-    this.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        node.visible = true;
-      } else if (node instanceof ClippedElementBrush) {
-        node.visible = false;
-      }
-    });
   }
 }
 

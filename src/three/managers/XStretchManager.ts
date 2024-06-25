@@ -40,8 +40,7 @@ class XStretchManager implements StretchManager {
         manager: this,
       }),
     ];
-    // this.init();
-    // setTimeout(() => this.init(), 2000);
+    this.init();
   }
 
   async init() {

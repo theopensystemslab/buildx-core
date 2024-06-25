@@ -9,7 +9,11 @@ import {
   Vector2,
   Vector3,
 } from "three";
-import { CAMERA_ONLY_LAYER, RAYCAST_ONLY_LAYER } from "../utils/layers";
+import {
+  CAMERA_ONLY_LAYER,
+  HIDDEN_LAYER,
+  RAYCAST_ONLY_LAYER,
+} from "../utils/layers";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
@@ -25,10 +29,10 @@ type DragDetail = {
 };
 
 class GestureManager {
-  private raycaster = new Raycaster();
+  raycaster = new Raycaster();
+  camera: Camera;
   private pointer = new Vector2();
   private gestureEnabledObjects: Object3D[];
-  private camera: Camera;
   private pointerDownTime = 0;
   private pointerIsDown = false;
   private pointerMoved = false;
@@ -95,8 +99,11 @@ class GestureManager {
 
     this.attachEventListeners();
 
-    this.raycaster.layers.enable(RAYCAST_ONLY_LAYER);
     this.camera.layers.enable(CAMERA_ONLY_LAYER);
+    this.raycaster.layers.enable(RAYCAST_ONLY_LAYER);
+
+    this.camera.layers.disable(HIDDEN_LAYER);
+    this.raycaster.layers.disable(HIDDEN_LAYER);
   }
 
   private attachEventListeners() {

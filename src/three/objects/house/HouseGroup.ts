@@ -4,12 +4,13 @@ import LayoutsManager from "@/three/managers/LayoutsManager";
 import ModeManager from "@/three/managers/ModeManager";
 import TransformsManager from "@/three/managers/TransformsManager";
 import XStretchManager from "@/three/managers/XStretchManager";
+import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Scene, Vector3 } from "three";
+import { Group, Vector3 } from "three";
+import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import ZStretchManager from "@/three/managers/ZStretchManager";
 
 type HouseGroupHooks = {
   onCreate?: (houseGroup: HouseGroup) => void;
@@ -78,17 +79,17 @@ export class HouseGroup extends Group {
     return this.activeLayoutGroup.zStretchManager;
   }
 
-  get scene(): Scene {
+  get scene(): BuildXScene {
     return pipe(
       this,
-      findFirstGuardUp((o): o is Scene => o instanceof Scene),
+      findFirstGuardUp((o): o is BuildXScene => o instanceof BuildXScene),
       someOrError(`scene not found above HouseGroup`)
     );
   }
 
   move(v: Vector3) {
     this.position.add(v);
-    this.cutsManager.applyClippingBrush();
+    // this.cutsManager.syncObjectCuts(this.activeLayoutGroup);
   }
 
   delete() {

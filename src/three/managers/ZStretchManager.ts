@@ -20,10 +20,10 @@ import {
   FullElementBrush,
 } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
+import { hideObject, showObject } from "../utils/layers";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
-import { hideObject, showObject } from "../utils/layers";
 
 const DEFAULT_MAX_DEPTH = 10;
 
@@ -39,7 +39,6 @@ class ZStretchManager implements StretchManager {
   maxDepth: number;
 
   initData?: {
-    templateVanillaColumnGroup: ColumnGroup;
     vanillaColumnGroups: ColumnGroup[];
     startColumnGroup: ColumnGroup;
     endColumnGroup: ColumnGroup;
@@ -102,32 +101,28 @@ class ZStretchManager implements StretchManager {
 
     const {
       userData: {
-        vanillaColumn: { positionedRows },
+        vanillaColumn: { positionedRows, columnDepth },
         depth: layoutDepth,
       },
     } = this.layoutGroup;
 
-    const templateVanillaColumnGroupCreator = defaultColumnGroupCreator({
-      positionedRows,
-      columnIndex: -1,
-    });
+    const maxDepth = this.maxDepth;
+
+    const maxMoreCols = floor((maxDepth - layoutDepth) / columnDepth - 1);
+
+    const vanillaColumnGroupsTE = pipe(
+      A.makeBy(maxMoreCols, () =>
+        defaultColumnGroupCreator({
+          positionedRows,
+          columnIndex: -1,
+        })
+      ),
+      A.sequence(TE.ApplicativePar)
+    );
 
     return pipe(
-      templateVanillaColumnGroupCreator,
-      TE.map((templateVanillaColumnGroup) => {
-        const { depth: vanillaColumnDepth } =
-          templateVanillaColumnGroup.userData;
-
-        const maxDepth = this.maxDepth;
-
-        const maxMoreCols = floor(
-          (maxDepth - layoutDepth) / vanillaColumnDepth - 1
-        );
-
-        const vanillaColumnGroups = pipe(
-          A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
-        );
-
+      vanillaColumnGroupsTE,
+      TE.map((vanillaColumnGroups) => {
         const { children } = this.layoutGroup;
 
         const sortedVisibleColumnGroups = pipe(
@@ -158,7 +153,6 @@ class ZStretchManager implements StretchManager {
         );
 
         this.initData = {
-          templateVanillaColumnGroup,
           vanillaColumnGroups,
           startColumnGroup,
           endColumnGroup,
@@ -246,6 +240,7 @@ class ZStretchManager implements StretchManager {
           0,
           startDepth + index * columnGroup.userData.depth
         );
+        this.layoutGroup.cutsManager.syncObjectCuts(columnGroup);
       });
 
       const lastVisibleMidColumnIndex =
@@ -267,14 +262,13 @@ class ZStretchManager implements StretchManager {
             index * columnGroup.userData.depth -
             columnGroup.userData.depth
         );
+        this.layoutGroup.cutsManager.syncObjectCuts(columnGroup);
       });
 
       this.progressData = {
         lastVisibleMidColumnIndex: 0,
       };
     }
-
-    this.layoutGroup.cutsManager.applyClippingBrush();
   }
 
   setVisibility(columnGroup: ColumnGroup, value: boolean) {

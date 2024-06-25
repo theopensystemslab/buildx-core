@@ -148,11 +148,16 @@ class LayoutsManager {
                 layout,
               }),
               TE.map((layoutGroup) => {
-                hideObject(layoutGroup);
                 this.houseGroup.add(layoutGroup);
-                layoutGroup.cutsManager.setClippingBrush(
-                  this.activeLayoutGroup.cutsManager.settings
-                );
+                hideObject(layoutGroup);
+
+                setTimeout(() => {
+                  console.log(layoutGroup.layers.mask);
+                  console.log(this.houseGroup.layers.mask);
+                }, 2000);
+                // layoutGroup.cutsManager.setClippingBrush(
+                //   this.activeLayoutGroup.cutsManager.settings
+                // );
                 return { layoutGroup, sectionType };
               })
             )

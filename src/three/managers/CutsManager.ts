@@ -1,13 +1,11 @@
 import { A, O, compareProps, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { BoxGeometry, DoubleSide, MeshBasicMaterial } from "three";
+import { BoxGeometry, DoubleSide, MeshBasicMaterial, Object3D } from "three";
 import { ADDITION, Brush, Evaluator } from "three-bvh-csg";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
-import {
-  ClippedElementBrush,
-  FullElementBrush,
-} from "../objects/house/ElementGroup";
-import { isModuleGroup } from "../objects/house/ModuleGroup";
+import { ElementGroup } from "../objects/house/ElementGroup";
+
+export const evaluator = new Evaluator();
 
 const PAD = 5;
 
@@ -18,7 +16,6 @@ const clippingMaterial = new MeshBasicMaterial({
 
 class CutsManager {
   private layoutGroup: ColumnLayoutGroup;
-  private evaluator: Evaluator;
   private clippingBrushes: {
     x?: Brush;
     y?: Brush;
@@ -33,7 +30,6 @@ class CutsManager {
 
   constructor(layoutGroup: ColumnLayoutGroup) {
     this.layoutGroup = layoutGroup;
-    this.evaluator = new Evaluator();
     this.clippingBrushes = {};
     this.brush = null;
     this.settings = {
@@ -142,47 +138,33 @@ class CutsManager {
     return clippingBrush;
   }
 
-  private destroyClippedBrushes() {
-    this.layoutGroup.traverse((node) => {
-      if (node instanceof ClippedElementBrush) {
-        node.removeFromParent();
-      }
-    });
-  }
-
-  private createClippedBrushes() {
+  private createClippedBrushes(object: Object3D) {
     if (this.brush === null) return;
 
-    this.layoutGroup.traverse((node) => {
-      if (isModuleGroup(node)) {
-        node.createClippedBrushes(this.brush!);
+    object.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.createClippedBrush(this.brush!);
       }
     });
   }
 
-  private showClippedBrushes() {
-    this.layoutGroup.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        node.visible = false;
-      } else if (node instanceof ClippedElementBrush) {
-        node.visible = true;
+  private showClippedBrushes(object: Object3D) {
+    object.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.showClippedBrush();
       }
     });
   }
 
-  private showElementBrushes() {
-    this.layoutGroup.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        node.visible = true;
-      } else if (node instanceof ClippedElementBrush) {
-        node.visible = false;
+  private showElementBrushes(object: Object3D) {
+    object.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.showFullBrush();
       }
     });
   }
 
   setClippingBrush(settings: typeof this.settings) {
-    this.destroyClippedBrushes();
-
     this.settings = settings;
 
     const { x, z, rowIndex } = settings;
@@ -195,33 +177,27 @@ class CutsManager {
     if (z) {
       const brushZ = this.createClippingBrushZ();
       brush =
-        brush === null
-          ? brushZ
-          : this.evaluator.evaluate(brush, brushZ, ADDITION);
+        brush === null ? brushZ : evaluator.evaluate(brush, brushZ, ADDITION);
     }
     if (rowIndex !== null) {
       const brushY = this.createClippingBrushY(rowIndex);
       brush =
-        brush === null
-          ? brushY
-          : this.evaluator.evaluate(brush, brushY, ADDITION);
+        brush === null ? brushY : evaluator.evaluate(brush, brushY, ADDITION);
     }
 
     this.brush = brush;
-
-    this.applyClippingBrush();
   }
 
-  applyClippingBrush() {
+  syncObjectCuts(object: Object3D) {
     const brush = this.brush;
 
     if (brush !== null) {
       brush.applyMatrix4(this.layoutGroup.houseGroup.matrixWorld);
       brush.updateMatrixWorld();
-      this.createClippedBrushes();
-      this.showClippedBrushes();
+      this.createClippedBrushes(object);
+      this.showClippedBrushes(object);
     } else {
-      this.showElementBrushes();
+      this.showElementBrushes(object);
     }
   }
 
@@ -265,19 +241,6 @@ class CutsManager {
     const nextSetting = settings[nextIndex];
     this.setClippingBrush(nextSetting);
   }
-
-  // processNewColumnGroup(columnGroup: ColumnGroup) {
-  //   if (this.settings === null) return;
-
-  //   if (this.brush) {
-  //     columnGroup.traverse((node) => {
-  //       if (node instanceof ModuleGroup) {
-  //         node.createClippedBrushes(this.brush!);
-  //         node.showClippedBrushes();
-  //       }
-  //     });
-  //   }
-  // }
 }
 
 export default CutsManager;
