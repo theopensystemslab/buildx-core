@@ -25,6 +25,7 @@ class CutsManager {
     y?: Brush;
     z?: Brush;
   };
+  private brush: Brush | null;
   settings: {
     x: boolean;
     z: boolean;
@@ -35,6 +36,7 @@ class CutsManager {
     this.layoutGroup = layoutGroup;
     this.evaluator = new Evaluator();
     this.clippingBrushes = {};
+    this.brush = null;
     this.settings = {
       rowIndex: null,
       x: false,
@@ -149,10 +151,12 @@ class CutsManager {
     });
   }
 
-  private createClippedBrushes(clippingBrush: Brush) {
+  private createClippedBrushes() {
+    if (this.brush === null) return;
+
     this.layoutGroup.traverse((node) => {
       if (isModuleGroup(node)) {
-        node.createClippedBrushes(clippingBrush);
+        node.createClippedBrushes(this.brush!);
       }
     });
   }
@@ -204,18 +208,22 @@ class CutsManager {
           : this.evaluator.evaluate(brush, brushY, ADDITION);
     }
 
+    this.brush = brush;
+
+    this.applyClippingBrush();
+  }
+
+  applyClippingBrush() {
+    const brush = this.brush;
+
     if (brush !== null) {
       brush.applyMatrix4(this.layoutGroup.houseGroup.matrixWorld);
       brush.updateMatrixWorld();
-      this.createClippedBrushes(brush);
+      this.createClippedBrushes();
       this.showClippedBrushes();
     } else {
       this.showElementBrushes();
     }
-  }
-
-  recomputeClipping() {
-    this.setClippingBrush(this.settings);
   }
 
   cycleClippingBrush() {
@@ -258,6 +266,19 @@ class CutsManager {
     const nextSetting = settings[nextIndex];
     this.setClippingBrush(nextSetting);
   }
+
+  // processNewColumnGroup(columnGroup: ColumnGroup) {
+  //   if (this.settings === null) return;
+
+  //   if (this.brush) {
+  //     columnGroup.traverse((node) => {
+  //       if (node instanceof ModuleGroup) {
+  //         node.createClippedBrushes(this.brush!);
+  //         node.showClippedBrushes();
+  //       }
+  //     });
+  //   }
+  // }
 }
 
 export default CutsManager;

@@ -7,7 +7,7 @@ import {
 } from "@/layouts/changeWindowType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { A, O, S, TE } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,
@@ -122,37 +122,6 @@ class LayoutsManager {
     );
   }
 
-  async prepareAltSectionTypeLayouts() {
-    const { systemId } = this.houseGroup.userData;
-    const { layout, sectionType } = this.activeLayoutGroup.userData;
-
-    this.clearPreviousLayouts();
-
-    const layouts = await pipe(
-      getAltSectionTypeLayouts({ systemId, layout, sectionType }),
-      TE.chain(
-        A.traverse(TE.ApplicativePar)(({ layout, sectionType }) =>
-          pipe(
-            createColumnLayoutGroup({
-              systemId,
-              dnas: columnLayoutToDnas(layout),
-              layout,
-            }),
-            TE.map((layoutGroup) => {
-              layoutGroup.cutsManager.setClippingBrush(
-                this.activeLayoutGroup.cutsManager.settings
-              );
-              return { layoutGroup, sectionType };
-            })
-          )
-        )
-      ),
-      TE.getOrElse(() => [] as any)
-    )();
-
-    return this.updateSectionTypeLayouts(layouts);
-  }
-
   private clearPreviousLayouts() {
     this.sectionTypeLayouts.forEach((x) => {
       if (x.layoutGroup.uuid !== this._activeLayoutGroup.uuid) {
@@ -161,26 +130,49 @@ class LayoutsManager {
     });
   }
 
-  private updateSectionTypeLayouts(
-    newLayouts: Array<{
-      layoutGroup: ColumnLayoutGroup;
-      sectionType: SectionType;
-    }>
-  ) {
-    this.sectionTypeLayouts = [
-      {
-        layoutGroup: this._activeLayoutGroup,
-        sectionType: this.currentSectionType,
-      },
-      ...newLayouts,
-    ].sort((a, b) => S.Ord.compare(b.sectionType.code, a.sectionType.code));
+  prepareAltSectionTypeLayouts() {
+    const { systemId } = this.houseGroup.userData;
+    const { layout, sectionType } = this.activeLayoutGroup.userData;
 
-    newLayouts.forEach(({ layoutGroup }) => {
-      setVisibilityDown(layoutGroup, false);
-      this.houseGroup.add(layoutGroup);
-    });
+    this.clearPreviousLayouts();
 
-    return this.sectionTypeLayouts;
+    return pipe(
+      getAltSectionTypeLayouts({ systemId, layout, sectionType }),
+      TE.chain(
+        flow(
+          A.traverse(TE.ApplicativePar)(({ layout, sectionType }) =>
+            pipe(
+              createColumnLayoutGroup({
+                systemId,
+                dnas: columnLayoutToDnas(layout),
+                layout,
+              }),
+              TE.map((layoutGroup) => {
+                setVisibilityDown(layoutGroup, false);
+                this.houseGroup.add(layoutGroup);
+                layoutGroup.cutsManager.setClippingBrush(
+                  this.activeLayoutGroup.cutsManager.settings
+                );
+                return { layoutGroup, sectionType };
+              })
+            )
+          ),
+          TE.map((xs) => {
+            this.sectionTypeLayouts = [
+              ...xs,
+              {
+                layoutGroup: this.activeLayoutGroup,
+                sectionType: this.activeLayoutGroup.userData.sectionType,
+              },
+            ].sort((a, b) =>
+              S.Ord.compare(b.sectionType.code, a.sectionType.code)
+            );
+            return this.sectionTypeLayouts;
+          })
+        )
+      ),
+      TE.getOrElse(() => [] as any)
+    )();
   }
 
   cycleWindowTypeLayout() {

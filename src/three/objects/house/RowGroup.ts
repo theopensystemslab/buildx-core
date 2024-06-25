@@ -4,13 +4,11 @@ import { getVanillaModule } from "@/tasks/vanilla";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
-import { Brush, Evaluator } from "three-bvh-csg";
+import { Evaluator } from "three-bvh-csg";
 import { ColumnGroup } from "./ColumnGroup";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import { ClippedElementBrush, FullElementBrush } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
-import { defaultModuleGroupCreator, isModuleGroup } from "./ModuleGroup";
-import { setVisibilityDown } from "@/three/utils";
+import { defaultModuleGroupCreator } from "./ModuleGroup";
 
 export type RowGroupUserData = {
   rowIndex: number;
@@ -40,42 +38,6 @@ export class RowGroup extends Group {
 
   get houseGroup(): HouseGroup {
     return this.columnLayoutGroup.houseGroup;
-  }
-
-  createClippedBrushes(clippingBrush: Brush) {
-    this.destroyClippedBrushes();
-
-    this.children.filter(isModuleGroup).forEach((moduleGroup) => {
-      moduleGroup.createClippedBrushes(clippingBrush);
-    });
-  }
-
-  showClippedBrushes() {
-    this.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        setVisibilityDown(node, false);
-      } else if (node instanceof ClippedElementBrush) {
-        setVisibilityDown(node, true);
-      }
-    });
-  }
-
-  destroyClippedBrushes() {
-    this.traverse((node) => {
-      if (node instanceof ClippedElementBrush) {
-        node.removeFromParent();
-      }
-    });
-  }
-
-  showElementBrushes() {
-    this.traverse((node) => {
-      if (node instanceof FullElementBrush) {
-        setVisibilityDown(node, true);
-      } else if (node instanceof ClippedElementBrush) {
-        setVisibilityDown(node, false);
-      }
-    });
   }
 }
 

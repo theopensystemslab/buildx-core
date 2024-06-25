@@ -88,7 +88,7 @@ export class HouseGroup extends Group {
 
   move(v: Vector3) {
     this.position.add(v);
-    this.cutsManager.recomputeClipping();
+    this.cutsManager.applyClippingBrush();
   }
 
   delete() {

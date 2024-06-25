@@ -30,6 +30,7 @@ export type ModuleGroupUserData = {
 export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
   evaluator: Evaluator;
+  lastClippingBrush?: Brush;
 
   constructor(userData: ModuleGroupUserData) {
     super();
@@ -54,6 +55,8 @@ export class ModuleGroup extends Group {
   }
 
   createClippedBrushes(clippingBrush: Brush) {
+    if (clippingBrush === this.lastClippingBrush) return;
+
     const inverseMatrix = this.matrixWorld.invert();
 
     this.traverse((node) => {
@@ -68,6 +71,8 @@ export class ModuleGroup extends Group {
 
         setVisibilityDown(clippedBrush, false);
         clippedBrush.updateMatrixWorld();
+
+        this.lastClippingBrush = clippingBrush;
       }
     });
   }

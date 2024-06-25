@@ -1,18 +1,29 @@
 import { A, Num, O, Ord, TE, someOrError } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
+import {
+  BufferGeometry,
+  Group,
+  Line,
+  LineBasicMaterial,
+  Scene,
+  Vector3,
+} from "three";
 import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
+import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
+import {
+  ClippedElementBrush,
+  FullElementBrush,
+} from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { setVisibilityDown } from "../utils";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
 const DEFAULT_MAX_DEPTH = 10;
 
@@ -104,8 +115,6 @@ class ZStretchManager implements StretchManager {
     return pipe(
       templateVanillaColumnGroupCreator,
       TE.map((templateVanillaColumnGroup) => {
-        setVisibilityDown(templateVanillaColumnGroup, false);
-
         const { depth: vanillaColumnDepth } =
           templateVanillaColumnGroup.userData;
 
@@ -158,7 +167,15 @@ class ZStretchManager implements StretchManager {
 
         this.layoutGroup.add(...vanillaColumnGroups);
 
-        this.handles.forEach((x) => x.syncDimensions(this.layoutGroup));
+        this.handles.forEach((x) => {
+          x.syncDimensions(this.layoutGroup);
+          if (
+            this.layoutGroup !==
+            this.houseGroup.layoutsManager.activeLayoutGroup
+          ) {
+            this.hideHandles();
+          }
+        });
 
         const [handleDown, handleUp] = this.handles;
         endColumnGroup.add(handleUp);
@@ -260,6 +277,22 @@ class ZStretchManager implements StretchManager {
         lastVisibleMidColumnIndex: 0,
       };
     }
+
+    this.layoutGroup.cutsManager.applyClippingBrush();
+  }
+
+  setVisibility(columnGroup: ColumnGroup, value: boolean) {
+    columnGroup.traverse((node) => {
+      if (node instanceof Group) {
+        node.visible = value;
+      }
+      if (node instanceof FullElementBrush) {
+        node.visible = this.layoutGroup.cutsManager.settings === null && value;
+      }
+      if (node instanceof ClippedElementBrush) {
+        node.visible = this.layoutGroup.cutsManager.settings !== null && value;
+      }
+    });
   }
 
   gestureProgress(delta: number) {
@@ -296,7 +329,7 @@ class ZStretchManager implements StretchManager {
             this.setColumnLine(target);
 
             if (bookendColumn.position.z > target) {
-              setVisibilityDown(firstInvisibleColumn, true);
+              this.setVisibility(firstInvisibleColumn, true);
               this.progressData!.lastVisibleMidColumnIndex++;
             }
           })
@@ -317,7 +350,7 @@ class ZStretchManager implements StretchManager {
             this.setColumnLine(target);
 
             if (bookendColumn.position.z < target) {
-              setVisibilityDown(finalVisibleColumn, false);
+              this.setVisibility(finalVisibleColumn, false);
               this.progressData!.lastVisibleMidColumnIndex--;
             }
           })
@@ -330,18 +363,7 @@ class ZStretchManager implements StretchManager {
   }
 
   finalize() {
-    if (!this.initData)
-      throw new Error(
-        `no ZStretchManager.initData in ZStretchManager.finalize`
-      );
-    if (!this.startData)
-      throw new Error(
-        `no ZStretchManager.startData in ZStretchManager.finalize`
-      );
-    if (!this.progressData)
-      throw new Error(
-        `no ZStretchManager.progressData in ZStretchManager.finalize`
-      );
+    if (!this.initData || !this.startData || !this.progressData) return;
 
     const { endColumnGroup } = this.initData;
 
@@ -366,7 +388,7 @@ class ZStretchManager implements StretchManager {
   gestureEnd() {
     this.finalize();
     this.init();
-    this.houseGroup.xStretchManager.init();
+    // this.houseGroup.xStretchManager.init();
   }
 
   getScene() {
