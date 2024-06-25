@@ -13,9 +13,7 @@ class StretchHandleMesh extends HandleMesh {
 
   get manager(): StretchManager {
     if (this.parent instanceof StretchHandleGroup) {
-      return this.axis === "z"
-        ? this.parent.houseGroup.zStretchManager
-        : this.parent.houseGroup.xStretchManager;
+      return this.parent.manager;
     } else {
       throw new Error(`no stretch manager for handle mesh`);
     }

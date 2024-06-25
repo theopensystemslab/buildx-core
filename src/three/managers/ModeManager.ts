@@ -12,7 +12,7 @@ class ModeManager {
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
     this.mode = ModeEnum.Enum.SITE;
-    this.init();
+    // this.init();
   }
 
   init() {
@@ -23,6 +23,7 @@ class ModeManager {
     switch (true) {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
+        this.houseGroup.zStretchManager.init();
         this.houseGroup.zStretchManager.showHandles();
         this.houseGroup.xStretchManager.showHandles();
         break;

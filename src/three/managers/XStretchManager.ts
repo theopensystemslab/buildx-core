@@ -32,20 +32,22 @@ class XStretchManager implements StretchManager {
       new StretchHandleGroup({
         axis: "x",
         side: -1,
-        houseGroup,
+        manager: this,
       }),
       new StretchHandleGroup({
         axis: "x",
         side: 1,
-        houseGroup,
+        manager: this,
       }),
     ];
     this.init();
-    setTimeout(() => this.init(), 2000);
+    // setTimeout(() => this.init(), 2000);
   }
 
   async init() {
     const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
+
+    this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
 
     const [handleDown, handleUp] = this.handles;
     this.houseGroup.add(handleDown);

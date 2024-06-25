@@ -1,7 +1,8 @@
+import StretchManager from "@/three/managers/StretchManager";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, SphereGeometry } from "three";
-import { HouseGroup } from "../house/HouseGroup";
+import { ColumnLayoutGroup } from "../house/ColumnLayoutGroup";
 import HandleGroup from "./HandleGroup";
 import StretchHandleMesh from "./StretchHandleMesh";
 import handleMaterial from "./handleMaterial";
@@ -19,21 +20,21 @@ class StretchHandleGroup extends HandleGroup {
     axis: StretchAxis;
     side: StretchSide;
   };
-  houseGroup: HouseGroup;
   boxMesh: StretchHandleMesh;
   sphereMeshes: [StretchHandleMesh, StretchHandleMesh];
+  manager: StretchManager;
 
   constructor({
     axis,
     side,
-    houseGroup,
+    manager,
   }: {
     axis: StretchAxis;
     side: StretchSide;
-    houseGroup: HouseGroup;
+    manager: StretchManager;
   }) {
     super();
-    this.houseGroup = houseGroup;
+    this.manager = manager;
     this.userData = {
       axis,
       side,
@@ -41,7 +42,6 @@ class StretchHandleGroup extends HandleGroup {
     this.boxMesh = this.createBoxMesh();
     this.sphereMeshes = this.createSphereMeshes();
     this.add(this.boxMesh, ...this.sphereMeshes);
-    this.syncDimensions();
   }
 
   private createBoxMesh(): StretchHandleMesh {
@@ -61,16 +61,14 @@ class StretchHandleGroup extends HandleGroup {
     ) as [StretchHandleMesh, StretchHandleMesh];
   }
 
-  syncDimensions() {
+  syncDimensions(layoutGroup: ColumnLayoutGroup) {
     const {
-      userData: { axis, side },
-      houseGroup: {
-        activeLayoutGroup: {
-          userData: { depth, width },
-        },
-      },
+      userData: { depth, width },
+    } = layoutGroup;
+    const {
       boxMesh,
       sphereMeshes,
+      userData: { axis, side },
     } = this;
 
     switch (axis) {

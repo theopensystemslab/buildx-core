@@ -3,6 +3,8 @@ import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
+import CutsManager from "@/three/managers/CutsManager";
+import ZStretchManager from "@/three/managers/ZStretchManager";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
@@ -10,7 +12,6 @@ import { Box3, Group, Scene } from "three";
 import { OBB } from "three-stdlib";
 import { defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
-import CutsManager from "@/three/managers/CutsManager";
 
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
@@ -28,6 +29,7 @@ export class ColumnLayoutGroup extends Group {
   aabb: Box3;
   obb: OBB;
   cutsManager: CutsManager;
+  zStretchManager: ZStretchManager;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
@@ -35,6 +37,7 @@ export class ColumnLayoutGroup extends Group {
     this.aabb = new Box3();
     this.obb = new OBB();
     this.cutsManager = new CutsManager(this);
+    this.zStretchManager = new ZStretchManager(this);
   }
 
   get houseGroup(): HouseGroup {

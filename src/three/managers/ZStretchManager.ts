@@ -12,6 +12,7 @@ import { setVisibilityDown } from "../utils";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
+import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
 const DEFAULT_MAX_DEPTH = 10;
 
@@ -23,7 +24,7 @@ const gestureLineMat = new LineBasicMaterial({ color: 0xff0000 }); // Red
 const columnLineMat = new LineBasicMaterial({ color: 0x0000ff }); // Blue
 
 class ZStretchManager implements StretchManager {
-  houseGroup: HouseGroup;
+  layoutGroup: ColumnLayoutGroup;
   maxDepth: number;
 
   initData?: {
@@ -52,22 +53,25 @@ class ZStretchManager implements StretchManager {
 
   handles: [StretchHandleGroup, StretchHandleGroup];
 
-  constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+  constructor(layoutGroup: ColumnLayoutGroup) {
+    this.layoutGroup = layoutGroup;
     this.maxDepth = DEFAULT_MAX_DEPTH;
     this.handles = [
       new StretchHandleGroup({
         axis: "z",
         side: -1,
-        houseGroup,
+        manager: this,
       }),
       new StretchHandleGroup({
         axis: "z",
         side: 1,
-        houseGroup,
+        manager: this,
       }),
     ];
-    this.init();
+  }
+
+  get houseGroup(): HouseGroup {
+    return this.layoutGroup.houseGroup;
   }
 
   cleanup() {
@@ -75,26 +79,22 @@ class ZStretchManager implements StretchManager {
     delete this.startData;
     delete this.progressData;
 
-    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
-
-    const invisibleColumnGroups = columnLayoutGroup.children.filter(
+    const invisibleColumnGroups = this.layoutGroup.children.filter(
       (x) => x instanceof ColumnGroup && !x.visible
     );
 
-    columnLayoutGroup.remove(...invisibleColumnGroups);
+    this.layoutGroup.remove(...invisibleColumnGroups);
   }
 
   async init() {
     this.cleanup();
-
-    const columnLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     const {
       userData: {
         vanillaColumn: { positionedRows },
         depth: layoutDepth,
       },
-    } = columnLayoutGroup;
+    } = this.layoutGroup;
 
     const templateVanillaColumnGroupCreator = defaultColumnGroupCreator({
       positionedRows,
@@ -119,7 +119,7 @@ class ZStretchManager implements StretchManager {
           A.makeBy(maxMoreCols, () => templateVanillaColumnGroup.clone())
         );
 
-        const { children } = columnLayoutGroup;
+        const { children } = this.layoutGroup;
 
         const sortedVisibleColumnGroups = pipe(
           children,
@@ -141,13 +141,12 @@ class ZStretchManager implements StretchManager {
         const endColumnGroup =
           sortedVisibleColumnGroups[sortedVisibleColumnGroups.length - 1];
 
-        const midColumnGroups: ColumnGroup[] =
-          columnLayoutGroup.children.filter(
-            (x): x is ColumnGroup =>
-              x instanceof ColumnGroup &&
-              x.visible &&
-              ![startColumnGroup, endColumnGroup].includes(x)
-          );
+        const midColumnGroups: ColumnGroup[] = this.layoutGroup.children.filter(
+          (x): x is ColumnGroup =>
+            x instanceof ColumnGroup &&
+            x.visible &&
+            ![startColumnGroup, endColumnGroup].includes(x)
+        );
 
         this.initData = {
           templateVanillaColumnGroup,
@@ -157,13 +156,17 @@ class ZStretchManager implements StretchManager {
           midColumnGroups,
         };
 
-        columnLayoutGroup.add(...vanillaColumnGroups);
+        this.layoutGroup.add(...vanillaColumnGroups);
+
+        this.handles.forEach((x) => x.syncDimensions(this.layoutGroup));
 
         const [handleDown, handleUp] = this.handles;
         endColumnGroup.add(handleUp);
         startColumnGroup.add(handleDown);
 
-        if (this.houseGroup.modeManager.mode === ModeEnum.Enum.SITE) {
+        if (
+          this.layoutGroup.houseGroup.modeManager.mode === ModeEnum.Enum.SITE
+        ) {
           this.hideHandles();
         }
       })
@@ -370,7 +373,7 @@ class ZStretchManager implements StretchManager {
     return pipe(
       this.houseGroup.activeLayoutGroup,
       findFirstGuardUp((o): o is Scene => o instanceof Scene),
-      someOrError(`scene not found above ZStretchManager's columnLayoutGroup`)
+      someOrError(`scene not found above ZStretchManager's this.layoutGroup`)
     );
   }
 
