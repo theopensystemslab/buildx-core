@@ -86,6 +86,7 @@ class ZStretchManager implements StretchManager {
   }
 
   async init() {
+    console.log("Z-stretch init");
     this.cleanup();
 
     const {
@@ -355,7 +356,9 @@ class ZStretchManager implements StretchManager {
   gestureEnd() {
     this.finalize();
     this.init();
-    // this.houseGroup.xStretchManager.init();
+    this.houseGroup.xStretchManager.init().then(() => {
+      this.houseGroup.xStretchManager.showHandles();
+    });
   }
 
   getScene() {

@@ -25,7 +25,8 @@ class ModeManager {
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
         this.houseGroup.zStretchManager.init();
         this.houseGroup.zStretchManager.showHandles();
-        this.houseGroup.xStretchManager?.showHandles();
+        this.houseGroup.xStretchManager.init();
+        this.houseGroup.xStretchManager.showHandles();
         break;
       }
       // (down) Building -> Level
@@ -52,9 +53,8 @@ class ModeManager {
           ...this.houseGroup.cutsManager.settings,
           rowIndex: null,
         });
-        this.houseGroup.cutsManager.syncObjectCuts(
-          this.houseGroup.activeLayoutGroup
-        );
+        console.log(this.houseGroup.children);
+        this.houseGroup.cutsManager.syncObjectCuts(this.houseGroup);
         break;
       }
       // (up, up) Level -> Site
@@ -64,6 +64,7 @@ class ModeManager {
           ...this.houseGroup.cutsManager.settings,
           rowIndex: null,
         });
+        this.houseGroup.cutsManager.syncObjectCuts(this.houseGroup);
         break;
       }
       default: {

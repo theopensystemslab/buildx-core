@@ -40,10 +40,10 @@ class XStretchManager implements StretchManager {
         manager: this,
       }),
     ];
-    this.init();
   }
 
   async init() {
+    console.log(`x-stretch init`);
     const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
 
     this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));

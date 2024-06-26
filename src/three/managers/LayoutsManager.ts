@@ -150,7 +150,7 @@ class LayoutsManager {
               TE.map((layoutGroup) => {
                 this.houseGroup.add(layoutGroup);
                 hideObject(layoutGroup);
-
+                this.activeLayoutGroup.cutsManager.syncObjectCuts(layoutGroup);
                 return { layoutGroup, sectionType };
               })
             )
