@@ -52,7 +52,6 @@ class ZStretchManager implements StretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   constructor(layoutGroup: ColumnLayoutGroup) {
-    console.log("Z constructor");
     this.layoutGroup = layoutGroup;
     this.maxDepth = DEFAULT_MAX_DEPTH;
     this.handles = [
@@ -79,14 +78,13 @@ class ZStretchManager implements StretchManager {
     delete this.progressData;
 
     const invisibleColumnGroups = this.layoutGroup.children.filter(
-      (x) => x instanceof ColumnGroup && !x.visible
+      (x): x is ColumnGroup => x instanceof ColumnGroup && !x.visible
     );
 
     this.layoutGroup.remove(...invisibleColumnGroups);
   }
 
   async init() {
-    console.log("Z INIT");
     this.cleanup();
 
     pipe(
@@ -236,6 +234,7 @@ class ZStretchManager implements StretchManager {
           0,
           startDepth + index * columnGroup.userData.depth
         );
+        console.log(`syncing cuts ${columnGroup.uuid}`);
         this.layoutGroup.cutsManager?.syncObjectCuts(columnGroup);
       });
 
@@ -355,6 +354,9 @@ class ZStretchManager implements StretchManager {
     });
 
     endColumnGroup.userData.columnIndex = visibleMidColumnGroups.length + 1;
+
+    this.layoutGroup.updateDepth();
+    this.layoutGroup.updateDnas();
   }
 
   gestureEnd() {

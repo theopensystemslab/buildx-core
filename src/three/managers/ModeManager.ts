@@ -2,6 +2,7 @@ import { z } from "zod";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { pipe } from "fp-ts/lib/function";
 import { O } from "@/utils/functions";
+import { sequenceT } from "fp-ts/lib/Apply";
 
 export const ModeEnum = z.enum(["SITE", "BUILDING", "LEVEL"]);
 
@@ -25,7 +26,6 @@ class ModeManager {
     switch (true) {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
-        console.log(`hey`);
         pipe(
           this.houseGroup.zStretchManager,
           O.map((zStretchManager) => {
@@ -39,6 +39,18 @@ class ModeManager {
       }
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
+        const { cutsManager, activeLayoutGroup } = this.houseGroup;
+        pipe(
+          sequenceT(O.Applicative)(cutsManager, activeLayoutGroup),
+          O.map(([cutsManager, activeLayoutGroup]) => {
+            cutsManager.setClippingBrush({
+              ...cutsManager.settings,
+              rowIndex: 1,
+            });
+            pipe(activeLayoutGroup);
+            cutsManager.syncObjectCuts(activeLayoutGroup);
+          })
+        );
         break;
       }
       // (up) Builing -> Site
