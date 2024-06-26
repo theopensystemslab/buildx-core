@@ -33,9 +33,8 @@ export class ElementGroup extends Group {
     hideObject(this.clippedBrush);
     this.add(this.clippedBrush);
 
-    console.log(`full brush`, this.fullBrush);
-
     this.fullBrush.updateMatrixWorld();
+
     evaluator.evaluate(
       this.fullBrush,
       clippingBrush,
@@ -170,7 +169,6 @@ export const defaultElementGroupCreator = ({
   const fullElementBrush = new FullElementBrush(geometry, threeMaterial);
   fullElementBrush.castShadow = true;
   const elementGroup = new ElementGroup(element, fullElementBrush);
-  console.log(elementGroup.updateMatrixWorld);
   elementGroup.add(fullElementBrush);
   return elementGroup;
 };

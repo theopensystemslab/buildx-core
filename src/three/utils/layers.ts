@@ -7,10 +7,14 @@ export const HIDDEN_LAYER = 3;
 
 export const showObject = (object: Object3D) => {
   object.visible = true;
-  object.layers.set(DEFAULT_LAYER);
+  object.traverse((node) => {
+    node.layers.set(DEFAULT_LAYER);
+  });
 };
 
 export const hideObject = (object: Object3D) => {
   object.visible = false;
-  object.layers.set(HIDDEN_LAYER);
+  object.traverse((node) => {
+    node.layers.set(HIDDEN_LAYER);
+  });
 };

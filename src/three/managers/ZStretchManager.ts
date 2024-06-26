@@ -1,31 +1,20 @@
 import { A, Num, O, Ord, TE, someOrError } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import {
-  BufferGeometry,
-  Group,
-  Line,
-  LineBasicMaterial,
-  Scene,
-  Vector3,
-} from "three";
+import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
 import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
-import {
-  ClippedElementBrush,
-  FullElementBrush,
-} from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
 import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
 
-const DEFAULT_MAX_DEPTH = 10;
+const DEFAULT_MAX_DEPTH = 15;
 
 const linePoints = [new Vector3(-10, 0, 0), new Vector3(10, 0, 0)];
 
@@ -159,6 +148,8 @@ class ZStretchManager implements StretchManager {
           midColumnGroups,
         };
 
+        vanillaColumnGroups.forEach(hideObject);
+
         this.layoutGroup.add(...vanillaColumnGroups);
 
         this.handles.forEach((x) => {
@@ -218,7 +209,7 @@ class ZStretchManager implements StretchManager {
 
     const z0 = bookendColumn.position.z;
 
-    this.setGestureLine(z0);
+    // this.setGestureLine(z0);
 
     this.startData = {
       allColumnGroups,
@@ -271,20 +262,6 @@ class ZStretchManager implements StretchManager {
     }
   }
 
-  setVisibility(columnGroup: ColumnGroup, value: boolean) {
-    columnGroup.traverse((node) => {
-      if (node instanceof Group) {
-        node.visible = value;
-      }
-      if (node instanceof FullElementBrush) {
-        node.visible = this.layoutGroup.cutsManager.settings === null && value;
-      }
-      if (node instanceof ClippedElementBrush) {
-        node.visible = this.layoutGroup.cutsManager.settings !== null && value;
-      }
-    });
-  }
-
   gestureProgress(delta: number) {
     if (!this.startData)
       throw new Error(`gestureProgress called without startData`);
@@ -316,10 +293,10 @@ class ZStretchManager implements StretchManager {
               firstInvisibleColumn.position.z +
               firstInvisibleColumn.userData.depth / 2;
 
-            this.setColumnLine(target);
+            // this.setColumnLine(target);
 
             if (bookendColumn.position.z > target) {
-              this.setVisibility(firstInvisibleColumn, true);
+              showObject(firstInvisibleColumn);
               this.progressData!.lastVisibleMidColumnIndex++;
             }
           })
@@ -337,10 +314,10 @@ class ZStretchManager implements StretchManager {
               finalVisibleColumn.position.z +
               finalVisibleColumn.userData.depth / 2;
 
-            this.setColumnLine(target);
+            // this.setColumnLine(target);
 
             if (bookendColumn.position.z < target) {
-              this.setVisibility(finalVisibleColumn, false);
+              hideObject(finalVisibleColumn);
               this.progressData!.lastVisibleMidColumnIndex--;
             }
           })
@@ -349,7 +326,7 @@ class ZStretchManager implements StretchManager {
     }
 
     bookendColumn.position.z += delta;
-    this.setGestureLine(bookendColumn.position.z);
+    // this.setGestureLine(bookendColumn.position.z);
   }
 
   finalize() {
@@ -390,13 +367,11 @@ class ZStretchManager implements StretchManager {
   }
 
   setGestureLine(z: number) {
-    const scene = this.getScene();
-
     if (this.debugGestureLine) {
       this.debugGestureLine.position.z = z;
     } else {
       this.debugGestureLine = new Line(lineGeometry, gestureLineMat);
-      scene.add(this.debugGestureLine);
+      this.layoutGroup.add(this.debugGestureLine);
       this.debugGestureLine.position.z = z;
     }
   }
@@ -406,12 +381,10 @@ class ZStretchManager implements StretchManager {
   }
 
   setColumnLine(z: number) {
-    const scene = this.getScene();
-
     if (this.progressData) {
       if (!this.debugColumnLine) {
         this.debugColumnLine = new Line(lineGeometry, gestureLineMat);
-        scene.add(this.debugColumnLine);
+        this.layoutGroup.add(this.debugColumnLine);
       }
       if (this.startData?.midColumnGroups) {
         this.debugColumnLine.position.z = z;
