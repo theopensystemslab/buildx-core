@@ -2,11 +2,10 @@ import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
 import ModeManager from "@/three/managers/ModeManager";
-import TransformsManager from "@/three/managers/TransformsManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
-import { someOrError } from "@/utils/functions";
+import { O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Vector3 } from "three";
 import BuildXScene from "../scene/BuildXScene";
@@ -28,11 +27,10 @@ export type HouseGroupUserData = {
 export class HouseGroup extends Group {
   userData: HouseGroupUserData;
 
-  elementsManager: ElementsManager;
-  layoutsManager: LayoutsManager;
-  transformsManager: TransformsManager;
-  modeManager: ModeManager;
-  xStretchManager: XStretchManager;
+  elementsManager?: ElementsManager;
+  layoutsManager?: LayoutsManager;
+  modeManager?: ModeManager;
+  xStretchManager?: XStretchManager;
 
   hooks?: HouseGroupHooks;
 
@@ -50,8 +48,7 @@ export class HouseGroup extends Group {
     this.userData = userData;
     this.modeManager = new ModeManager(this);
     this.elementsManager = new ElementsManager(this);
-    this.transformsManager = new TransformsManager(this);
-    this.layoutsManager = new LayoutsManager(initialColumnLayoutGroup);
+    this.layoutsManager = new LayoutsManager(this);
     this.xStretchManager = new XStretchManager(this);
     this.hooks = hooks;
   }
@@ -67,8 +64,8 @@ export class HouseGroup extends Group {
     }) as this;
   }
 
-  get activeLayoutGroup(): ColumnLayoutGroup {
-    return this.layoutsManager.activeLayoutGroup;
+  get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
+    return O.fromNullable(this.layoutsManager?.activeLayoutGroup);
   }
 
   get cutsManager(): CutsManager {
