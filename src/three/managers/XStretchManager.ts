@@ -43,114 +43,137 @@ class XStretchManager implements StretchManager {
   }
 
   async init() {
-    console.log(`x-stretch init`);
-    const activeLayoutGroup = this.houseGroup.activeLayoutGroup;
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        // TODO ME
+        return;
 
-    this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
+        this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
 
-    const [handleDown, handleUp] = this.handles;
-    this.houseGroup.add(handleDown);
-    this.houseGroup.add(handleUp);
+        const [handleDown, handleUp] = this.handles;
+        this.houseGroup.add(handleDown);
+        this.houseGroup.add(handleUp);
 
-    if (this.houseGroup.modeManager.mode === ModeEnum.Enum.SITE) {
-      this.hideHandles();
-    }
+        if (this.houseGroup.modeManager?.mode === ModeEnum.Enum.SITE) {
+          this.hideHandles();
+        }
 
-    const alts =
-      await this.houseGroup.layoutsManager.prepareAltSectionTypeLayouts();
+        // const alts =
+        //   await this.houseGroup.layoutsManager?.prepareAltSectionTypeLayouts();
 
-    const currentLayoutIndex = alts.findIndex(
-      (x) => x.layoutGroup === activeLayoutGroup
+        // const currentLayoutIndex = alts.findIndex(
+        //   (x) => x.layoutGroup === activeLayoutGroup
+        // );
+        // if (currentLayoutIndex === -1)
+        //   throw new Error(`currentLayoutIndex === -1`);
+
+        // this.initData = {
+        //   alts,
+        //   minWidth: alts[0].sectionType.width,
+        //   maxWidth: alts[alts.length - 1].sectionType.width,
+        //   initialLayoutWidth: activeLayoutGroup.userData.width,
+        // };
+
+        // this.progressData = {
+        //   cumulativeDx: 0,
+        //   currentLayoutIndex,
+        // };
+      })
     );
-    if (currentLayoutIndex === -1) throw new Error(`currentLayoutIndex === -1`);
-
-    this.initData = {
-      alts,
-      minWidth: alts[0].sectionType.width,
-      maxWidth: alts[alts.length - 1].sectionType.width,
-      initialLayoutWidth: activeLayoutGroup.userData.width,
-    };
-
-    this.progressData = {
-      cumulativeDx: 0,
-      currentLayoutIndex,
-    };
   }
 
   gestureStart(side: 1 | -1) {
     this.startData = {
       side,
     };
-    this.houseGroup.zStretchManager.hideHandles();
+    pipe(
+      this.houseGroup.zStretchManager,
+      O.map((x) => x.hideHandles())
+    );
   }
+
   gestureProgress(delta: number) {
-    const { initialLayoutWidth: currentWidth, alts } = this.initData!;
-    const { side } = this.startData!;
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        const { initialLayoutWidth: currentWidth, alts } = this.initData!;
+        const { side } = this.startData!;
 
-    this.progressData!.cumulativeDx += delta;
+        this.progressData!.cumulativeDx += delta;
 
-    const { cumulativeDx, currentLayoutIndex } = this.progressData!;
+        const { cumulativeDx, currentLayoutIndex } = this.progressData!;
 
-    // up the axis
-    if (side === 1) {
-      // additive up the axis
-      if (delta > 0) {
-        pipe(
-          alts,
-          A.lookup(currentLayoutIndex + 1),
-          O.map((nextWiderLayout) => {
-            const v = currentWidth + cumulativeDx;
-            const targetWidth = nextWiderLayout.sectionType.width;
+        // up the axis
+        if (side === 1) {
+          // additive up the axis
+          if (delta > 0) {
+            pipe(
+              alts,
+              A.lookup(currentLayoutIndex + 1),
+              O.map((nextWiderLayout) => {
+                const v = currentWidth + cumulativeDx;
+                const targetWidth = nextWiderLayout.sectionType.width;
 
-            if (v >= targetWidth) {
-              this.houseGroup.layoutsManager.activeLayoutGroup =
-                nextWiderLayout.layoutGroup;
-              this.progressData!.currentLayoutIndex++;
-            }
-          })
-        );
-      }
+                // TODO make nicer?
+                if (v >= targetWidth && this.houseGroup.layoutsManager) {
+                  this.houseGroup.layoutsManager.activeLayoutGroup =
+                    nextWiderLayout.layoutGroup;
+                  this.progressData!.currentLayoutIndex++;
+                }
+              })
+            );
+          }
 
-      // subtractive down the axis
-      if (delta < 0) {
-        pipe(
-          alts,
-          A.lookup(currentLayoutIndex - 1),
-          O.map((nextShorterLayout) => {
-            const v = currentWidth + cumulativeDx;
-            const targetWidth = nextShorterLayout.sectionType.width;
+          // subtractive down the axis
+          if (delta < 0) {
+            pipe(
+              alts,
+              A.lookup(currentLayoutIndex - 1),
+              O.map((nextShorterLayout) => {
+                const v = currentWidth + cumulativeDx;
+                const targetWidth = nextShorterLayout.sectionType.width;
 
-            if (v <= targetWidth) {
-              this.houseGroup.layoutsManager.activeLayoutGroup =
-                nextShorterLayout.layoutGroup;
-              this.progressData!.currentLayoutIndex--;
-            }
-          })
-        );
-      }
-    }
+                // TODO make nicer? DRY?
+                if (v <= targetWidth && this.houseGroup.layoutsManager) {
+                  this.houseGroup.layoutsManager.activeLayoutGroup =
+                    nextShorterLayout.layoutGroup;
+                  this.progressData!.currentLayoutIndex--;
+                }
+              })
+            );
+          }
+        }
 
-    // down the axis
-    if (side === -1) {
-      // additive down the axis
-      if (delta < 0) {
-      }
+        // down the axis
+        if (side === -1) {
+          // additive down the axis
+          if (delta < 0) {
+          }
 
-      // subtractive up the axis
-      if (delta > 0) {
-      }
-    }
+          // subtractive up the axis
+          if (delta > 0) {
+          }
+        }
 
-    // this.progressData!.currentWidth = ;
+        // this.progressData!.currentWidth = ;
 
-    const [handleDown, handleUp] = this.handles;
+        const [handleDown, handleUp] = this.handles;
 
-    handleDown.position.x -= side * delta;
-    handleUp.position.x += side * delta;
+        handleDown.position.x -= side * delta;
+        handleUp.position.x += side * delta;
+      })
+    );
   }
+
   gestureEnd() {
-    this.houseGroup.zStretchManager.init();
-    // this.houseGroup.zStretchManager.showHandles()
+    pipe(
+      this.houseGroup.zStretchManager,
+      O.map((zMan) => {
+        zMan.init();
+        zMan.showHandles();
+      })
+    );
   }
 
   showHandles() {

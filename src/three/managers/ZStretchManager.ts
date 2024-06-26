@@ -1,7 +1,7 @@
-import { A, Num, O, Ord, TE, someOrError } from "@/utils/functions";
+import { A, Num, O, Ord, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { BufferGeometry, Line, LineBasicMaterial, Scene, Vector3 } from "three";
+import { BufferGeometry, Line, LineBasicMaterial, Vector3 } from "three";
 import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
@@ -10,7 +10,6 @@ import {
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
-import { findFirstGuardUp } from "../utils/sceneQueries";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
 
@@ -53,6 +52,7 @@ class ZStretchManager implements StretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   constructor(layoutGroup: ColumnLayoutGroup) {
+    console.log("Z constructor");
     this.layoutGroup = layoutGroup;
     this.maxDepth = DEFAULT_MAX_DEPTH;
     this.handles = [
@@ -86,94 +86,98 @@ class ZStretchManager implements StretchManager {
   }
 
   async init() {
-    console.log("Z-stretch init");
+    console.log("Z INIT");
     this.cleanup();
 
-    const {
-      userData: {
-        vanillaColumn: { positionedRows, columnDepth },
-        depth: layoutDepth,
-      },
-    } = this.layoutGroup;
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        const {
+          userData: {
+            vanillaColumn: { positionedRows, columnDepth },
+            depth: layoutDepth,
+          },
+        } = this.layoutGroup;
 
-    const maxDepth = this.maxDepth;
+        const maxDepth = this.maxDepth;
 
-    const maxMoreCols = floor((maxDepth - layoutDepth) / columnDepth - 1);
+        const maxMoreCols = floor((maxDepth - layoutDepth) / columnDepth - 1);
 
-    const vanillaColumnGroupsTE = pipe(
-      A.makeBy(maxMoreCols, () =>
-        defaultColumnGroupCreator({
-          positionedRows,
-          columnIndex: -1,
-        })
-      ),
-      A.sequence(TE.ApplicativePar)
-    );
-
-    return pipe(
-      vanillaColumnGroupsTE,
-      TE.map((vanillaColumnGroups) => {
-        const { children } = this.layoutGroup;
-
-        const sortedVisibleColumnGroups = pipe(
-          children,
-          A.filter(
-            (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+        const vanillaColumnGroupsTE = pipe(
+          A.makeBy(maxMoreCols, () =>
+            defaultColumnGroupCreator({
+              positionedRows,
+              columnIndex: -1,
+            })
           ),
-          A.sort(
-            pipe(
-              Num.Ord,
-              Ord.contramap(
-                ({ userData: { columnIndex } }: ColumnGroup): number =>
-                  columnIndex
+          A.sequence(TE.ApplicativePar)
+        );
+
+        return pipe(
+          vanillaColumnGroupsTE,
+          TE.map((vanillaColumnGroups) => {
+            const { children } = this.layoutGroup;
+
+            const sortedVisibleColumnGroups = pipe(
+              children,
+              A.filter(
+                (x): x is ColumnGroup => x instanceof ColumnGroup && x.visible
+              ),
+              A.sort(
+                pipe(
+                  Num.Ord,
+                  Ord.contramap(
+                    ({ userData: { columnIndex } }: ColumnGroup): number =>
+                      columnIndex
+                  )
+                )
               )
-            )
-          )
-        );
+            );
 
-        const startColumnGroup = sortedVisibleColumnGroups[0];
-        const endColumnGroup =
-          sortedVisibleColumnGroups[sortedVisibleColumnGroups.length - 1];
+            const startColumnGroup = sortedVisibleColumnGroups[0];
+            const endColumnGroup =
+              sortedVisibleColumnGroups[sortedVisibleColumnGroups.length - 1];
 
-        const midColumnGroups: ColumnGroup[] = this.layoutGroup.children.filter(
-          (x): x is ColumnGroup =>
-            x instanceof ColumnGroup &&
-            x.visible &&
-            ![startColumnGroup, endColumnGroup].includes(x)
-        );
+            const midColumnGroups: ColumnGroup[] =
+              this.layoutGroup.children.filter(
+                (x): x is ColumnGroup =>
+                  x instanceof ColumnGroup &&
+                  x.visible &&
+                  ![startColumnGroup, endColumnGroup].includes(x)
+              );
 
-        this.initData = {
-          vanillaColumnGroups,
-          startColumnGroup,
-          endColumnGroup,
-          midColumnGroups,
-        };
+            this.initData = {
+              vanillaColumnGroups,
+              startColumnGroup,
+              endColumnGroup,
+              midColumnGroups,
+            };
 
-        vanillaColumnGroups.forEach(hideObject);
+            vanillaColumnGroups.forEach(hideObject);
 
-        this.layoutGroup.add(...vanillaColumnGroups);
+            this.layoutGroup.add(...vanillaColumnGroups);
 
-        this.handles.forEach((x) => {
-          x.syncDimensions(this.layoutGroup);
-          if (
-            this.layoutGroup !==
-            this.houseGroup.layoutsManager.activeLayoutGroup
-          ) {
-            this.hideHandles();
-          }
-        });
+            this.handles.forEach((x) => {
+              x.syncDimensions(this.layoutGroup);
+              if (this.layoutGroup !== activeLayoutGroup) {
+                this.hideHandles();
+              }
+            });
 
-        const [handleDown, handleUp] = this.handles;
-        endColumnGroup.add(handleUp);
-        startColumnGroup.add(handleDown);
+            const [handleDown, handleUp] = this.handles;
+            endColumnGroup.add(handleUp);
+            startColumnGroup.add(handleDown);
 
-        if (
-          this.layoutGroup.houseGroup.modeManager.mode === ModeEnum.Enum.SITE
-        ) {
-          this.hideHandles();
-        }
+            if (
+              this.layoutGroup.houseGroup.modeManager?.mode ===
+              ModeEnum.Enum.SITE
+            ) {
+              this.hideHandles();
+            }
+          })
+        )();
       })
-    )();
+    );
   }
 
   showHandles() {
@@ -187,7 +191,7 @@ class ZStretchManager implements StretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) throw new Error(`gestureStart called without initData`);
 
-    this.houseGroup.xStretchManager.hideHandles();
+    this.houseGroup.xStretchManager?.hideHandles();
 
     const { startColumnGroup, endColumnGroup, vanillaColumnGroups } =
       this.initData;
@@ -232,7 +236,7 @@ class ZStretchManager implements StretchManager {
           0,
           startDepth + index * columnGroup.userData.depth
         );
-        this.layoutGroup.cutsManager.syncObjectCuts(columnGroup);
+        this.layoutGroup.cutsManager?.syncObjectCuts(columnGroup);
       });
 
       const lastVisibleMidColumnIndex =
@@ -254,7 +258,7 @@ class ZStretchManager implements StretchManager {
             index * columnGroup.userData.depth -
             columnGroup.userData.depth
         );
-        this.layoutGroup.cutsManager.syncObjectCuts(columnGroup);
+        this.layoutGroup.cutsManager?.syncObjectCuts(columnGroup);
       });
 
       this.progressData = {
@@ -356,17 +360,9 @@ class ZStretchManager implements StretchManager {
   gestureEnd() {
     this.finalize();
     this.init();
-    this.houseGroup.xStretchManager.init().then(() => {
-      this.houseGroup.xStretchManager.showHandles();
+    this.houseGroup.xStretchManager?.init().then(() => {
+      this.houseGroup.xStretchManager?.showHandles();
     });
-  }
-
-  getScene() {
-    return pipe(
-      this.houseGroup.activeLayoutGroup,
-      findFirstGuardUp((o): o is Scene => o instanceof Scene),
-      someOrError(`scene not found above ZStretchManager's this.layoutGroup`)
-    );
   }
 
   setGestureLine(z: number) {
@@ -398,8 +394,6 @@ class ZStretchManager implements StretchManager {
   setColumnLines() {
     if (!this.startData) return;
 
-    const scene = this.getScene();
-
     const { allColumnGroups } = this.startData;
 
     if (this.debugColumnLines) {
@@ -412,7 +406,7 @@ class ZStretchManager implements StretchManager {
         const geometry = new BufferGeometry().setFromPoints(points);
         const line = new Line(geometry, columnLineMat);
 
-        scene.add(line);
+        this.layoutGroup.add(line);
 
         return line;
       });

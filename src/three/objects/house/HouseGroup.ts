@@ -28,7 +28,7 @@ export class HouseGroup extends Group {
   userData: HouseGroupUserData;
 
   elementsManager?: ElementsManager;
-  layoutsManager?: LayoutsManager;
+  layoutsManager: LayoutsManager;
   modeManager?: ModeManager;
   xStretchManager?: XStretchManager;
 
@@ -49,31 +49,31 @@ export class HouseGroup extends Group {
     this.modeManager = new ModeManager(this);
     this.elementsManager = new ElementsManager(this);
     this.layoutsManager = new LayoutsManager(this);
+    this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
     this.xStretchManager = new XStretchManager(this);
     this.hooks = hooks;
   }
 
-  // questionable
-  clone(recursive = true) {
-    if (!recursive)
-      throw new Error(`HouseGroup.clone called without recursive`);
-
-    return new HouseGroup({
-      userData: { ...this.userData },
-      initialColumnLayoutGroup: this.layoutsManager.activeLayoutGroup.clone(),
-    }) as this;
-  }
-
   get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
-    return O.fromNullable(this.layoutsManager?.activeLayoutGroup);
+    return pipe(
+      this.layoutsManager,
+      O.fromNullable,
+      O.chain((x) => x.activeLayoutGroup)
+    );
   }
 
-  get cutsManager(): CutsManager {
-    return this.activeLayoutGroup.cutsManager;
+  get cutsManager(): O.Option<CutsManager> {
+    return pipe(
+      this.activeLayoutGroup,
+      O.chain((x) => O.fromNullable(x.cutsManager))
+    );
   }
 
-  get zStretchManager(): ZStretchManager {
-    return this.activeLayoutGroup.zStretchManager;
+  get zStretchManager(): O.Option<ZStretchManager> {
+    return pipe(
+      this.activeLayoutGroup,
+      O.chain((x) => O.fromNullable(x.zStretchManager))
+    );
   }
 
   get scene(): BuildXScene {

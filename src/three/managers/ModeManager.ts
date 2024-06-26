@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { HouseGroup } from "../objects/house/HouseGroup";
+import { pipe } from "fp-ts/lib/function";
+import { O } from "@/utils/functions";
 
 export const ModeEnum = z.enum(["SITE", "BUILDING", "LEVEL"]);
 
@@ -23,48 +25,55 @@ class ModeManager {
     switch (true) {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
-        this.houseGroup.zStretchManager.init();
-        this.houseGroup.zStretchManager.showHandles();
-        this.houseGroup.xStretchManager.init();
-        this.houseGroup.xStretchManager.showHandles();
+        console.log(`hey`);
+        pipe(
+          this.houseGroup.zStretchManager,
+          O.map((zStretchManager) => {
+            zStretchManager.init();
+            zStretchManager.showHandles();
+          })
+        );
+        this.houseGroup.xStretchManager?.init();
+        this.houseGroup.xStretchManager?.showHandles();
         break;
       }
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
-        this.houseGroup.cutsManager.setClippingBrush({
-          rowIndex: 1,
-          x: false,
-          z: false,
-        });
-        this.houseGroup.cutsManager.syncObjectCuts(
-          this.houseGroup.activeLayoutGroup
-        );
         break;
       }
       // (up) Builing -> Site
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.SITE: {
-        this.houseGroup.zStretchManager.hideHandles();
+        pipe(
+          this.houseGroup.zStretchManager,
+          O.map((zStretchManager) => {
+            zStretchManager.hideHandles();
+          })
+        );
         this.houseGroup.xStretchManager?.hideHandles();
         break;
       }
       // (up) Level -> Building
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.BUILDING: {
-        this.houseGroup.cutsManager.setClippingBrush({
-          ...this.houseGroup.cutsManager.settings,
-          rowIndex: null,
-        });
-        console.log(this.houseGroup.children);
-        this.houseGroup.cutsManager.syncObjectCuts(this.houseGroup);
+        pipe(
+          this.houseGroup.cutsManager,
+          O.map((cutsManager) => {
+            cutsManager.setClippingBrush({
+              ...cutsManager.settings,
+              rowIndex: null,
+            });
+            cutsManager.syncObjectCuts(this.houseGroup);
+          })
+        );
         break;
       }
       // (up, up) Level -> Site
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.SITE: {
-        this.houseGroup.zStretchManager.hideHandles();
-        this.houseGroup.cutsManager.setClippingBrush({
-          ...this.houseGroup.cutsManager.settings,
-          rowIndex: null,
-        });
-        this.houseGroup.cutsManager.syncObjectCuts(this.houseGroup);
+        // this.houseGroup.zStretchManager.hideHandles();
+        // this.houseGroup.cutsManager.setClippingBrush({
+        //   ...this.houseGroup.cutsManager.settings,
+        //   rowIndex: null,
+        // });
+        // this.houseGroup.cutsManager.syncObjectCuts(this.houseGroup);
         break;
       }
       default: {

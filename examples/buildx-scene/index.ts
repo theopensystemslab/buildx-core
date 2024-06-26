@@ -28,7 +28,7 @@ pipe(
 
     window.addEventListener("keydown", (ev) => {
       if (ev.key === "m") {
-        houseGroup.modeManager.up();
+        houseGroup.modeManager?.up();
       }
     });
   })

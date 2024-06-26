@@ -28,8 +28,8 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
-  cutsManager: CutsManager;
-  zStretchManager: ZStretchManager;
+  cutsManager?: CutsManager;
+  zStretchManager?: ZStretchManager;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
