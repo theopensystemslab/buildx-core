@@ -102,7 +102,6 @@ class XStretchManager implements StretchManager {
   }
 
   init() {
-    return pipe(TE.of(undefined))();
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),

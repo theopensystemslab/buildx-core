@@ -42,7 +42,6 @@ export class ElementGroup extends Group {
       this.clippedBrush
     );
 
-    // this.clippedBrush.geometry.applyMatrix4(this.parent!.matrixWorld.invert());
     this.clippedBrush.geometry.applyMatrix4(this.matrixWorld.invert());
     this.clippedBrush.updateMatrixWorld();
   }

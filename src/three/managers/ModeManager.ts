@@ -6,6 +6,7 @@ import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import CutsManager from "./CutsManager";
 import ZStretchManager from "./ZStretchManager";
+import XStretchManager from "./XStretchManager";
 
 export const ModeEnum = z.enum(["SITE", "BUILDING", "LEVEL"]);
 
@@ -26,18 +27,14 @@ class ModeManager {
   }
 
   setMode(v: ModeEnum) {
-    const {
-      cutsManager,
-      activeLayoutGroup,
-      // xStretchManager,
-      zStretchManager,
-    } = this.houseGroup;
+    const { cutsManager, activeLayoutGroup, xStretchManager, zStretchManager } =
+      this.houseGroup;
 
     const go = (
       f: (stuff: {
         activeLayoutGroup: ColumnLayoutGroup;
         cutsManager: CutsManager;
-        // xStretchManager: XStretchManager;
+        xStretchManager: XStretchManager;
         zStretchManager: ZStretchManager;
       }) => void
     ) =>
@@ -45,20 +42,20 @@ class ModeManager {
         sequenceT(O.Applicative)(
           activeLayoutGroup,
           cutsManager,
-          // O.fromNullable(xStretchManager),
+          O.fromNullable(xStretchManager),
           zStretchManager
         ),
         O.map(
           ([
             activeLayoutGroup,
             cutsManager,
-            // xStretchManager,
+            xStretchManager,
             zStretchManager,
           ]) =>
             f({
               activeLayoutGroup,
               cutsManager,
-              // xStretchManager,
+              xStretchManager,
               zStretchManager,
             })
         )
@@ -82,18 +79,20 @@ class ModeManager {
       }
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
-        const { cutsManager, activeLayoutGroup } = this.houseGroup;
-        pipe(
-          sequenceT(O.Applicative)(cutsManager, activeLayoutGroup),
-          O.map(([cutsManager, activeLayoutGroup]) => {
-            cutsManager.setClippingBrush({
-              ...cutsManager.settings,
-              rowIndex: 1,
-            });
-            cutsManager.createObjectCuts(activeLayoutGroup);
-            cutsManager.showClippedBrushes(activeLayoutGroup);
-          })
-        );
+        go(({ cutsManager, activeLayoutGroup }) => {
+          cutsManager.setClippingBrush({
+            ...cutsManager.settings,
+            rowIndex: 1,
+          });
+          cutsManager.createObjectCuts(activeLayoutGroup);
+          cutsManager.showClippedBrushes(activeLayoutGroup);
+          // xStretchManager.initData?.alts.forEach(({ layoutGroup }) => {
+          //   if (layoutGroup !== activeLayoutGroup) {
+          //     cutsManager.createObjectCuts(layoutGroup);
+          //     cutsManager.showClippedBrushes(layoutGroup);
+          //   }
+          // });
+        });
         break;
       }
       // (up) Builing -> Site

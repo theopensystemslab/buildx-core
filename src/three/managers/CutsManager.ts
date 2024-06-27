@@ -27,6 +27,7 @@ class CutsManager {
     z: boolean;
     rowIndex: number | null;
   };
+  debugged: boolean;
 
   constructor(layoutGroup: ColumnLayoutGroup) {
     this.layoutGroup = layoutGroup;
@@ -37,10 +38,19 @@ class CutsManager {
       x: false,
       z: false,
     };
+    this.debugged = false;
   }
 
   debugClippingBrush() {
-    this.brush && this.layoutGroup.scene.add(this.brush);
+    if (!this.brush) return;
+
+    if (this.debugged) {
+      this.layoutGroup.scene.remove(this.brush);
+      this.debugged = false;
+    } else {
+      this.layoutGroup.scene.add(this.brush);
+      this.debugged = true;
+    }
   }
 
   private createClippingBrushX() {
@@ -199,6 +209,13 @@ class CutsManager {
         brush === null ? brushY : evaluator.evaluate(brush, brushY, ADDITION);
     }
 
+    if (brush) {
+      brush.rotation.y = this.layoutGroup.houseGroup.rotation.y;
+      brush.position.setX(this.layoutGroup.houseGroup.position.x);
+      brush.position.setZ(this.layoutGroup.houseGroup.position.z);
+      brush.updateMatrixWorld();
+    }
+
     this.brush = brush;
   }
 
@@ -206,8 +223,6 @@ class CutsManager {
     const brush = this.brush;
 
     if (brush !== null) {
-      brush.applyMatrix4(this.layoutGroup.houseGroup.matrixWorld);
-      brush.updateMatrixWorld();
       this.createClippedBrushes(object);
     }
   }
