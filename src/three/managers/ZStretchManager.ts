@@ -85,7 +85,6 @@ class ZStretchManager implements StretchManager {
   }
 
   async init() {
-    console.log(`z stretch init`);
     this.cleanup();
 
     pipe(
@@ -188,7 +187,9 @@ class ZStretchManager implements StretchManager {
   }
 
   gestureStart(side: 1 | -1) {
-    if (!this.initData) throw new Error(`gestureStart called without initData`);
+    if (!this.initData) {
+      return;
+    }
 
     this.houseGroup.xStretchManager?.hideHandles();
 
@@ -269,10 +270,7 @@ class ZStretchManager implements StretchManager {
   }
 
   gestureProgress(delta: number) {
-    if (!this.startData)
-      throw new Error(`gestureProgress called without startData`);
-    if (!this.progressData)
-      throw new Error(`gestureProgress called without progressData`);
+    if (!this.startData || !this.progressData) return;
 
     const { bookendColumn, side, midColumnGroups } = this.startData;
 
@@ -356,6 +354,8 @@ class ZStretchManager implements StretchManager {
     });
 
     endColumnGroup.userData.columnIndex = visibleMidColumnGroups.length + 1;
+
+    this.cleanup();
 
     this.layoutGroup.updateDepth();
     this.layoutGroup.updateDnas();

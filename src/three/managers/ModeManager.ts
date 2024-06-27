@@ -5,7 +5,6 @@ import { z } from "zod";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import CutsManager from "./CutsManager";
-import XStretchManager from "./XStretchManager";
 import ZStretchManager from "./ZStretchManager";
 
 export const ModeEnum = z.enum(["SITE", "BUILDING", "LEVEL"]);
@@ -27,14 +26,18 @@ class ModeManager {
   }
 
   setMode(v: ModeEnum) {
-    const { cutsManager, activeLayoutGroup, xStretchManager, zStretchManager } =
-      this.houseGroup;
+    const {
+      cutsManager,
+      activeLayoutGroup,
+      // xStretchManager,
+      zStretchManager,
+    } = this.houseGroup;
 
     const go = (
       f: (stuff: {
         activeLayoutGroup: ColumnLayoutGroup;
         cutsManager: CutsManager;
-        xStretchManager: XStretchManager;
+        // xStretchManager: XStretchManager;
         zStretchManager: ZStretchManager;
       }) => void
     ) =>
@@ -42,20 +45,20 @@ class ModeManager {
         sequenceT(O.Applicative)(
           activeLayoutGroup,
           cutsManager,
-          O.fromNullable(xStretchManager),
+          // O.fromNullable(xStretchManager),
           zStretchManager
         ),
         O.map(
           ([
             activeLayoutGroup,
             cutsManager,
-            xStretchManager,
+            // xStretchManager,
             zStretchManager,
           ]) =>
             f({
               activeLayoutGroup,
               cutsManager,
-              xStretchManager,
+              // xStretchManager,
               zStretchManager,
             })
         )
@@ -106,6 +109,7 @@ class ModeManager {
       }
       // (up) Level -> Building
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.BUILDING: {
+        console.log(`gogogo`);
         go(({ cutsManager, activeLayoutGroup }) => {
           cutsManager.setClippingBrush({
             ...cutsManager.settings,
@@ -113,6 +117,7 @@ class ModeManager {
           });
           cutsManager.createObjectCuts(activeLayoutGroup);
           cutsManager.showAppropriateBrushes(activeLayoutGroup);
+          console.log(`gone`);
         });
         break;
       }

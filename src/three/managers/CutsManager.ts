@@ -39,6 +39,10 @@ class CutsManager {
     };
   }
 
+  debugClippingBrush() {
+    this.brush && this.layoutGroup.scene.add(this.brush);
+  }
+
   private createClippingBrushX() {
     const {
       obb: { halfSize },
@@ -168,10 +172,8 @@ class CutsManager {
     const { rowIndex, x, z } = this.settings;
 
     if (rowIndex !== null || x || z) {
-      console.log(`clipped appropriate`);
       this.showClippedBrushes(object);
     } else {
-      console.log(`full appropriate`);
       this.showElementBrushes(object);
     }
   }
