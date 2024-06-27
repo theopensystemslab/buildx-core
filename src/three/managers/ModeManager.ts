@@ -34,7 +34,8 @@ class ModeManager {
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
         console.log(`level mode`);
-        const { cutsManager, activeLayoutGroup } = this.houseGroup;
+        const { cutsManager, activeLayoutGroup, xStretchManager } =
+          this.houseGroup;
         pipe(
           activeLayoutGroup,
           O.map((activeLayoutGroup) => {
@@ -45,6 +46,11 @@ class ModeManager {
             });
             cutsManager?.createObjectCuts(activeLayoutGroup);
             cutsManager?.showClippedBrushes(activeLayoutGroup);
+
+            xStretchManager?.initData?.alts?.forEach(({ layoutGroup }, i) => {
+              if (layoutGroup === activeLayoutGroup) return;
+              cutsManager?.createObjectCuts(layoutGroup);
+            });
           })
         );
         // xStretchManager.initData?.alts.forEach(({ layoutGroup }) => {

@@ -74,9 +74,8 @@ class XStretchManager implements StretchManager {
                   TE.map((layoutGroup) => {
                     this.houseGroup.add(layoutGroup);
                     hideObject(layoutGroup);
-                    activeLayoutGroup.cutsManager?.createObjectCuts(
-                      layoutGroup
-                    );
+                    console.log(`yo`, this.houseGroup.cutsManager, layoutGroup);
+                    this.houseGroup.cutsManager?.createObjectCuts(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
                 )
@@ -148,10 +147,7 @@ class XStretchManager implements StretchManager {
     this.startData = {
       side,
     };
-    pipe(
-      this.houseGroup.zStretchManager,
-      O.map((x) => x.hideHandles())
-    );
+    this.houseGroup.zStretchManager?.hideHandles();
   }
 
   gestureProgress(delta: number) {
@@ -164,17 +160,21 @@ class XStretchManager implements StretchManager {
 
     // up the axis
     if (side === 1) {
+      const v = currentWidth + cumulativeDx;
+
       // additive up the axis
       if (delta > 0) {
         pipe(
           alts,
           A.lookup(currentLayoutIndex + 1),
           O.map((nextWiderLayout) => {
-            const v = currentWidth + cumulativeDx;
             const targetWidth = nextWiderLayout.sectionType.width;
 
             // TODO make nicer?
             if (v >= targetWidth && this.houseGroup.layoutsManager) {
+              this.houseGroup.cutsManager?.showAppropriateBrushes(
+                nextWiderLayout.layoutGroup
+              );
               this.houseGroup.layoutsManager.activeLayoutGroup =
                 nextWiderLayout.layoutGroup;
               this.progressData!.currentLayoutIndex++;
@@ -189,11 +189,13 @@ class XStretchManager implements StretchManager {
           alts,
           A.lookup(currentLayoutIndex - 1),
           O.map((nextShorterLayout) => {
-            const v = currentWidth + cumulativeDx;
             const targetWidth = nextShorterLayout.sectionType.width;
 
             // TODO make nicer? DRY?
             if (v <= targetWidth && this.houseGroup.layoutsManager) {
+              this.houseGroup.cutsManager?.showAppropriateBrushes(
+                nextShorterLayout.layoutGroup
+              );
               this.houseGroup.layoutsManager.activeLayoutGroup =
                 nextShorterLayout.layoutGroup;
               this.progressData!.currentLayoutIndex--;
@@ -205,12 +207,48 @@ class XStretchManager implements StretchManager {
 
     // down the axis
     if (side === -1) {
+      const v = currentWidth - cumulativeDx;
+
       // additive down the axis
       if (delta < 0) {
+        pipe(
+          alts,
+          A.lookup(currentLayoutIndex + 1),
+          O.map((nextWiderLayout) => {
+            const targetWidth = nextWiderLayout.sectionType.width;
+
+            // TODO make nicer?
+            if (v >= targetWidth && this.houseGroup.layoutsManager) {
+              this.houseGroup.cutsManager?.showAppropriateBrushes(
+                nextWiderLayout.layoutGroup
+              );
+              this.houseGroup.layoutsManager.activeLayoutGroup =
+                nextWiderLayout.layoutGroup;
+              this.progressData!.currentLayoutIndex++;
+            }
+          })
+        );
       }
 
       // subtractive up the axis
       if (delta > 0) {
+        pipe(
+          alts,
+          A.lookup(currentLayoutIndex - 1),
+          O.map((nextShorterLayout) => {
+            const targetWidth = nextShorterLayout.sectionType.width;
+
+            // TODO make nicer? DRY?
+            if (v <= targetWidth && this.houseGroup.layoutsManager) {
+              this.houseGroup.cutsManager?.showAppropriateBrushes(
+                nextShorterLayout.layoutGroup
+              );
+              this.houseGroup.layoutsManager.activeLayoutGroup =
+                nextShorterLayout.layoutGroup;
+              this.progressData!.currentLayoutIndex--;
+            }
+          })
+        );
       }
     }
 
@@ -223,13 +261,8 @@ class XStretchManager implements StretchManager {
   }
 
   gestureEnd() {
-    pipe(
-      this.houseGroup.zStretchManager,
-      O.map((zMan) => {
-        zMan.init();
-        zMan.showHandles();
-      })
-    );
+    this.houseGroup.zStretchManager?.init();
+    this.houseGroup.zStretchManager?.showHandles();
   }
 
   showHandles() {
