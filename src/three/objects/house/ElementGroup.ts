@@ -29,6 +29,10 @@ export class ElementGroup extends Group {
   createClippedBrush(clippingBrush: Brush) {
     if (!this.fullBrush) return;
 
+    if (this.clippedBrush) {
+      this.clippedBrush.removeFromParent();
+    }
+
     this.clippedBrush = new ClippedElementBrush();
     hideObject(this.clippedBrush);
     this.add(this.clippedBrush);

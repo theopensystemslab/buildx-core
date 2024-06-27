@@ -152,7 +152,7 @@ class CutsManager {
 
             const x = 0;
             const y = height / 2 + levelHeight;
-            const z = 0; // halfSize.z;
+            const z = 0;
 
             const clippingBrush = new Brush(
               new BoxGeometry(width, height, depth),
@@ -260,11 +260,10 @@ class CutsManager {
     pipe(
       this.brush,
       O.map((brush) => {
-        console.log(`brush`, brush);
-        // brush.rotation.y = this.houseGroup.rotation.y;
-        // brush.position.setX(this.houseGroup.position.x);
-        // brush.position.setZ(this.houseGroup.position.z);
-        // brush.updateMatrixWorld();
+        brush.rotateY(this.houseGroup.rotation.y);
+        brush.position.add(this.houseGroup.position);
+
+        brush.updateMatrixWorld();
       })
     );
   }
