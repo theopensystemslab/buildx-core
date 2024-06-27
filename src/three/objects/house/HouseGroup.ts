@@ -50,7 +50,7 @@ export class HouseGroup extends Group {
     this.elementsManager = new ElementsManager(this);
     this.layoutsManager = new LayoutsManager(this);
     this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
-    // this.xStretchManager = new XStretchManager(this);
+    this.xStretchManager = new XStretchManager(this);
     this.hooks = hooks;
   }
 

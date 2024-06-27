@@ -153,7 +153,9 @@ class ZStretchManager implements StretchManager {
 
             vanillaColumnGroups.forEach(hideObject);
 
-            this.layoutGroup.add(...vanillaColumnGroups);
+            if (vanillaColumnGroups.length > 0) {
+              this.layoutGroup.add(...vanillaColumnGroups);
+            }
 
             this.handles.forEach((x) => {
               x.syncDimensions(this.layoutGroup);
@@ -191,7 +193,7 @@ class ZStretchManager implements StretchManager {
       return;
     }
 
-    this.houseGroup.xStretchManager?.hideHandles();
+    // this.houseGroup.xStretchManager?.hideHandles();
 
     const { startColumnGroup, endColumnGroup, vanillaColumnGroups } =
       this.initData;
@@ -364,9 +366,9 @@ class ZStretchManager implements StretchManager {
   gestureEnd() {
     this.finalize();
     this.init();
-    this.houseGroup.xStretchManager?.init().then(() => {
-      this.houseGroup.xStretchManager?.showHandles();
-    });
+    // this.houseGroup.xStretchManager?.init().then(() => {
+    //   this.houseGroup.xStretchManager?.showHandles();
+    // });
   }
 
   setGestureLine(z: number) {

@@ -109,7 +109,6 @@ class ModeManager {
       }
       // (up) Level -> Building
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.BUILDING: {
-        console.log(`gogogo`);
         go(({ cutsManager, activeLayoutGroup }) => {
           cutsManager.setClippingBrush({
             ...cutsManager.settings,
@@ -117,7 +116,6 @@ class ModeManager {
           });
           cutsManager.createObjectCuts(activeLayoutGroup);
           cutsManager.showAppropriateBrushes(activeLayoutGroup);
-          console.log(`gone`);
         });
         break;
       }

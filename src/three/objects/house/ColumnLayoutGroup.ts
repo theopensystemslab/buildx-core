@@ -113,15 +113,9 @@ export class ColumnLayoutGroup extends Group {
       0
     );
 
-    console.log(`originalDepth: ${originalDepth}; nextDepth: ${nextDepth}`);
-
     this.userData.depth = nextDepth;
 
-    console.log([this.position.z]);
-
     this.position.setZ(-nextDepth / 2);
-
-    console.log([this.position.z]);
 
     this.houseGroup.position.add(
       new Vector3(0, 0, (nextDepth - originalDepth) / 2).applyAxisAngle(
