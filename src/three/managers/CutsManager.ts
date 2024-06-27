@@ -2,8 +2,8 @@ import { A, O, compareProps, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial, Object3D } from "three";
 import { ADDITION, Brush, Evaluator } from "three-bvh-csg";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { ElementGroup } from "../objects/house/ElementGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
 
 export const evaluator = new Evaluator();
 
@@ -15,13 +15,14 @@ const clippingMaterial = new MeshBasicMaterial({
 });
 
 class CutsManager {
-  private layoutGroup: ColumnLayoutGroup;
+  private houseGroup: HouseGroup;
+
   private clippingBrushes: {
     x?: Brush;
     y?: Brush;
     z?: Brush;
   };
-  private brush: Brush | null;
+  private brush: O.Option<Brush>;
   settings: {
     x: boolean;
     z: boolean;
@@ -29,10 +30,10 @@ class CutsManager {
   };
   debugged: boolean;
 
-  constructor(layoutGroup: ColumnLayoutGroup) {
-    this.layoutGroup = layoutGroup;
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
     this.clippingBrushes = {};
-    this.brush = null;
+    this.brush = O.none;
     this.settings = {
       rowIndex: null,
       x: false,
@@ -42,98 +43,35 @@ class CutsManager {
   }
 
   debugClippingBrush() {
-    if (!this.brush) return;
-
-    if (this.debugged) {
-      this.layoutGroup.scene.remove(this.brush);
-      this.debugged = false;
-    } else {
-      this.layoutGroup.scene.add(this.brush);
-      this.debugged = true;
-    }
+    pipe(
+      this.brush,
+      O.map((brush) => {
+        if (this.debugged) {
+          this.houseGroup.scene.remove(brush);
+          this.debugged = false;
+        } else {
+          this.houseGroup.scene.add(brush);
+          this.debugged = true;
+        }
+      })
+    );
   }
 
   private createClippingBrushX() {
-    const {
-      obb: { halfSize },
-    } = this.layoutGroup;
+    return pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        const {
+          obb: { halfSize },
+        } = activeLayoutGroup;
 
-    const width = halfSize.x + PAD;
-    const height = halfSize.y * 2 + PAD;
-    const depth = halfSize.z * 2 + PAD;
-
-    const x = width / 2;
-    const y = halfSize.y;
-    const z = halfSize.z;
-
-    const clippingBrush = new Brush(
-      new BoxGeometry(width, height, depth),
-      clippingMaterial
-    );
-    clippingBrush.position.set(x, y, z);
-    clippingBrush.updateMatrixWorld();
-
-    this.clippingBrushes.x = clippingBrush;
-
-    return this.clippingBrushes.x;
-  }
-
-  private createClippingBrushZ() {
-    const {
-      obb: { halfSize },
-    } = this.layoutGroup;
-
-    const width = halfSize.x * 2 + PAD;
-    const height = halfSize.y * 2 + PAD;
-    const depth = halfSize.z + PAD;
-
-    const x = 0;
-    const y = halfSize.y;
-    const z = depth / 2 + halfSize.z;
-
-    const clippingBrush = new Brush(
-      new BoxGeometry(width, height, depth),
-      clippingMaterial
-    );
-    clippingBrush.position.set(x, y, z);
-    clippingBrush.updateMatrixWorld();
-
-    this.clippingBrushes.z = clippingBrush;
-
-    return this.clippingBrushes.z;
-  }
-
-  private createClippingBrushY(rowIndex: number) {
-    const {
-      userData: { layout },
-      obb: { halfSize },
-    } = this.layoutGroup;
-
-    const clippingBrush = pipe(
-      layout,
-      A.head,
-      O.chain(({ positionedRows }) => pipe(positionedRows, A.lookup(rowIndex))),
-      O.chain(({ y, positionedModules, levelType }) =>
-        pipe(
-          positionedModules,
-          A.head,
-          O.map(({ module: { height } }) => {
-            const levelLetter = levelType[0];
-            const sign = levelLetter === "F" ? -1 : 1;
-            const result = sign * (height / 2) + y;
-            return result;
-          })
-        )
-      ),
-      O.map((levelHeight) => {
-        const width = halfSize.x * 2 + PAD;
-
+        const width = halfSize.x + PAD;
         const height = halfSize.y * 2 + PAD;
-        const depth = 999;
+        const depth = halfSize.z * 2 + PAD;
 
-        const x = 0;
-        const y = height / 2 + levelHeight;
-        const z = 0; // halfSize.z;
+        const x = width / 2;
+        const y = halfSize.y;
+        const z = 0;
 
         const clippingBrush = new Brush(
           new BoxGeometry(width, height, depth),
@@ -142,24 +80,110 @@ class CutsManager {
         clippingBrush.position.set(x, y, z);
         clippingBrush.updateMatrixWorld();
 
-        return clippingBrush;
-      }),
-      someOrError(`failure`)
+        this.clippingBrushes.x = clippingBrush;
+
+        return this.clippingBrushes.x;
+      })
     );
+  }
 
-    this.clippingBrushes.y = clippingBrush;
+  private createClippingBrushZ() {
+    return pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        const {
+          obb: { halfSize },
+        } = activeLayoutGroup;
 
-    return clippingBrush;
+        const width = halfSize.x * 2 + PAD;
+        const height = halfSize.y * 2 + PAD;
+        const depth = halfSize.z + PAD;
+
+        const x = 0;
+        const y = halfSize.y;
+        const z = depth / 2;
+
+        const clippingBrush = new Brush(
+          new BoxGeometry(width, height, depth),
+          clippingMaterial
+        );
+        clippingBrush.position.set(x, y, z);
+        clippingBrush.updateMatrixWorld();
+
+        this.clippingBrushes.z = clippingBrush;
+
+        return this.clippingBrushes.z;
+      })
+    );
+  }
+
+  private createClippingBrushY(rowIndex: number) {
+    return pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        const {
+          userData: { layout },
+          obb: { halfSize },
+        } = activeLayoutGroup;
+
+        const clippingBrush = pipe(
+          layout,
+          A.head,
+          O.chain(({ positionedRows }) =>
+            pipe(positionedRows, A.lookup(rowIndex))
+          ),
+          O.chain(({ y, positionedModules, levelType }) =>
+            pipe(
+              positionedModules,
+              A.head,
+              O.map(({ module: { height } }) => {
+                const levelLetter = levelType[0];
+                const sign = levelLetter === "F" ? -1 : 1;
+                const result = sign * (height / 2) + y;
+                return result;
+              })
+            )
+          ),
+          O.map((levelHeight) => {
+            const width = halfSize.x * 2 + PAD;
+
+            const height = halfSize.y * 2 + PAD;
+            const depth = 999;
+
+            const x = 0;
+            const y = height / 2 + levelHeight;
+            const z = 0; // halfSize.z;
+
+            const clippingBrush = new Brush(
+              new BoxGeometry(width, height, depth),
+              clippingMaterial
+            );
+            clippingBrush.position.set(x, y, z);
+            clippingBrush.updateMatrixWorld();
+
+            return clippingBrush;
+          }),
+          someOrError(`failure`)
+        );
+
+        this.clippingBrushes.y = clippingBrush;
+
+        return clippingBrush;
+      })
+    );
   }
 
   private createClippedBrushes(object: Object3D) {
-    if (this.brush === null) return;
-
-    object.traverse((node) => {
-      if (node instanceof ElementGroup) {
-        node.createClippedBrush(this.brush!);
-      }
-    });
+    pipe(
+      this.brush,
+      O.map((brush) => {
+        object.traverse((node) => {
+          if (node instanceof ElementGroup) {
+            node.createClippedBrush(brush);
+          }
+        });
+      })
+    );
   }
 
   showClippedBrushes(object: Object3D) {
@@ -193,30 +217,99 @@ class CutsManager {
 
     const { x, z, rowIndex } = settings;
 
-    let brush: Brush | null = null;
+    this.brush = O.none;
 
     if (x) {
-      brush = this.createClippingBrushX();
+      this.brush = this.createClippingBrushX();
     }
     if (z) {
-      const brushZ = this.createClippingBrushZ();
-      brush =
-        brush === null ? brushZ : evaluator.evaluate(brush, brushZ, ADDITION);
+      this.brush = pipe(
+        this.createClippingBrushZ(),
+        O.match(
+          () => this.brush,
+          (brushZ) =>
+            pipe(
+              this.brush,
+              O.match(
+                () => brushZ,
+                (brushX) => evaluator.evaluate(brushX, brushZ, ADDITION)
+              ),
+              O.some
+            )
+        )
+      );
     }
     if (rowIndex !== null) {
-      const brushY = this.createClippingBrushY(rowIndex);
-      brush =
-        brush === null ? brushY : evaluator.evaluate(brush, brushY, ADDITION);
+      this.brush = pipe(
+        this.createClippingBrushY(rowIndex),
+        O.match(
+          () => this.brush,
+          (brushY) =>
+            pipe(
+              this.brush,
+              O.match(
+                () => brushY,
+                (brushXZ) => evaluator.evaluate(brushXZ, brushY, ADDITION)
+              ),
+              O.some
+            )
+        )
+      );
     }
 
-    if (brush) {
-      brush.rotation.y = this.layoutGroup.houseGroup.rotation.y;
-      brush.position.setX(this.layoutGroup.houseGroup.position.x);
-      brush.position.setZ(this.layoutGroup.houseGroup.position.z);
-      brush.updateMatrixWorld();
-    }
+    pipe(
+      this.brush,
+      O.map((brush) => {
+        console.log(`brush`, brush);
+        // brush.rotation.y = this.houseGroup.rotation.y;
+        // brush.position.setX(this.houseGroup.position.x);
+        // brush.position.setZ(this.houseGroup.position.z);
+        // brush.updateMatrixWorld();
+      })
+    );
+  }
 
-    this.brush = brush;
+  setXCut(v: boolean) {
+    this.setClippingBrush({
+      ...this.settings,
+      x: v,
+    });
+  }
+
+  toggleXCut() {
+    this.setXCut(!this.settings.x);
+  }
+
+  setZCut(v: boolean) {
+    this.setClippingBrush({
+      ...this.settings,
+      z: v,
+    });
+  }
+
+  toggleZCut() {
+    this.setZCut(!this.settings.z);
+  }
+
+  setRowCut(rowIndex: number | null) {
+    this.setClippingBrush({
+      ...this.settings,
+      rowIndex,
+    });
+  }
+
+  toggleGroundCut() {
+    this.setRowCut(this.settings.rowIndex === null ? 1 : null);
+  }
+
+  syncActiveLayout() {
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        this.createObjectCuts(activeLayoutGroup);
+        this.showAppropriateBrushes(activeLayoutGroup);
+      })
+    );
   }
 
   createObjectCuts(object: Object3D) {

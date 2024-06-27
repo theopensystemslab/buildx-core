@@ -31,7 +31,8 @@ export class HouseGroup extends Group {
   layoutsManager: LayoutsManager;
   modeManager?: ModeManager;
   xStretchManager?: XStretchManager;
-
+  zStretchManager?: ZStretchManager;
+  cutsManager?: CutsManager;
   hooks?: HouseGroupHooks;
 
   constructor({
@@ -50,7 +51,9 @@ export class HouseGroup extends Group {
     this.elementsManager = new ElementsManager(this);
     this.layoutsManager = new LayoutsManager(this);
     this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
+    this.zStretchManager = new ZStretchManager(this);
     this.xStretchManager = new XStretchManager(this);
+    this.cutsManager = new CutsManager(this);
     this.hooks = hooks;
   }
 
@@ -59,20 +62,6 @@ export class HouseGroup extends Group {
       this.layoutsManager,
       O.fromNullable,
       O.chain((x) => x.activeLayoutGroup)
-    );
-  }
-
-  get cutsManager(): O.Option<CutsManager> {
-    return pipe(
-      this.activeLayoutGroup,
-      O.chain((x) => O.fromNullable(x.cutsManager))
-    );
-  }
-
-  get zStretchManager(): O.Option<ZStretchManager> {
-    return pipe(
-      this.activeLayoutGroup,
-      O.chain((x) => O.fromNullable(x.zStretchManager))
     );
   }
 

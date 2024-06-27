@@ -7,7 +7,6 @@ import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "../objects/house/ColumnGroup";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
 import { ModeEnum } from "./ModeManager";
@@ -23,7 +22,8 @@ const gestureLineMat = new LineBasicMaterial({ color: 0xff0000 }); // Red
 const columnLineMat = new LineBasicMaterial({ color: 0x0000ff }); // Blue
 
 class ZStretchManager implements StretchManager {
-  layoutGroup: ColumnLayoutGroup;
+  houseGroup: HouseGroup;
+
   maxDepth: number;
 
   initData?: {
@@ -51,8 +51,8 @@ class ZStretchManager implements StretchManager {
 
   handles: [StretchHandleGroup, StretchHandleGroup];
 
-  constructor(layoutGroup: ColumnLayoutGroup) {
-    this.layoutGroup = layoutGroup;
+  constructor(houseGroup: HouseGroup) {
+    this.houseGroup = houseGroup;
     this.maxDepth = DEFAULT_MAX_DEPTH;
     this.handles = [
       new StretchHandleGroup({
@@ -68,20 +68,21 @@ class ZStretchManager implements StretchManager {
     ];
   }
 
-  get houseGroup(): HouseGroup {
-    return this.layoutGroup.houseGroup;
-  }
-
   cleanup() {
-    delete this.initData;
-    delete this.startData;
-    delete this.progressData;
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((layoutGroup) => {
+        const invisibleColumnGroups = this.startData?.midColumnGroups.filter(
+          (x) => !x.visible
+        );
 
-    const invisibleColumnGroups = this.layoutGroup.children.filter(
-      (x): x is ColumnGroup => x instanceof ColumnGroup && !x.visible
+        if (invisibleColumnGroups) layoutGroup.remove(...invisibleColumnGroups);
+
+        delete this.initData;
+        delete this.startData;
+        delete this.progressData;
+      })
     );
-
-    this.layoutGroup.remove(...invisibleColumnGroups);
   }
 
   async init() {
@@ -95,7 +96,7 @@ class ZStretchManager implements StretchManager {
             vanillaColumn: { positionedRows, columnDepth },
             depth: layoutDepth,
           },
-        } = this.layoutGroup;
+        } = activeLayoutGroup;
 
         const maxDepth = this.maxDepth;
 
@@ -114,7 +115,7 @@ class ZStretchManager implements StretchManager {
         return pipe(
           vanillaColumnGroupsTE,
           TE.map((vanillaColumnGroups) => {
-            const { children } = this.layoutGroup;
+            const { children } = activeLayoutGroup;
 
             const sortedVisibleColumnGroups = pipe(
               children,
@@ -137,7 +138,7 @@ class ZStretchManager implements StretchManager {
               sortedVisibleColumnGroups[sortedVisibleColumnGroups.length - 1];
 
             const midColumnGroups: ColumnGroup[] =
-              this.layoutGroup.children.filter(
+              activeLayoutGroup.children.filter(
                 (x): x is ColumnGroup =>
                   x instanceof ColumnGroup &&
                   x.visible &&
@@ -154,12 +155,12 @@ class ZStretchManager implements StretchManager {
             vanillaColumnGroups.forEach(hideObject);
 
             if (vanillaColumnGroups.length > 0) {
-              this.layoutGroup.add(...vanillaColumnGroups);
+              activeLayoutGroup.add(...vanillaColumnGroups);
             }
 
             this.handles.forEach((x) => {
-              x.syncDimensions(this.layoutGroup);
-              if (this.layoutGroup !== activeLayoutGroup) {
+              x.syncDimensions(activeLayoutGroup);
+              if (activeLayoutGroup !== activeLayoutGroup) {
                 this.hideHandles();
               }
             });
@@ -168,10 +169,7 @@ class ZStretchManager implements StretchManager {
             endColumnGroup.add(handleUp);
             startColumnGroup.add(handleDown);
 
-            if (
-              this.layoutGroup.houseGroup.modeManager?.mode ===
-              ModeEnum.Enum.SITE
-            ) {
+            if (this.houseGroup.modeManager?.mode === ModeEnum.Enum.SITE) {
               this.hideHandles();
             }
           })
@@ -238,8 +236,8 @@ class ZStretchManager implements StretchManager {
           0,
           startDepth + index * columnGroup.userData.depth
         );
-        this.layoutGroup.cutsManager?.createObjectCuts(columnGroup);
-        this.layoutGroup.cutsManager?.showAppropriateBrushes(columnGroup);
+        this.houseGroup.cutsManager?.createObjectCuts(columnGroup);
+        this.houseGroup.cutsManager?.showAppropriateBrushes(columnGroup);
       });
 
       const lastVisibleMidColumnIndex =
@@ -261,8 +259,8 @@ class ZStretchManager implements StretchManager {
             index * columnGroup.userData.depth -
             columnGroup.userData.depth
         );
-        this.layoutGroup.cutsManager?.createObjectCuts(columnGroup);
-        this.layoutGroup.cutsManager?.showAppropriateBrushes(columnGroup);
+        this.houseGroup.cutsManager?.createObjectCuts(columnGroup);
+        this.houseGroup.cutsManager?.showAppropriateBrushes(columnGroup);
       });
 
       this.progressData = {
@@ -359,8 +357,13 @@ class ZStretchManager implements StretchManager {
 
     this.cleanup();
 
-    this.layoutGroup.updateDepth();
-    this.layoutGroup.updateDnas();
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        activeLayoutGroup.updateDepth();
+        activeLayoutGroup.updateDnas();
+      })
+    );
   }
 
   gestureEnd() {
@@ -372,13 +375,18 @@ class ZStretchManager implements StretchManager {
   }
 
   setGestureLine(z: number) {
-    if (this.debugGestureLine) {
-      this.debugGestureLine.position.z = z;
-    } else {
-      this.debugGestureLine = new Line(lineGeometry, gestureLineMat);
-      this.layoutGroup.add(this.debugGestureLine);
-      this.debugGestureLine.position.z = z;
-    }
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        if (this.debugGestureLine) {
+          this.debugGestureLine.position.z = z;
+        } else {
+          this.debugGestureLine = new Line(lineGeometry, gestureLineMat);
+          activeLayoutGroup.add(this.debugGestureLine);
+          this.debugGestureLine.position.z = z;
+        }
+      })
+    );
   }
 
   moveGestureLine(delta: number) {
@@ -387,13 +395,18 @@ class ZStretchManager implements StretchManager {
 
   setColumnLine(z: number) {
     if (this.progressData) {
-      if (!this.debugColumnLine) {
-        this.debugColumnLine = new Line(lineGeometry, gestureLineMat);
-        this.layoutGroup.add(this.debugColumnLine);
-      }
-      if (this.startData?.midColumnGroups) {
-        this.debugColumnLine.position.z = z;
-      }
+      pipe(
+        this.houseGroup.activeLayoutGroup,
+        O.map((activeLayoutGroup) => {
+          if (!this.debugColumnLine) {
+            this.debugColumnLine = new Line(lineGeometry, gestureLineMat);
+            activeLayoutGroup.add(this.debugColumnLine);
+          }
+          if (this.startData?.midColumnGroups) {
+            this.debugColumnLine.position.z = z;
+          }
+        })
+      );
     }
   }
 
@@ -412,7 +425,12 @@ class ZStretchManager implements StretchManager {
         const geometry = new BufferGeometry().setFromPoints(points);
         const line = new Line(geometry, columnLineMat);
 
-        this.layoutGroup.add(line);
+        pipe(
+          this.houseGroup.activeLayoutGroup,
+          O.map((activeLayoutGroup) => {
+            activeLayoutGroup.add(line);
+          })
+        );
 
         return line;
       });
