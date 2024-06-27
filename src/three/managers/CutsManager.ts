@@ -119,7 +119,7 @@ class CutsManager {
 
         const x = 0;
         const y = height / 2 + levelHeight;
-        const z = halfSize.z;
+        const z = 0; // halfSize.z;
 
         const clippingBrush = new Brush(
           new BoxGeometry(width, height, depth),
@@ -148,7 +148,7 @@ class CutsManager {
     });
   }
 
-  private showClippedBrushes(object: Object3D) {
+  showClippedBrushes(object: Object3D) {
     object.traverse((node) => {
       if (node instanceof ElementGroup) {
         node.showClippedBrush();
@@ -156,12 +156,24 @@ class CutsManager {
     });
   }
 
-  private showElementBrushes(object: Object3D) {
+  showElementBrushes(object: Object3D) {
     object.traverse((node) => {
       if (node instanceof ElementGroup) {
         node.showFullBrush();
       }
     });
+  }
+
+  showAppropriateBrushes(object: Object3D) {
+    const { rowIndex, x, z } = this.settings;
+
+    if (rowIndex !== null || x || z) {
+      console.log(`clipped appropriate`);
+      this.showClippedBrushes(object);
+    } else {
+      console.log(`full appropriate`);
+      this.showElementBrushes(object);
+    }
   }
 
   setClippingBrush(settings: typeof this.settings) {
@@ -188,16 +200,13 @@ class CutsManager {
     this.brush = brush;
   }
 
-  syncObjectCuts(object: Object3D) {
+  createObjectCuts(object: Object3D) {
     const brush = this.brush;
 
     if (brush !== null) {
       brush.applyMatrix4(this.layoutGroup.houseGroup.matrixWorld);
       brush.updateMatrixWorld();
       this.createClippedBrushes(object);
-      this.showClippedBrushes(object);
-    } else {
-      this.showElementBrushes(object);
     }
   }
 

@@ -157,7 +157,7 @@ class BuildXScene extends Scene {
         },
         onDoubleTap: ({ object }) => {
           if (object instanceof ElementBrush) {
-            object.houseGroup.modeManager.down();
+            object.houseGroup.modeManager?.down();
           }
         },
         onLongTap: ({ object }, pointer) => {
@@ -194,7 +194,7 @@ class BuildXScene extends Scene {
             };
           } else if (object instanceof ElementBrush) {
             const houseGroup = object.houseGroup;
-            const mode = object.houseGroup.modeManager.mode;
+            const mode = object.houseGroup.modeManager?.mode;
 
             if (mode === ModeEnum.Enum.SITE) {
               dragProgress = (delta: Vector3) => {

@@ -79,7 +79,7 @@ class StretchHandleGroup extends HandleGroup {
           sphereMesh.position.setZ((depth / 2) * sign);
         });
         this.position.setX((side * width) / 2 + OFFSET * side);
-        this.position.setZ(depth / 2);
+        // this.position.setZ(depth / 2);
         break;
       case "z":
         sphereMeshes.forEach((sphereMesh, i) => {

@@ -1,18 +1,28 @@
 import { SectionType } from "@/build-systems/remote/sectionTypes";
-import { A, O } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
+import { columnLayoutToDnas } from "@/layouts/init";
+import { A, O, S, TE } from "@/utils/functions";
+import { flow, pipe } from "fp-ts/lib/function";
 import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
+import {
+  ColumnLayoutGroup,
+  createColumnLayoutGroup,
+} from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
 import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
 
+type AltSectionTypeLayout = {
+  sectionType: SectionType;
+  layoutGroup: ColumnLayoutGroup;
+};
+
 class XStretchManager implements StretchManager {
   houseGroup: HouseGroup;
   handles: [StretchHandleGroup, StretchHandleGroup];
   initData?: {
-    alts: Array<{ sectionType: SectionType; layoutGroup: ColumnLayoutGroup }>;
+    alts: Array<AltSectionTypeLayout>;
     minWidth: number;
     maxWidth: number;
     initialLayoutWidth: number;
@@ -42,45 +52,96 @@ class XStretchManager implements StretchManager {
     ];
   }
 
-  async init() {
-    pipe(
+  createAlts(): TE.TaskEither<Error, Array<AltSectionTypeLayout>> {
+    const { systemId } = this.houseGroup.userData;
+
+    return pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
-        // TODO ME
-        return;
+        const { layout, sectionType } = activeLayoutGroup.userData;
 
+        return pipe(
+          getAltSectionTypeLayouts({ systemId, layout, sectionType }),
+          TE.chain(
+            flow(
+              A.traverse(TE.ApplicativePar)(({ layout, sectionType }) =>
+                pipe(
+                  createColumnLayoutGroup({
+                    systemId,
+                    dnas: columnLayoutToDnas(layout),
+                    layout,
+                  }),
+                  TE.map((layoutGroup) => {
+                    this.houseGroup.add(layoutGroup);
+                    hideObject(layoutGroup);
+                    activeLayoutGroup.cutsManager?.createObjectCuts(
+                      layoutGroup
+                    );
+                    return { layoutGroup, sectionType };
+                  })
+                )
+              ),
+              TE.map((xs) => {
+                return [
+                  ...xs,
+                  {
+                    layoutGroup: activeLayoutGroup,
+                    sectionType: activeLayoutGroup.userData.sectionType,
+                  },
+                ].sort((a, b) =>
+                  S.Ord.compare(b.sectionType.code, a.sectionType.code)
+                );
+              })
+            )
+          )
+        );
+      }),
+      TE.fromOption(() => Error(`eh`)),
+      TE.flatten
+    );
+  }
+
+  init() {
+    return pipe(
+      this.houseGroup.activeLayoutGroup,
+      TE.fromOption(() => Error(`no activeLayoutGroup`)),
+      TE.map((activeLayoutGroup) => {
         this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
 
         const [handleDown, handleUp] = this.handles;
         this.houseGroup.add(handleDown);
         this.houseGroup.add(handleUp);
-
         if (this.houseGroup.modeManager?.mode === ModeEnum.Enum.SITE) {
           this.hideHandles();
         }
 
-        // const alts =
-        //   await this.houseGroup.layoutsManager?.prepareAltSectionTypeLayouts();
+        return activeLayoutGroup;
+      }),
+      TE.chain((activeLayoutGroup) =>
+        pipe(
+          this.createAlts(),
+          TE.map((alts) => {
+            const currentLayoutIndex = alts.findIndex(
+              (x) => x.layoutGroup === activeLayoutGroup
+            );
+            if (currentLayoutIndex === -1)
+              throw new Error(`currentLayoutIndex === -1`);
 
-        // const currentLayoutIndex = alts.findIndex(
-        //   (x) => x.layoutGroup === activeLayoutGroup
-        // );
-        // if (currentLayoutIndex === -1)
-        //   throw new Error(`currentLayoutIndex === -1`);
+            this.initData = {
+              alts,
+              minWidth: alts[0].sectionType.width,
+              maxWidth: alts[alts.length - 1].sectionType.width,
+              initialLayoutWidth: activeLayoutGroup.userData.width,
+            };
 
-        // this.initData = {
-        //   alts,
-        //   minWidth: alts[0].sectionType.width,
-        //   maxWidth: alts[alts.length - 1].sectionType.width,
-        //   initialLayoutWidth: activeLayoutGroup.userData.width,
-        // };
-
-        // this.progressData = {
-        //   cumulativeDx: 0,
-        //   currentLayoutIndex,
-        // };
-      })
-    );
+            this.progressData = {
+              cumulativeDx: 0,
+              currentLayoutIndex,
+            };
+          })
+        )
+      )
+    )();
   }
 
   gestureStart(side: 1 | -1) {
@@ -94,76 +155,71 @@ class XStretchManager implements StretchManager {
   }
 
   gestureProgress(delta: number) {
-    pipe(
-      this.houseGroup.activeLayoutGroup,
-      O.map((activeLayoutGroup) => {
-        const { initialLayoutWidth: currentWidth, alts } = this.initData!;
-        const { side } = this.startData!;
+    const { initialLayoutWidth: currentWidth, alts } = this.initData!;
+    const { side } = this.startData!;
 
-        this.progressData!.cumulativeDx += delta;
+    this.progressData!.cumulativeDx += delta;
 
-        const { cumulativeDx, currentLayoutIndex } = this.progressData!;
+    const { cumulativeDx, currentLayoutIndex } = this.progressData!;
 
-        // up the axis
-        if (side === 1) {
-          // additive up the axis
-          if (delta > 0) {
-            pipe(
-              alts,
-              A.lookup(currentLayoutIndex + 1),
-              O.map((nextWiderLayout) => {
-                const v = currentWidth + cumulativeDx;
-                const targetWidth = nextWiderLayout.sectionType.width;
+    // up the axis
+    if (side === 1) {
+      // additive up the axis
+      if (delta > 0) {
+        pipe(
+          alts,
+          A.lookup(currentLayoutIndex + 1),
+          O.map((nextWiderLayout) => {
+            const v = currentWidth + cumulativeDx;
+            const targetWidth = nextWiderLayout.sectionType.width;
 
-                // TODO make nicer?
-                if (v >= targetWidth && this.houseGroup.layoutsManager) {
-                  this.houseGroup.layoutsManager.activeLayoutGroup =
-                    nextWiderLayout.layoutGroup;
-                  this.progressData!.currentLayoutIndex++;
-                }
-              })
-            );
-          }
+            // TODO make nicer?
+            if (v >= targetWidth && this.houseGroup.layoutsManager) {
+              this.houseGroup.layoutsManager.activeLayoutGroup =
+                nextWiderLayout.layoutGroup;
+              this.progressData!.currentLayoutIndex++;
+            }
+          })
+        );
+      }
 
-          // subtractive down the axis
-          if (delta < 0) {
-            pipe(
-              alts,
-              A.lookup(currentLayoutIndex - 1),
-              O.map((nextShorterLayout) => {
-                const v = currentWidth + cumulativeDx;
-                const targetWidth = nextShorterLayout.sectionType.width;
+      // subtractive down the axis
+      if (delta < 0) {
+        pipe(
+          alts,
+          A.lookup(currentLayoutIndex - 1),
+          O.map((nextShorterLayout) => {
+            const v = currentWidth + cumulativeDx;
+            const targetWidth = nextShorterLayout.sectionType.width;
 
-                // TODO make nicer? DRY?
-                if (v <= targetWidth && this.houseGroup.layoutsManager) {
-                  this.houseGroup.layoutsManager.activeLayoutGroup =
-                    nextShorterLayout.layoutGroup;
-                  this.progressData!.currentLayoutIndex--;
-                }
-              })
-            );
-          }
-        }
+            // TODO make nicer? DRY?
+            if (v <= targetWidth && this.houseGroup.layoutsManager) {
+              this.houseGroup.layoutsManager.activeLayoutGroup =
+                nextShorterLayout.layoutGroup;
+              this.progressData!.currentLayoutIndex--;
+            }
+          })
+        );
+      }
+    }
 
-        // down the axis
-        if (side === -1) {
-          // additive down the axis
-          if (delta < 0) {
-          }
+    // down the axis
+    if (side === -1) {
+      // additive down the axis
+      if (delta < 0) {
+      }
 
-          // subtractive up the axis
-          if (delta > 0) {
-          }
-        }
+      // subtractive up the axis
+      if (delta > 0) {
+      }
+    }
 
-        // this.progressData!.currentWidth = ;
+    // this.progressData!.currentWidth = ;
 
-        const [handleDown, handleUp] = this.handles;
+    const [handleDown, handleUp] = this.handles;
 
-        handleDown.position.x -= side * delta;
-        handleUp.position.x += side * delta;
-      })
-    );
+    handleDown.position.x -= side * delta;
+    handleUp.position.x += side * delta;
   }
 
   gestureEnd() {

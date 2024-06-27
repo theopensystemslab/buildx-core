@@ -1,8 +1,12 @@
-import { z } from "zod";
-import { HouseGroup } from "../objects/house/HouseGroup";
-import { pipe } from "fp-ts/lib/function";
 import { O } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
+import { pipe } from "fp-ts/lib/function";
+import { z } from "zod";
+import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
+import CutsManager from "./CutsManager";
+import XStretchManager from "./XStretchManager";
+import ZStretchManager from "./ZStretchManager";
 
 export const ModeEnum = z.enum(["SITE", "BUILDING", "LEVEL"]);
 
@@ -23,6 +27,40 @@ class ModeManager {
   }
 
   setMode(v: ModeEnum) {
+    const { cutsManager, activeLayoutGroup, xStretchManager, zStretchManager } =
+      this.houseGroup;
+
+    const go = (
+      f: (stuff: {
+        activeLayoutGroup: ColumnLayoutGroup;
+        cutsManager: CutsManager;
+        xStretchManager: XStretchManager;
+        zStretchManager: ZStretchManager;
+      }) => void
+    ) =>
+      pipe(
+        sequenceT(O.Applicative)(
+          activeLayoutGroup,
+          cutsManager,
+          O.fromNullable(xStretchManager),
+          zStretchManager
+        ),
+        O.map(
+          ([
+            activeLayoutGroup,
+            cutsManager,
+            xStretchManager,
+            zStretchManager,
+          ]) =>
+            f({
+              activeLayoutGroup,
+              cutsManager,
+              xStretchManager,
+              zStretchManager,
+            })
+        )
+      );
+
     switch (true) {
       // (down) Site -> Building
       case this.mode === ModeEnum.Enum.SITE && v === ModeEnum.Enum.BUILDING: {
@@ -35,6 +73,8 @@ class ModeManager {
         );
         this.houseGroup.xStretchManager?.init();
         this.houseGroup.xStretchManager?.showHandles();
+
+        go(() => {});
         break;
       }
       // (down) Building -> Level
@@ -47,8 +87,8 @@ class ModeManager {
               ...cutsManager.settings,
               rowIndex: 1,
             });
-            pipe(activeLayoutGroup);
-            cutsManager.syncObjectCuts(activeLayoutGroup);
+            cutsManager.createObjectCuts(activeLayoutGroup);
+            cutsManager.showClippedBrushes(activeLayoutGroup);
           })
         );
         break;
@@ -66,16 +106,14 @@ class ModeManager {
       }
       // (up) Level -> Building
       case this.mode === ModeEnum.Enum.LEVEL && v === ModeEnum.Enum.BUILDING: {
-        pipe(
-          this.houseGroup.cutsManager,
-          O.map((cutsManager) => {
-            cutsManager.setClippingBrush({
-              ...cutsManager.settings,
-              rowIndex: null,
-            });
-            cutsManager.syncObjectCuts(this.houseGroup);
-          })
-        );
+        go(({ cutsManager, activeLayoutGroup }) => {
+          cutsManager.setClippingBrush({
+            ...cutsManager.settings,
+            rowIndex: null,
+          });
+          cutsManager.createObjectCuts(activeLayoutGroup);
+          cutsManager.showAppropriateBrushes(activeLayoutGroup);
+        });
         break;
       }
       // (up, up) Level -> Site

@@ -85,6 +85,7 @@ class ZStretchManager implements StretchManager {
   }
 
   async init() {
+    console.log(`z stretch init`);
     this.cleanup();
 
     pipe(
@@ -234,8 +235,8 @@ class ZStretchManager implements StretchManager {
           0,
           startDepth + index * columnGroup.userData.depth
         );
-        console.log(`syncing cuts ${columnGroup.uuid}`);
-        this.layoutGroup.cutsManager?.syncObjectCuts(columnGroup);
+        this.layoutGroup.cutsManager?.createObjectCuts(columnGroup);
+        this.layoutGroup.cutsManager?.showAppropriateBrushes(columnGroup);
       });
 
       const lastVisibleMidColumnIndex =
@@ -257,7 +258,8 @@ class ZStretchManager implements StretchManager {
             index * columnGroup.userData.depth -
             columnGroup.userData.depth
         );
-        this.layoutGroup.cutsManager?.syncObjectCuts(columnGroup);
+        this.layoutGroup.cutsManager?.createObjectCuts(columnGroup);
+        this.layoutGroup.cutsManager?.showAppropriateBrushes(columnGroup);
       });
 
       this.progressData = {
