@@ -73,8 +73,8 @@ class XStretchManager implements StretchManager {
                   }),
                   TE.map((layoutGroup) => {
                     this.houseGroup.add(layoutGroup);
+                    layoutGroup.updateOBB();
                     hideObject(layoutGroup);
-                    console.log(`yo`, this.houseGroup.cutsManager, layoutGroup);
                     this.houseGroup.cutsManager?.createObjectCuts(layoutGroup);
                     return { layoutGroup, sectionType };
                   })

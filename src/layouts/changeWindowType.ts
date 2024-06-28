@@ -25,9 +25,11 @@ type AltWindowTypeLayout = {
   candidate: BuildModule;
 };
 
-export type AltWindowTypeLayoutGroupOption = {
+export type AltWindowTypeLayoutGroupOption = Omit<
+  AltWindowTypeLayout,
+  "layout" | "dnas"
+> & {
   layoutGroup: ColumnLayoutGroup;
-  windowType: CachedWindowType;
 };
 
 export const getAltWindowTypeLayouts = ({

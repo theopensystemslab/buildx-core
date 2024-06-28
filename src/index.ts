@@ -8,6 +8,7 @@ import BuildXScene from "./three/objects/scene/BuildXScene";
 import houseGroupTE from "./tasks/houseGroupTE";
 import { HouseGroup } from "./three/objects/house/HouseGroup";
 import type { ScopeElement } from "./three/objects/types";
+import type { OpeningsChangeInfo } from "./three/managers/OpeningsManager";
 
 export {
   createBasicScene,
@@ -19,4 +20,5 @@ export {
   ScopeElement,
   CachedHouseType,
   HouseGroup,
+  OpeningsChangeInfo,
 };

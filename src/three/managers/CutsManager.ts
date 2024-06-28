@@ -144,14 +144,14 @@ class CutsManager {
               })
             )
           ),
-          O.map((levelHeight) => {
+          O.map((rowHeight) => {
             const width = halfSize.x * 2 + PAD;
 
             const height = halfSize.y * 2 + PAD;
             const depth = 999;
 
             const x = 0;
-            const y = height / 2 + levelHeight;
+            const y = height / 2 + rowHeight;
             const z = 0;
 
             const clippingBrush = new Brush(

@@ -10,6 +10,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Group, Vector3 } from "three";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import OpeningsManager from "@/three/managers/OpeningsManager";
 
 type HouseGroupHooks = {
   onCreate?: (houseGroup: HouseGroup) => void;
@@ -33,6 +34,7 @@ export class HouseGroup extends Group {
   xStretchManager?: XStretchManager;
   zStretchManager?: ZStretchManager;
   cutsManager?: CutsManager;
+  openingsManager?: OpeningsManager;
   hooks?: HouseGroupHooks;
 
   constructor({
@@ -54,6 +56,7 @@ export class HouseGroup extends Group {
     this.zStretchManager = new ZStretchManager(this);
     this.xStretchManager = new XStretchManager(this);
     this.cutsManager = new CutsManager(this);
+    this.openingsManager = new OpeningsManager(this);
     this.hooks = hooks;
   }
 

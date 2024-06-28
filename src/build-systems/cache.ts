@@ -27,7 +27,7 @@ export type CachedBuildModel = {
 };
 
 export type BlobbedImage<T> = Omit<T, "imageUrl"> & {
-  imageBlob: Blob;
+  imageBlob?: Blob;
 };
 
 export type CachedHouseType = BlobbedImage<HouseType>;
@@ -166,6 +166,18 @@ export const localMaterialsTE: TE.TaskEither<Error, CachedBuildMaterial[]> =
     (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
   );
 
+const tryCatchImageBlob = (imageUrl: string | undefined) =>
+  TE.tryCatch(
+    () => {
+      return typeof imageUrl === "undefined"
+        ? Promise.resolve(undefined)
+        : fetchImageAsBlob(imageUrl);
+    },
+    (reason) => {
+      return reason instanceof Error ? reason : new Error(String(reason));
+    }
+  );
+
 export const cachedMaterialsTE = runUntilFirstSuccess([
   localMaterialsTE,
   pipe(
@@ -175,11 +187,7 @@ export const cachedMaterialsTE = runUntilFirstSuccess([
         remoteMaterials,
         A.traverse(TE.ApplicativePar)(({ imageUrl, ...material }) =>
           pipe(
-            TE.tryCatch(
-              () => fetchImageAsBlob(imageUrl),
-              (reason) =>
-                reason instanceof Error ? reason : new Error(String(reason))
-            ),
+            tryCatchImageBlob(imageUrl),
             TE.map((imageBlob) => ({ ...material, imageBlob }))
           )
         ),
@@ -274,11 +282,7 @@ export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
           remoteHouseTypes,
           A.traverse(TE.ApplicativePar)(({ imageUrl, ...houseType }) =>
             pipe(
-              TE.tryCatch(
-                () => fetchImageAsBlob(imageUrl),
-                (reason) =>
-                  reason instanceof Error ? reason : new Error(String(reason))
-              ),
+              tryCatchImageBlob(imageUrl),
               TE.map((imageBlob) => ({ ...houseType, imageBlob }))
             )
           ),
@@ -490,11 +494,7 @@ export const cachedWindowTypesTE = runUntilFirstSuccess([
         remoteWindowTypes,
         A.traverse(TE.ApplicativePar)(({ imageUrl, ...windowType }) =>
           pipe(
-            TE.tryCatch(
-              () => fetchImageAsBlob(imageUrl),
-              (reason) =>
-                reason instanceof Error ? reason : new Error(String(reason))
-            ),
+            tryCatchImageBlob(imageUrl),
             TE.map((imageBlob) => ({ ...windowType, imageBlob }))
           )
         ),
