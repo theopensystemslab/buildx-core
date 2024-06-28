@@ -74,8 +74,11 @@ class XStretchManager implements StretchManager {
                   TE.map((layoutGroup) => {
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateOBB();
-                    hideObject(layoutGroup);
                     this.houseGroup.cutsManager?.createObjectCuts(layoutGroup);
+                    this.houseGroup.cutsManager?.showAppropriateBrushes(
+                      layoutGroup
+                    );
+                    hideObject(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
                 )
@@ -151,7 +154,12 @@ class XStretchManager implements StretchManager {
   }
 
   gestureProgress(delta: number) {
-    const { initialLayoutWidth: currentWidth, alts } = this.initData!;
+    const {
+      initialLayoutWidth: currentWidth,
+      alts,
+      maxWidth,
+      minWidth,
+    } = this.initData!;
     const { side } = this.startData!;
 
     this.progressData!.cumulativeDx += delta;

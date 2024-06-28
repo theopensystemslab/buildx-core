@@ -61,16 +61,18 @@ class OpeningsManager {
                       layout,
                     }),
                     TE.map((layoutGroup) => {
-                      hideObject(layoutGroup);
-
                       this.houseGroup.add(layoutGroup);
+
                       layoutGroup.updateOBB();
+
                       this.houseGroup.cutsManager?.createObjectCuts(
                         layoutGroup
                       );
                       this.houseGroup.cutsManager?.showAppropriateBrushes(
                         layoutGroup
                       );
+
+                      hideObject(layoutGroup);
 
                       return {
                         candidate,

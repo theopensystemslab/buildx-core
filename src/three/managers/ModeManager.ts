@@ -33,13 +33,11 @@ class ModeManager {
       }
       // (down) Building -> Level
       case this.mode === ModeEnum.Enum.BUILDING && v === ModeEnum.Enum.LEVEL: {
-        console.log(`level mode`);
         const { cutsManager, activeLayoutGroup, xStretchManager } =
           this.houseGroup;
         pipe(
           activeLayoutGroup,
           O.map((activeLayoutGroup) => {
-            console.log({ rowIndex: 1 });
             cutsManager?.setClippingBrush({
               ...cutsManager.settings,
               rowIndex: 1,
