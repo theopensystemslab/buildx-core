@@ -47,7 +47,7 @@ class ModeManager {
             cutsManager?.createObjectCuts(activeLayoutGroup);
             cutsManager?.showClippedBrushes(activeLayoutGroup);
 
-            xStretchManager?.initData?.alts?.forEach(({ layoutGroup }, i) => {
+            xStretchManager?.initData?.alts?.forEach(({ layoutGroup }) => {
               if (layoutGroup === activeLayoutGroup) return;
               cutsManager?.createObjectCuts(layoutGroup);
             });
