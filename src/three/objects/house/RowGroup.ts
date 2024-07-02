@@ -1,7 +1,7 @@
 import { BuildModule } from "@/build-systems/remote/modules";
 import { PositionedRow } from "@/layouts/types";
 import { getVanillaModule } from "@/tasks/vanilla";
-import { A, TE } from "@/utils/functions";
+import { A, O, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
 import { Evaluator } from "three-bvh-csg";
@@ -38,6 +38,14 @@ export class RowGroup extends Group {
 
   get houseGroup(): HouseGroup {
     return this.columnLayoutGroup.houseGroup;
+  }
+
+  editRow() {
+    if (this.houseGroup.scene.contextManager) {
+      this.houseGroup.scene.contextManager.buildingRowIndex = O.some(
+        this.userData.rowIndex
+      );
+    }
   }
 }
 

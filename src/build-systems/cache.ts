@@ -52,7 +52,7 @@ class BuildSystemsCache extends Dexie {
   // settings: Dexie.Table<SystemSettings, string>
 
   constructor() {
-    super("BuildSystemsDatabase");
+    super("BuildSystemsCache");
 
     this.version(3).stores({
       modules: "[systemId+dna]",
