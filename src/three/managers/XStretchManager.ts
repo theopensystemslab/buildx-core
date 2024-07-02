@@ -157,8 +157,8 @@ class XStretchManager implements StretchManager {
     const {
       initialLayoutWidth: currentWidth,
       alts,
-      maxWidth,
-      minWidth,
+      // maxWidth,
+      // minWidth,
     } = this.initData!;
     const { side } = this.startData!;
 
