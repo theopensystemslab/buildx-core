@@ -9,6 +9,11 @@ import houseGroupTE from "./tasks/houseGroupTE";
 import { HouseGroup } from "./three/objects/house/HouseGroup";
 import type { ScopeElement } from "./three/objects/types";
 import type { OpeningsChangeInfo } from "./three/managers/OpeningsManager";
+import { SceneContextModeLabel } from "./three/managers/ContextManager";
+import type { SceneContextMode } from "./three/managers/ContextManager";
+import { useProjectCurrency, useProjectData } from "./user-data/cache";
+
+export { defaultCachedHousesOps, cachedHousesTE } from "./user-data/houses";
 
 export {
   createBasicScene,
@@ -21,4 +26,8 @@ export {
   CachedHouseType,
   HouseGroup,
   OpeningsChangeInfo,
+  SceneContextModeLabel,
+  SceneContextMode,
+  useProjectData,
+  useProjectCurrency,
 };

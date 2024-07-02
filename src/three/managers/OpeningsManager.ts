@@ -7,7 +7,7 @@ import { pipe } from "fp-ts/lib/function";
 import { createColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ScopeElement } from "../objects/types";
-import { Side } from "../utils/camera";
+import { Side, getSide } from "../utils/camera";
 import { hideObject } from "../utils/layers";
 
 export type OpeningsChangeInfo = {
@@ -25,10 +25,12 @@ class OpeningsManager {
     this.houseGroup = houseGroup;
   }
 
-  createAlts(
-    target: ScopeElement,
-    side: Side
-  ): TE.TaskEither<Error, OpeningsChangeInfo> {
+  createAlts(target: ScopeElement): TE.TaskEither<Error, OpeningsChangeInfo> {
+    const side = getSide(
+      this.houseGroup,
+      this.houseGroup.scene.cameraControls.camera
+    );
+
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
