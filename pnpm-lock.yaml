@@ -44,6 +44,9 @@ importers:
       dexie:
         specifier: ^4.0.1
         version: 4.0.1
+      dexie-react-hooks:
+        specifier: ^1.1.7
+        version: 1.1.7(@types/react@18.3.1)(dexie@4.0.1)(react@18.3.1)
       fp-ts:
         specifier: ^2.16.3
         version: 2.16.3
@@ -59,6 +62,9 @@ importers:
       immer:
         specifier: ^10.0.4
         version: 10.0.4
+      nanoid:
+        specifier: ^5.0.7
+        version: 5.0.7
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -753,6 +759,13 @@ packages:
       supports-color:
         optional: true
 
+  dexie-react-hooks@1.1.7:
+    resolution: {integrity: sha512-Lwv5W0Hk+uOW3kGnsU9GZoR1er1B7WQ5DSdonoNG+focTNeJbHW6vi6nBoX534VKI3/uwHebYzSw1fwY6a7mTw==}
+    peerDependencies:
+      '@types/react': '>=16'
+      dexie: ^3.2 || ^4.0.1-alpha
+      react: '>=16'
+
   dexie@4.0.1:
     resolution: {integrity: sha512-wSNn+TcCh+DuE2pdg058K3MhxA4g+IiZlW7yGz4cMd/t3z2rJXZcV3HDxZljbrICU2Iq0qY4UHnbolTMK/+bcA==}
 
@@ -1027,6 +1040,11 @@ packages:
   nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@5.0.7:
+    resolution: {integrity: sha512-oLxFY2gd2IqnjcYyOXD8XGCftpGtZP2AbHbOkthDkvRywH5ayNtPVy9YlOPcHckXzbLTCHpkb7FB+yuxKV13pQ==}
+    engines: {node: ^18 || >=20}
     hasBin: true
 
   newtype-ts@0.3.5:
@@ -2146,6 +2164,12 @@ snapshots:
     dependencies:
       ms: 2.1.2
 
+  dexie-react-hooks@1.1.7(@types/react@18.3.1)(dexie@4.0.1)(react@18.3.1):
+    dependencies:
+      '@types/react': 18.3.1
+      dexie: 4.0.1
+      react: 18.3.1
+
   dexie@4.0.1: {}
 
   draco3d@1.5.7: {}
@@ -2380,6 +2404,8 @@ snapshots:
   muggle-string@0.3.1: {}
 
   nanoid@3.3.7: {}
+
+  nanoid@5.0.7: {}
 
   newtype-ts@0.3.5(fp-ts@2.16.3)(monocle-ts@2.3.13(fp-ts@2.16.3)):
     dependencies:

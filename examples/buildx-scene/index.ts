@@ -1,10 +1,28 @@
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
+import {
+  deleteCachedHouse,
+  createCachedHouse,
+  updateCachedHouse,
+} from "@/user-data/houses";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 
-const scene = new BuildXScene();
+const scene = new BuildXScene({
+  onHouseCreate: (house) => {
+    createCachedHouse(house)();
+  },
+  onHouseDelete: (house) => {
+    deleteCachedHouse(house)();
+  },
+  onHouseUpdate: (houseId, changes) => {
+    updateCachedHouse(houseId, changes);
+  },
+  onRightClickBuildElement: (x) => {
+    x.elementGroup.houseGroup.delete();
+  },
+});
 
 pipe(
   cachedHouseTypesTE,
@@ -28,7 +46,7 @@ pipe(
 
     window.addEventListener("keydown", (ev) => {
       if (ev.key === "m") {
-        houseGroup.modeManager?.up();
+        scene.contextManager?.contextUp();
       }
       if (ev.key === "d") {
         houseGroup.cutsManager?.debugClippingBrush();

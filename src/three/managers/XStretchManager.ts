@@ -10,7 +10,6 @@ import {
 } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
-import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
 
 type AltSectionTypeLayout = {
@@ -113,9 +112,6 @@ class XStretchManager implements StretchManager {
         const [handleDown, handleUp] = this.handles;
         this.houseGroup.add(handleDown);
         this.houseGroup.add(handleUp);
-        if (this.houseGroup.modeManager?.mode === ModeEnum.Enum.SITE) {
-          this.hideHandles();
-        }
 
         return activeLayoutGroup;
       }),

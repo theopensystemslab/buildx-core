@@ -1,31 +1,33 @@
+import ContextManager, {
+  SceneContextMode,
+} from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
+import ZStretchManager from "@/three/managers/ZStretchManager";
+import { House } from "@/user-data/houses";
 import CameraControls from "camera-controls";
 import {
+  AmbientLight,
   AxesHelper,
+  Box3,
   BufferAttribute,
   BufferGeometry,
   CircleGeometry,
+  Clock,
   DirectionalLight,
   DoubleSide,
   LineBasicMaterial,
   LineDashedMaterial,
   LineSegments,
+  Matrix4,
   Mesh,
   MeshStandardMaterial,
   Object3D,
-  PlaneGeometry,
-  Scene,
-  ShadowMaterial,
-} from "three";
-import { ModeEnum } from "@/three/managers/ModeManager";
-import {
-  AmbientLight,
-  Box3,
-  Clock,
-  Matrix4,
   PerspectiveCamera,
+  PlaneGeometry,
   Quaternion,
   Raycaster,
+  Scene,
+  ShadowMaterial,
   Sphere,
   Spherical,
   Vector2,
@@ -37,7 +39,6 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
-import ZStretchManager from "@/three/managers/ZStretchManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -65,15 +66,25 @@ type BuildXSceneConfig = {
   onLongTapBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
   onRightClickBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
   onTapMissed?: () => void;
+  onFocusHouse?: (houseId: string) => void;
+  onFocusRow?: (houseId: string, rowIndex: number) => void;
+  onHouseCreate?: (house: House) => void;
+  onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
+  onHouseDelete?: (houseId: string) => void;
+  onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
 };
 
 class BuildXScene extends Scene {
   gestureManager?: GestureManager;
+  contextManager?: ContextManager;
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
   selectedElement: ScopeElement | null;
   hoveredElement: ScopeElement | null;
+  onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
+  onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
+  onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -89,10 +100,24 @@ class BuildXScene extends Scene {
       antialias = true,
       onLongTapBuildElement,
       onRightClickBuildElement,
+      // onFocusHouse,
+      // onFocusRow,
       onTapMissed,
+      onHouseCreate,
+      onHouseUpdate,
+      onHouseDelete,
+      onModeChange,
     } = config;
 
+    this.onHouseCreate = onHouseCreate;
+    this.onHouseUpdate = onHouseUpdate;
+    this.onHouseDelete = onHouseDelete;
+
     this.clock = new Clock();
+
+    this.contextManager = new ContextManager({
+      onModeChange,
+    });
 
     const camera = new PerspectiveCamera(
       60,
@@ -157,7 +182,7 @@ class BuildXScene extends Scene {
         },
         onDoubleTap: ({ object }) => {
           if (object instanceof ElementBrush) {
-            object.houseGroup.modeManager?.down();
+            this.contextManager?.contextDown(object.elementGroup);
           }
         },
         onLongTap: ({ object }, pointer) => {
@@ -193,15 +218,20 @@ class BuildXScene extends Scene {
               dragProgress = undefined;
             };
           } else if (object instanceof ElementBrush) {
-            const houseGroup = object.houseGroup;
-            const mode = object.houseGroup.modeManager?.mode;
-
-            if (mode === ModeEnum.Enum.SITE) {
+            if (this.contextManager?.siteMode) {
+              const houseGroup = object.houseGroup;
               dragProgress = (delta: Vector3) => {
                 houseGroup.move(delta);
               };
               dragEnd = () => {
                 dragProgress = undefined;
+
+                const {
+                  userData: { houseId },
+                  position,
+                } = houseGroup;
+
+                houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
               };
             }
           }
@@ -344,6 +374,17 @@ class BuildXScene extends Scene {
 
   addHouseGroup(houseGroup: HouseGroup) {
     this.gestureManager?.enableGesturesOnObject(houseGroup);
+
+    const { onHouseCreate, onHouseUpdate, onHouseDelete } = this;
+
+    houseGroup.hooks = {
+      onHouseCreate: onHouseCreate,
+      onHouseUpdate: onHouseUpdate,
+      onHouseDelete: onHouseDelete,
+    };
+
+    houseGroup.hooks.onHouseCreate?.(houseGroup.house);
+
     this.add(houseGroup);
   }
 

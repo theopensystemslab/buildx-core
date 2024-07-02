@@ -1,7 +1,6 @@
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
-import ModeManager from "@/three/managers/ModeManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
@@ -11,11 +10,12 @@ import { Group, Vector3 } from "three";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import OpeningsManager from "@/three/managers/OpeningsManager";
+import { House } from "@/user-data/houses";
 
 type HouseGroupHooks = {
-  onCreate?: (houseGroup: HouseGroup) => void;
-  onUpdate?: (houseGroup: HouseGroup) => void;
-  onDelete?: (houseGroup: HouseGroup) => void;
+  onHouseCreate?: (house: House) => void;
+  onHouseUpdate?: (houseId: string, changes: Partial<House>) => void;
+  onHouseDelete?: (houseId: string) => void;
 };
 
 export type HouseGroupUserData = {
@@ -30,7 +30,6 @@ export class HouseGroup extends Group {
 
   elementsManager?: ElementsManager;
   layoutsManager: LayoutsManager;
-  modeManager?: ModeManager;
   xStretchManager?: XStretchManager;
   zStretchManager?: ZStretchManager;
   cutsManager?: CutsManager;
@@ -41,15 +40,20 @@ export class HouseGroup extends Group {
     userData,
     initialColumnLayoutGroup,
     hooks,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = 0,
   }: {
     userData: HouseGroupUserData;
     initialColumnLayoutGroup: ColumnLayoutGroup;
     hooks?: HouseGroupHooks;
+    position?: { x: number; y: number; z: number };
+    rotation?: number;
   }) {
     super();
-    this.add(initialColumnLayoutGroup);
     this.userData = userData;
-    this.modeManager = new ModeManager(this);
+
+    this.add(initialColumnLayoutGroup);
+
     this.elementsManager = new ElementsManager(this);
     this.layoutsManager = new LayoutsManager(this);
     this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
@@ -58,6 +62,18 @@ export class HouseGroup extends Group {
     this.cutsManager = new CutsManager(this);
     this.openingsManager = new OpeningsManager(this);
     this.hooks = hooks;
+
+    this.position.set(position.x, position.y, position.z);
+    this.rotation.setFromVector3(new Vector3(0, rotation, 0));
+  }
+
+  get friendlyName(): string {
+    return this.userData.friendlyName;
+  }
+
+  set friendlyName(friendlyName: string) {
+    this.userData.friendlyName = friendlyName;
+    this.hooks?.onHouseUpdate?.(this.house.houseId, { friendlyName });
   }
 
   get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
@@ -83,7 +99,47 @@ export class HouseGroup extends Group {
 
   delete() {
     this.removeFromParent();
-    this.hooks?.onDelete?.(this);
+    this.hooks?.onHouseDelete?.(this.house.houseId);
     // how is the housesDB managed?
+  }
+
+  get house(): House {
+    const {
+      userData: { systemId, houseId, friendlyName, houseTypeId },
+      position,
+      rotation: { y: rotation },
+      activeLayoutGroup,
+    } = this;
+
+    return pipe(
+      activeLayoutGroup,
+      O.match(
+        () => {
+          throw new Error(`no activeLayoutGroup in houseGroup`);
+        },
+        (activeLayoutGroup) => {
+          const {
+            userData: { dnas },
+          } = activeLayoutGroup;
+
+          return {
+            systemId,
+            houseId,
+            activeElementMaterials: {},
+            dnas,
+            friendlyName,
+            houseTypeId,
+            position,
+            rotation,
+          };
+        }
+      )
+    );
+  }
+
+  editHouse() {
+    if (this.scene.contextManager) {
+      this.scene.contextManager.buildingHouseGroup = O.some(this);
+    }
   }
 }
