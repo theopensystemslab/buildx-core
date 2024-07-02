@@ -1,31 +1,30 @@
+import ContextManager from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
+import ZStretchManager from "@/three/managers/ZStretchManager";
 import CameraControls from "camera-controls";
 import {
+  AmbientLight,
   AxesHelper,
+  Box3,
   BufferAttribute,
   BufferGeometry,
   CircleGeometry,
+  Clock,
   DirectionalLight,
   DoubleSide,
   LineBasicMaterial,
   LineDashedMaterial,
   LineSegments,
+  Matrix4,
   Mesh,
   MeshStandardMaterial,
   Object3D,
-  PlaneGeometry,
-  Scene,
-  ShadowMaterial,
-} from "three";
-import { ModeEnum } from "@/three/managers/ModeManager";
-import {
-  AmbientLight,
-  Box3,
-  Clock,
-  Matrix4,
   PerspectiveCamera,
+  PlaneGeometry,
   Quaternion,
   Raycaster,
+  Scene,
+  ShadowMaterial,
   Sphere,
   Spherical,
   Vector2,
@@ -37,7 +36,6 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
-import ZStretchManager from "@/three/managers/ZStretchManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -65,10 +63,13 @@ type BuildXSceneConfig = {
   onLongTapBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
   onRightClickBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
   onTapMissed?: () => void;
+  onFocusHouse?: (houseId: string) => void;
+  onFocusRow?: (houseId: string, rowIndex: number) => void;
 };
 
 class BuildXScene extends Scene {
   gestureManager?: GestureManager;
+  contextManager?: ContextManager;
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
@@ -89,10 +90,14 @@ class BuildXScene extends Scene {
       antialias = true,
       onLongTapBuildElement,
       onRightClickBuildElement,
+      // onFocusHouse,
+      // onFocusRow,
       onTapMissed,
     } = config;
 
     this.clock = new Clock();
+
+    this.contextManager = new ContextManager();
 
     const camera = new PerspectiveCamera(
       60,
@@ -157,7 +162,8 @@ class BuildXScene extends Scene {
         },
         onDoubleTap: ({ object }) => {
           if (object instanceof ElementBrush) {
-            object.houseGroup.modeManager?.down();
+            // TODO
+            // object.houseGroup.modeManager?.down();
           }
         },
         onLongTap: ({ object }, pointer) => {
@@ -193,17 +199,17 @@ class BuildXScene extends Scene {
               dragProgress = undefined;
             };
           } else if (object instanceof ElementBrush) {
-            const houseGroup = object.houseGroup;
-            const mode = object.houseGroup.modeManager?.mode;
-
-            if (mode === ModeEnum.Enum.SITE) {
-              dragProgress = (delta: Vector3) => {
-                houseGroup.move(delta);
-              };
-              dragEnd = () => {
-                dragProgress = undefined;
-              };
-            }
+            // TODO
+            // const houseGroup = object.houseGroup;
+            // const mode = object.houseGroup.modeManager?.mode;
+            // if (mode === ModeEnum.Enum.SITE) {
+            //   dragProgress = (delta: Vector3) => {
+            //     houseGroup.move(delta);
+            //   };
+            //   dragEnd = () => {
+            //     dragProgress = undefined;
+            //   };
+            // }
           }
         },
         onDragProgress: (v) => dragProgress?.(v.delta),

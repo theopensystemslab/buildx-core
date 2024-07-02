@@ -9,7 +9,6 @@ import {
 } from "../objects/house/ColumnGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
-import { ModeEnum } from "./ModeManager";
 import StretchManager from "./StretchManager";
 
 const DEFAULT_MAX_DEPTH = 15;
@@ -168,10 +167,6 @@ class ZStretchManager implements StretchManager {
             const [handleDown, handleUp] = this.handles;
             endColumnGroup.add(handleUp);
             startColumnGroup.add(handleDown);
-
-            if (this.houseGroup.modeManager?.mode === ModeEnum.Enum.SITE) {
-              this.hideHandles();
-            }
           })
         )();
       })

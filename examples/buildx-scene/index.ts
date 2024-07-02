@@ -27,9 +27,6 @@ pipe(
     scene.addHouseGroup(houseGroup);
 
     window.addEventListener("keydown", (ev) => {
-      if (ev.key === "m") {
-        houseGroup.modeManager?.up();
-      }
       if (ev.key === "d") {
         houseGroup.cutsManager?.debugClippingBrush();
       }

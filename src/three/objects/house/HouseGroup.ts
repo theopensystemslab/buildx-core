@@ -1,7 +1,6 @@
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
-import ModeManager from "@/three/managers/ModeManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
@@ -30,7 +29,6 @@ export class HouseGroup extends Group {
 
   elementsManager?: ElementsManager;
   layoutsManager: LayoutsManager;
-  modeManager?: ModeManager;
   xStretchManager?: XStretchManager;
   zStretchManager?: ZStretchManager;
   cutsManager?: CutsManager;
@@ -49,7 +47,6 @@ export class HouseGroup extends Group {
     super();
     this.add(initialColumnLayoutGroup);
     this.userData = userData;
-    this.modeManager = new ModeManager(this);
     this.elementsManager = new ElementsManager(this);
     this.layoutsManager = new LayoutsManager(this);
     this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
