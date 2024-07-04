@@ -162,8 +162,7 @@ class BuildXScene extends Scene {
         },
         onDoubleTap: ({ object }) => {
           if (object instanceof ElementBrush) {
-            // TODO
-            // object.houseGroup.modeManager?.down();
+            this.contextManager?.contextDown(object);
           }
         },
         onLongTap: ({ object }, pointer) => {
@@ -199,17 +198,15 @@ class BuildXScene extends Scene {
               dragProgress = undefined;
             };
           } else if (object instanceof ElementBrush) {
-            // TODO
-            // const houseGroup = object.houseGroup;
-            // const mode = object.houseGroup.modeManager?.mode;
-            // if (mode === ModeEnum.Enum.SITE) {
-            //   dragProgress = (delta: Vector3) => {
-            //     houseGroup.move(delta);
-            //   };
-            //   dragEnd = () => {
-            //     dragProgress = undefined;
-            //   };
-            // }
+            if (this.contextManager?.siteMode) {
+              const houseGroup = object.houseGroup;
+              dragProgress = (delta: Vector3) => {
+                houseGroup.move(delta);
+              };
+              dragEnd = () => {
+                dragProgress = undefined;
+              };
+            }
           }
         },
         onDragProgress: (v) => dragProgress?.(v.delta),

@@ -1,6 +1,7 @@
 import { O } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import { identity, pipe } from "fp-ts/lib/function";
 import { HouseGroup } from "../objects/house/HouseGroup";
+import { ElementBrush } from "../objects/house/ElementGroup";
 
 class ContextManager {
   _buildingHouseGroup: O.Option<HouseGroup>;
@@ -9,6 +10,10 @@ class ContextManager {
   constructor() {
     this._buildingHouseGroup = O.none;
     this._buildingRowIndex = O.none;
+  }
+
+  get siteMode() {
+    return O.isNone(this._buildingHouseGroup);
   }
 
   get buildingHouseGroup(): O.Option<HouseGroup> {
@@ -110,6 +115,47 @@ class ContextManager {
           );
 
           this._buildingRowIndex = rowIndex;
+        }
+      )
+    );
+  }
+
+  contextDown(elementBrush: ElementBrush) {
+    pipe(
+      this._buildingRowIndex,
+      O.match(() => {
+        pipe(
+          this._buildingHouseGroup,
+          O.match(
+            // go into building
+            () => {
+              this.buildingHouseGroup = O.some(elementBrush.houseGroup);
+            },
+            // go into level
+            () => {
+              const { rowIndex } = elementBrush.rowGroup.userData;
+              this.buildingRowIndex = O.some(rowIndex);
+            }
+          )
+        );
+      }, identity)
+    );
+  }
+
+  contextUp() {
+    pipe(
+      this._buildingRowIndex,
+      O.match(
+        () => {
+          pipe(
+            this._buildingHouseGroup,
+            O.map(() => {
+              this.buildingHouseGroup = O.none;
+            })
+          );
+        },
+        () => {
+          this.buildingRowIndex = O.none;
         }
       )
     );
