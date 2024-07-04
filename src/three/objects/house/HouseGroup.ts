@@ -10,6 +10,7 @@ import { Group, Vector3 } from "three";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import OpeningsManager from "@/three/managers/OpeningsManager";
+import { House } from "@/user-data/houses";
 
 type HouseGroupHooks = {
   onCreate?: (houseGroup: HouseGroup) => void;
@@ -82,5 +83,39 @@ export class HouseGroup extends Group {
     this.removeFromParent();
     this.hooks?.onDelete?.(this);
     // how is the housesDB managed?
+  }
+
+  get house(): House {
+    const {
+      userData: { systemId, houseId, friendlyName, houseTypeId },
+      position,
+      rotation: { y: rotation },
+      activeLayoutGroup,
+    } = this;
+
+    return pipe(
+      activeLayoutGroup,
+      O.match(
+        () => {
+          throw new Error(`no activeLayoutGroup in houseGroup`);
+        },
+        (activeLayoutGroup) => {
+          const {
+            userData: { dnas },
+          } = activeLayoutGroup;
+
+          return {
+            systemId,
+            houseId,
+            activeElementMaterials: {},
+            dnas,
+            friendlyName,
+            houseTypeId,
+            position,
+            rotation,
+          };
+        }
+      )
+    );
   }
 }

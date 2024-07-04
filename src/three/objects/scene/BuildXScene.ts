@@ -65,6 +65,9 @@ type BuildXSceneConfig = {
   onTapMissed?: () => void;
   onFocusHouse?: (houseId: string) => void;
   onFocusRow?: (houseId: string, rowIndex: number) => void;
+  onCreateHouseGroup?: (houseGroup: HouseGroup) => void;
+  onUpdateHouseGroup?: (houseGroup: HouseGroup) => void;
+  onDeleteHouseGroup?: (houseGroup: HouseGroup) => void;
 };
 
 class BuildXScene extends Scene {
@@ -75,6 +78,9 @@ class BuildXScene extends Scene {
   clock: Clock;
   selectedElement: ScopeElement | null;
   hoveredElement: ScopeElement | null;
+  onCreateHouseGroup?: (houseGroup: HouseGroup) => void;
+  onUpdateHouseGroup?: (houseGroup: HouseGroup) => void;
+  onDeleteHouseGroup?: (houseGroup: HouseGroup) => void;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -93,7 +99,14 @@ class BuildXScene extends Scene {
       // onFocusHouse,
       // onFocusRow,
       onTapMissed,
+      onCreateHouseGroup,
+      onUpdateHouseGroup,
+      onDeleteHouseGroup,
     } = config;
+
+    this.onCreateHouseGroup = onCreateHouseGroup;
+    this.onUpdateHouseGroup = onUpdateHouseGroup;
+    this.onDeleteHouseGroup = onDeleteHouseGroup;
 
     this.clock = new Clock();
 
@@ -347,6 +360,17 @@ class BuildXScene extends Scene {
 
   addHouseGroup(houseGroup: HouseGroup) {
     this.gestureManager?.enableGesturesOnObject(houseGroup);
+
+    const { onCreateHouseGroup, onUpdateHouseGroup, onDeleteHouseGroup } = this;
+
+    houseGroup.hooks = {
+      onCreate: onCreateHouseGroup,
+      onUpdate: onUpdateHouseGroup,
+      onDelete: onDeleteHouseGroup,
+    };
+
+    houseGroup.hooks.onCreate?.(houseGroup);
+
     this.add(houseGroup);
   }
 
