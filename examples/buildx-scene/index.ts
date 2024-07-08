@@ -1,7 +1,7 @@
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { deleteHouse, saveHouse, updateHouse } from "@/user-data/houses";
+import { deleteHouse, saveHouse, updateHouse } from "@/user-data/cache";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 

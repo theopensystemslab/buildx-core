@@ -6,12 +6,10 @@ import {
   deleteHouse,
   saveHouse,
   updateHouse,
-} from "@/user-data/houses";
+} from "@/user-data/cache";
 import { A, NEA, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-
-// 0-9 select respective house type and add to scene
 
 // right-click delete house
 
