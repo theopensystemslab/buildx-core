@@ -1,6 +1,7 @@
 import ContextManager from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
+import { House } from "@/user-data/houses";
 import CameraControls from "camera-controls";
 import {
   AmbientLight,
@@ -36,7 +37,6 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
-import { House } from "@/user-data/houses";
 
 const subsetOfTHREE = {
   Vector2,
@@ -68,7 +68,7 @@ type BuildXSceneConfig = {
   onFocusRow?: (houseId: string, rowIndex: number) => void;
   onHouseCreate?: (house: House) => void;
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
-  onHouseDelete?: (house: House) => void;
+  onHouseDelete?: (houseId: string) => void;
 };
 
 class BuildXScene extends Scene {

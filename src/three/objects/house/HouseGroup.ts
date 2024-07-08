@@ -15,7 +15,7 @@ import { House } from "@/user-data/houses";
 type HouseGroupHooks = {
   onHouseCreate?: (house: House) => void;
   onHouseUpdate?: (houseId: string, changes: Partial<House>) => void;
-  onHouseDelete?: (house: House) => void;
+  onHouseDelete?: (houseId: string) => void;
 };
 
 export type HouseGroupUserData = {
@@ -90,7 +90,7 @@ export class HouseGroup extends Group {
 
   delete() {
     this.removeFromParent();
-    this.hooks?.onHouseDelete?.(this.house);
+    this.hooks?.onHouseDelete?.(this.house.houseId);
     // how is the housesDB managed?
   }
 
@@ -126,5 +126,11 @@ export class HouseGroup extends Group {
         }
       )
     );
+  }
+
+  editHouse() {
+    if (this.scene.contextManager) {
+      this.scene.contextManager.buildingHouseGroup = O.some(this);
+    }
   }
 }

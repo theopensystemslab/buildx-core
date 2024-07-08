@@ -1,12 +1,7 @@
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import {
-  cachedHousesTE,
-  deleteHouse,
-  saveHouse,
-  updateHouse,
-} from "@/user-data/cache";
+import { cachedHousesTE, defaultCachedHousesOps } from "@/user-data/cache";
 import { A, NEA, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
@@ -16,15 +11,7 @@ import { nanoid } from "nanoid";
 // persist
 
 const scene = new BuildXScene({
-  onHouseCreate: (house) => {
-    saveHouse(house)();
-  },
-  onHouseDelete: (house) => {
-    deleteHouse(house)();
-  },
-  onHouseUpdate: (houseId, changes) => {
-    updateHouse(houseId, changes)();
-  },
+  ...defaultCachedHousesOps,
   onRightClickBuildElement: (x) => {
     x.elementGroup.houseGroup.delete();
   },

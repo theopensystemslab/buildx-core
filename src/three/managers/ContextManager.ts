@@ -2,6 +2,11 @@ import { O } from "@/utils/functions";
 import { identity, pipe } from "fp-ts/lib/function";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ElementBrush } from "../objects/house/ElementGroup";
+import { z } from "zod";
+
+export const SiteCtxModeEnum = z.enum(["SITE", "BUILDING", "ROW"]);
+
+export type SiteCtxMode = z.infer<typeof SiteCtxModeEnum>;
 
 class ContextManager {
   _buildingHouseGroup: O.Option<HouseGroup>;
@@ -14,6 +19,24 @@ class ContextManager {
 
   get siteMode() {
     return O.isNone(this._buildingHouseGroup);
+  }
+
+  get buildingMode() {
+    return (
+      O.isNone(this._buildingRowIndex) && O.isSome(this._buildingHouseGroup)
+    );
+  }
+
+  get rowMode() {
+    return O.isSome(this._buildingRowIndex);
+  }
+
+  get mode(): SiteCtxMode {
+    if (this.siteMode) return SiteCtxModeEnum.Enum.SITE;
+    if (this.buildingMode) return SiteCtxModeEnum.Enum.BUILDING;
+    if (this.rowMode) return SiteCtxModeEnum.Enum.ROW;
+
+    throw new Error(`invalid mode state on ContextManager`);
   }
 
   get buildingHouseGroup(): O.Option<HouseGroup> {

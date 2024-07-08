@@ -1,19 +1,23 @@
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { deleteHouse, saveHouse, updateHouse } from "@/user-data/cache";
+import {
+  deleteCachedHouse,
+  createCachedHouse,
+  updateCachedHouse,
+} from "@/user-data/cache";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 
 const scene = new BuildXScene({
   onHouseCreate: (house) => {
-    saveHouse(house)();
+    createCachedHouse(house)();
   },
   onHouseDelete: (house) => {
-    deleteHouse(house)();
+    deleteCachedHouse(house)();
   },
   onHouseUpdate: (houseId, changes) => {
-    updateHouse(houseId, changes);
+    updateCachedHouse(houseId, changes);
   },
   onRightClickBuildElement: (x) => {
     x.elementGroup.houseGroup.delete();

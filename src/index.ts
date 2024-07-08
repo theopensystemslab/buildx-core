@@ -9,6 +9,11 @@ import houseGroupTE from "./tasks/houseGroupTE";
 import { HouseGroup } from "./three/objects/house/HouseGroup";
 import type { ScopeElement } from "./three/objects/types";
 import type { OpeningsChangeInfo } from "./three/managers/OpeningsManager";
+import type { SiteCtxMode } from "./three/managers/ContextManager";
+import { SiteCtxModeEnum } from "./three/managers/ContextManager";
+export { cachedHousesTE } from "./user-data/cache";
+
+export { defaultCachedHousesOps } from "./user-data/cache";
 
 export {
   createBasicScene,
@@ -21,4 +26,6 @@ export {
   CachedHouseType,
   HouseGroup,
   OpeningsChangeInfo,
+  SiteCtxMode,
+  SiteCtxModeEnum,
 };

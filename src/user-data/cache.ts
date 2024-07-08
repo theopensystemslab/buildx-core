@@ -29,7 +29,7 @@ class UserDatabase extends Dexie {
 
 const userDB = new UserDatabase();
 
-export const saveHouse =
+export const createCachedHouse =
   (house: House): TE.TaskEither<Error, House> =>
   () =>
     userDB.houses
@@ -37,15 +37,15 @@ export const saveHouse =
       .then(() => E.right(house))
       .catch(E.left);
 
-export const deleteHouse =
-  (house: House): TE.TaskEither<Error, House> =>
+export const deleteCachedHouse =
+  (houseId: string): TE.TaskEither<Error, string> =>
   () =>
     userDB.houses
-      .delete(house.houseId)
-      .then(() => E.right(house))
+      .delete(houseId)
+      .then(() => E.right(houseId))
       .catch(E.left);
 
-export const updateHouse =
+export const updateCachedHouse =
   (houseId: string, changes: Partial<House>): TE.TaskEither<Error, string> =>
   () =>
     userDB.houses
@@ -55,6 +55,17 @@ export const updateHouse =
 
 export const cachedHousesTE: TE.TaskEither<Error, Array<House>> = () =>
   userDB.houses.toArray().then(E.right).catch(E.left);
-// export * from "./houses"
+
+export const defaultCachedHousesOps = {
+  onHouseCreate: (house: House) => {
+    createCachedHouse(house)();
+  },
+  onHouseUpdate: (houseId: string, changes: Partial<House>) => {
+    updateCachedHouse(houseId, changes)();
+  },
+  onHouseDelete: (houseId: string) => {
+    deleteCachedHouse(houseId)();
+  },
+};
 
 export default userDB;
