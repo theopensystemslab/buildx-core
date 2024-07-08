@@ -42,3 +42,6 @@ export const updateHouse =
       .update(houseId, changes)
       .then(() => E.right(houseId))
       .catch(E.left);
+
+export const cachedHousesTE: TE.TaskEither<Error, Array<House>> = () =>
+  userDB.houses.toArray().then(E.right).catch(E.left);

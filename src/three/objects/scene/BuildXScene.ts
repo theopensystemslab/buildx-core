@@ -36,6 +36,7 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
+import { House } from "@/user-data/houses";
 
 const subsetOfTHREE = {
   Vector2,
@@ -65,9 +66,9 @@ type BuildXSceneConfig = {
   onTapMissed?: () => void;
   onFocusHouse?: (houseId: string) => void;
   onFocusRow?: (houseId: string, rowIndex: number) => void;
-  onCreateHouseGroup?: (houseGroup: HouseGroup) => void;
-  onUpdateHouseGroup?: (houseGroup: HouseGroup) => void;
-  onDeleteHouseGroup?: (houseGroup: HouseGroup) => void;
+  onHouseCreate?: (house: House) => void;
+  onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
+  onHouseDelete?: (house: House) => void;
 };
 
 class BuildXScene extends Scene {
@@ -78,9 +79,9 @@ class BuildXScene extends Scene {
   clock: Clock;
   selectedElement: ScopeElement | null;
   hoveredElement: ScopeElement | null;
-  onCreateHouseGroup?: (houseGroup: HouseGroup) => void;
-  onUpdateHouseGroup?: (houseGroup: HouseGroup) => void;
-  onDeleteHouseGroup?: (houseGroup: HouseGroup) => void;
+  onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
+  onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
+  onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -99,14 +100,14 @@ class BuildXScene extends Scene {
       // onFocusHouse,
       // onFocusRow,
       onTapMissed,
-      onCreateHouseGroup,
-      onUpdateHouseGroup,
-      onDeleteHouseGroup,
+      onHouseCreate,
+      onHouseUpdate,
+      onHouseDelete,
     } = config;
 
-    this.onCreateHouseGroup = onCreateHouseGroup;
-    this.onUpdateHouseGroup = onUpdateHouseGroup;
-    this.onDeleteHouseGroup = onDeleteHouseGroup;
+    this.onHouseCreate = onHouseCreate;
+    this.onHouseUpdate = onHouseUpdate;
+    this.onHouseDelete = onHouseDelete;
 
     this.clock = new Clock();
 
@@ -218,6 +219,14 @@ class BuildXScene extends Scene {
               };
               dragEnd = () => {
                 dragProgress = undefined;
+
+                const {
+                  userData: { houseId },
+                  position,
+                } = houseGroup;
+
+                console.log(`updating`, { houseId, position });
+                houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
               };
             }
           }
@@ -361,15 +370,15 @@ class BuildXScene extends Scene {
   addHouseGroup(houseGroup: HouseGroup) {
     this.gestureManager?.enableGesturesOnObject(houseGroup);
 
-    const { onCreateHouseGroup, onUpdateHouseGroup, onDeleteHouseGroup } = this;
+    const { onHouseCreate, onHouseUpdate, onHouseDelete } = this;
 
     houseGroup.hooks = {
-      onCreate: onCreateHouseGroup,
-      onUpdate: onUpdateHouseGroup,
-      onDelete: onDeleteHouseGroup,
+      onHouseCreate: onHouseCreate,
+      onHouseUpdate: onHouseUpdate,
+      onHouseDelete: onHouseDelete,
     };
 
-    houseGroup.hooks.onCreate?.(houseGroup);
+    houseGroup.hooks.onHouseCreate?.(houseGroup.house);
 
     this.add(houseGroup);
   }

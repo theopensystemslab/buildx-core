@@ -6,18 +6,13 @@ import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 
 const scene = new BuildXScene({
-  onCreateHouseGroup: (houseGroup) => {
-    saveHouse(houseGroup.house)();
+  onHouseCreate: (house) => {
+    saveHouse(house)();
   },
-  onDeleteHouseGroup: (houseGroup) => {
-    deleteHouse(houseGroup.house)();
+  onHouseDelete: (house) => {
+    deleteHouse(house)();
   },
-  onUpdateHouseGroup: (houseGroup) => {
-    const {
-      house: { houseId },
-    } = houseGroup;
-    const changes = {};
-
+  onHouseUpdate: (houseId, changes) => {
     updateHouse(houseId, changes);
   },
   onRightClickBuildElement: (x) => {

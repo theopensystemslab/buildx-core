@@ -9,12 +9,16 @@ const houseGroupTE = ({
   friendlyName,
   houseId,
   houseTypeId,
+  position,
+  rotation,
 }: {
   systemId: string;
   friendlyName: string;
   houseId: string;
   houseTypeId: string;
   dnas: string[];
+  position?: { x: number; y: number; z: number };
+  rotation?: number;
 }): TE.TaskEither<Error, HouseGroup> =>
   pipe(
     { systemId, dnas },
@@ -29,6 +33,8 @@ const houseGroupTE = ({
             houseTypeId,
             friendlyName,
           },
+          position,
+          rotation,
         })
     )
   );

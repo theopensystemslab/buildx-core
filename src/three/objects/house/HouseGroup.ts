@@ -13,9 +13,9 @@ import OpeningsManager from "@/three/managers/OpeningsManager";
 import { House } from "@/user-data/houses";
 
 type HouseGroupHooks = {
-  onCreate?: (houseGroup: HouseGroup) => void;
-  onUpdate?: (houseGroup: HouseGroup) => void;
-  onDelete?: (houseGroup: HouseGroup) => void;
+  onHouseCreate?: (house: House) => void;
+  onHouseUpdate?: (houseId: string, changes: Partial<House>) => void;
+  onHouseDelete?: (house: House) => void;
 };
 
 export type HouseGroupUserData = {
@@ -40,10 +40,14 @@ export class HouseGroup extends Group {
     userData,
     initialColumnLayoutGroup,
     hooks,
+    position = { x: 0, y: 0, z: 0 },
+    rotation = 0,
   }: {
     userData: HouseGroupUserData;
     initialColumnLayoutGroup: ColumnLayoutGroup;
     hooks?: HouseGroupHooks;
+    position?: { x: number; y: number; z: number };
+    rotation?: number;
   }) {
     super();
     this.add(initialColumnLayoutGroup);
@@ -56,6 +60,11 @@ export class HouseGroup extends Group {
     this.cutsManager = new CutsManager(this);
     this.openingsManager = new OpeningsManager(this);
     this.hooks = hooks;
+
+    console.log({ position });
+
+    this.position.set(position.x, position.y, position.z);
+    this.rotation.setFromVector3(new Vector3(0, rotation, 0));
   }
 
   get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
@@ -81,7 +90,7 @@ export class HouseGroup extends Group {
 
   delete() {
     this.removeFromParent();
-    this.hooks?.onDelete?.(this);
+    this.hooks?.onHouseDelete?.(this.house);
     // how is the housesDB managed?
   }
 
