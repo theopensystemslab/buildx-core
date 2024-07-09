@@ -43,11 +43,10 @@ pipe(
               `no houseType ${key} in houseTypes of length ${houseTypes.length}`
             )
           ),
-          TE.chain(({ id: houseTypeId, name, systemId, dnas }) =>
+          TE.chain(({ id: houseTypeId, systemId, dnas }) =>
             houseGroupTE({
               systemId,
               dnas,
-              friendlyName: name,
               houseId: nanoid(),
               houseTypeId,
             })
