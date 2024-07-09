@@ -1,4 +1,4 @@
-import ContextManager from "@/three/managers/ContextManager";
+import ContextManager, { SiteCtxMode } from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { House } from "@/user-data/houses";
@@ -69,6 +69,7 @@ type BuildXSceneConfig = {
   onHouseCreate?: (house: House) => void;
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
   onHouseDelete?: (houseId: string) => void;
+  onModeChange?: (prev: SiteCtxMode, next: SiteCtxMode) => void;
 };
 
 class BuildXScene extends Scene {
@@ -103,6 +104,7 @@ class BuildXScene extends Scene {
       onHouseCreate,
       onHouseUpdate,
       onHouseDelete,
+      onModeChange,
     } = config;
 
     this.onHouseCreate = onHouseCreate;
@@ -111,7 +113,9 @@ class BuildXScene extends Scene {
 
     this.clock = new Clock();
 
-    this.contextManager = new ContextManager();
+    this.contextManager = new ContextManager({
+      onModeChange,
+    });
 
     const camera = new PerspectiveCamera(
       60,
@@ -176,7 +180,7 @@ class BuildXScene extends Scene {
         },
         onDoubleTap: ({ object }) => {
           if (object instanceof ElementBrush) {
-            this.contextManager?.contextDown(object);
+            this.contextManager?.contextDown(object.elementGroup);
           }
         },
         onLongTap: ({ object }, pointer) => {

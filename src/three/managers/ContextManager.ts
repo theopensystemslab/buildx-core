@@ -1,18 +1,34 @@
 import { O } from "@/utils/functions";
 import { identity, pipe } from "fp-ts/lib/function";
-import { HouseGroup } from "../objects/house/HouseGroup";
-import { ElementBrush } from "../objects/house/ElementGroup";
 import { z } from "zod";
+import { ElementGroup } from "../objects/house/ElementGroup";
+import { HouseGroup } from "../objects/house/HouseGroup";
 
 export const SiteCtxModeEnum = z.enum(["SITE", "BUILDING", "ROW"]);
 
-export type SiteCtxMode = z.infer<typeof SiteCtxModeEnum>;
+export type SiteCtxModeEnum = z.infer<typeof SiteCtxModeEnum>;
+
+export type SiteCtxMode = {
+  label: SiteCtxModeEnum;
+  buildingHouseGroup: O.Option<HouseGroup>;
+  buildingRowIndex: O.Option<number>;
+};
+
+type ContextManagerConfig = {
+  onModeChange?: (prev: SiteCtxMode, next: SiteCtxMode) => void;
+};
 
 class ContextManager {
   _buildingHouseGroup: O.Option<HouseGroup>;
   _buildingRowIndex: O.Option<number>;
 
-  constructor() {
+  onModeChange?: (prev: SiteCtxMode, next: SiteCtxMode) => void;
+
+  constructor(config?: ContextManagerConfig) {
+    const { onModeChange } = config ?? {};
+
+    this.onModeChange = onModeChange;
+
     this._buildingHouseGroup = O.none;
     this._buildingRowIndex = O.none;
   }
@@ -32,11 +48,26 @@ class ContextManager {
   }
 
   get mode(): SiteCtxMode {
-    if (this.siteMode) return SiteCtxModeEnum.Enum.SITE;
-    if (this.buildingMode) return SiteCtxModeEnum.Enum.BUILDING;
-    if (this.rowMode) return SiteCtxModeEnum.Enum.ROW;
+    const { buildingHouseGroup, buildingRowIndex } = this;
 
-    throw new Error(`invalid mode state on ContextManager`);
+    const mode = (function () {
+      if (O.isNone(buildingHouseGroup)) return SiteCtxModeEnum.Enum.SITE;
+      else if (O.isSome(buildingHouseGroup)) {
+        if (O.isSome(buildingRowIndex)) {
+          return SiteCtxModeEnum.Enum.ROW;
+        } else {
+          return SiteCtxModeEnum.Enum.BUILDING;
+        }
+      } else {
+        throw new Error(`invalid mode state on ContextManager`);
+      }
+    })();
+
+    return {
+      label: mode,
+      buildingHouseGroup,
+      buildingRowIndex,
+    };
   }
 
   get buildingHouseGroup(): O.Option<HouseGroup> {
@@ -44,6 +75,8 @@ class ContextManager {
   }
 
   set buildingHouseGroup(nextOption: O.Option<HouseGroup>) {
+    let prevMode = this.mode;
+
     // 1. hide other houses
     // 2. change outlining stuff if activated
 
@@ -73,6 +106,10 @@ class ContextManager {
     );
 
     this._buildingHouseGroup = nextOption;
+
+    let nextMode = this.mode;
+
+    this.onModeChange?.(prevMode, nextMode);
   }
 
   get buildingRowIndex(): O.Option<number> {
@@ -143,7 +180,7 @@ class ContextManager {
     );
   }
 
-  contextDown(elementBrush: ElementBrush) {
+  contextDown(elementGroup: ElementGroup) {
     pipe(
       this._buildingRowIndex,
       O.match(() => {
@@ -152,11 +189,11 @@ class ContextManager {
           O.match(
             // go into building
             () => {
-              this.buildingHouseGroup = O.some(elementBrush.houseGroup);
+              this.buildingHouseGroup = O.some(elementGroup.houseGroup);
             },
             // go into level
             () => {
-              const { rowIndex } = elementBrush.rowGroup.userData;
+              const { rowIndex } = elementGroup.rowGroup.userData;
               this.buildingRowIndex = O.some(rowIndex);
             }
           )
