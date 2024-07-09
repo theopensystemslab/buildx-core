@@ -10,6 +10,7 @@ import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
 import { evaluator } from "@/three/managers/CutsManager";
+import BuildXScene from "../scene/BuildXScene";
 
 export class ElementGroup extends Group {
   userData: {
@@ -83,6 +84,10 @@ export class ElementGroup extends Group {
 
   get houseGroup(): HouseGroup {
     return this.columnLayoutGroup.houseGroup;
+  }
+
+  get scene(): BuildXScene {
+    return this.houseGroup.scene;
   }
 }
 

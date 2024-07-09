@@ -50,8 +50,10 @@ export class HouseGroup extends Group {
     rotation?: number;
   }) {
     super();
-    this.add(initialColumnLayoutGroup);
     this.userData = userData;
+
+    this.add(initialColumnLayoutGroup);
+
     this.elementsManager = new ElementsManager(this);
     this.layoutsManager = new LayoutsManager(this);
     this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
@@ -61,10 +63,17 @@ export class HouseGroup extends Group {
     this.openingsManager = new OpeningsManager(this);
     this.hooks = hooks;
 
-    console.log({ position });
-
     this.position.set(position.x, position.y, position.z);
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
+  }
+
+  get friendlyName(): string {
+    return this.userData.friendlyName;
+  }
+
+  set friendlyName(friendlyName: string) {
+    this.userData.friendlyName = friendlyName;
+    this.hooks?.onHouseUpdate?.(this.house.houseId, { friendlyName });
   }
 
   get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
