@@ -226,3 +226,39 @@ export const successSeqTE = <E, T>(tasks: TE.TaskEither<E, T>[]): T.Task<T[]> =>
     A.sequence(T.ApplicativePar),
     T.map(A.flatten)
   );
+
+export const logTaskPerf =
+  (label: string) =>
+  <A>(task: T.Task<A>): T.Task<A> =>
+    pipe(
+      T.of(performance.now()),
+      T.chain((start) =>
+        pipe(
+          task,
+          T.chain((result) =>
+            pipe(
+              T.of(performance.now()),
+              T.map((end) => {
+                const timeTaken = end - start;
+                console.log({
+                  [label]: result,
+                  timeTaken: `${timeTaken} ms`,
+                });
+                return result;
+              })
+            )
+          )
+        )
+      )
+    );
+
+export function unwrapTaskEither<E, A>(te: TE.TaskEither<E, A>): Promise<A> {
+  return te().then(
+    E.fold(
+      (e) => {
+        throw e;
+      },
+      (a) => a
+    )
+  );
+}

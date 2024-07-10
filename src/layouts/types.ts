@@ -1,4 +1,4 @@
-import { BuildModule } from "@/build-systems/remote/modules";
+import { BuildModule } from "@/data/build-systems";
 
 export type PositionedBuildModule = {
   module: BuildModule;

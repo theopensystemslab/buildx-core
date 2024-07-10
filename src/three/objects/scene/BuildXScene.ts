@@ -3,7 +3,7 @@ import ContextManager, {
 } from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
-import { House } from "@/user-data/houses";
+import { House } from "@/data/user/houses";
 import CameraControls from "camera-controls";
 import {
   AmbientLight,
@@ -39,6 +39,8 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
+import { Polygon } from "geojson";
+import SiteBoundary from "./SiteBoundary";
 
 const subsetOfTHREE = {
   Vector2,
@@ -85,9 +87,12 @@ class BuildXScene extends Scene {
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
   onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
+  siteBoundary: SiteBoundary | null;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
+
+    this.siteBoundary = null;
 
     const {
       canvas,
@@ -242,6 +247,18 @@ class BuildXScene extends Scene {
       });
 
     this.animate();
+  }
+
+  updatePolygon(polygon: Polygon | null) {
+    if (this.siteBoundary !== null) {
+      this.siteBoundary.removeFromParent();
+    }
+    if (polygon !== null) {
+      this.siteBoundary = new SiteBoundary(polygon);
+      console.log(`adding polygon`, this.siteBoundary);
+      this.siteBoundary.position.set(0, 0.1, 0);
+      this.addObject(this.siteBoundary, { gestures: false });
+    }
   }
 
   enableLighting() {

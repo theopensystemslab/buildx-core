@@ -5,7 +5,7 @@ import {
   deleteCachedHouse,
   createCachedHouse,
   updateCachedHouse,
-} from "@/user-data/houses";
+} from "@/data/user/houses";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 

@@ -1,12 +1,15 @@
-import { cachedModulesTE, cachedSectionTypesTE } from "@/build-systems/cache";
-import { BuildModule } from "@/build-systems/remote/modules";
-import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { getVanillaModule } from "@/tasks/vanilla";
 import { A, O, TE, reduceToOption, successSeqTE } from "@/utils/functions";
 import { roundp, sign } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { ColumnLayout, PositionedBuildModule, PositionedRow } from "./types";
 import { filterCompatibleModules, topCandidateByHamming } from "./utils";
+import {
+  SectionType,
+  cachedModulesTE,
+  BuildModule,
+  cachedSectionTypesTE,
+} from "@/data/build-systems";
 
 export const changeLayoutSectionType = ({
   systemId,

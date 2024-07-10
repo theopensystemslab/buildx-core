@@ -10,7 +10,7 @@ import { Group, Vector3 } from "three";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import OpeningsManager from "@/three/managers/OpeningsManager";
-import { House } from "@/user-data/houses";
+import { House } from "@/data/user/houses";
 
 type HouseGroupHooks = {
   onHouseCreate?: (house: House) => void;
