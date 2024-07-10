@@ -1,9 +1,9 @@
-import { BuildModule } from "@/build-systems/remote/modules";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Column, ColumnLayout, Row } from "./types";
 import { createRow, positionColumns, positionRows } from "./init";
 import { sign } from "@/utils/math";
+import { BuildModule } from "@/data/build-systems";
 
 export const vanillaPadRow = (
   row: Row,

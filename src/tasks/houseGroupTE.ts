@@ -2,7 +2,7 @@ import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { O, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import columnLayoutGroupTE from "./columnLayoutGroupTE";
-import { getFriendlyNameTE } from "@/user-data/houses";
+import { getFriendlyNameTE } from "@/data/user/houses";
 import { nanoid } from "nanoid";
 
 const houseGroupTE = ({

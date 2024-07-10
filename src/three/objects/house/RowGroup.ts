@@ -1,4 +1,3 @@
-import { BuildModule } from "@/build-systems/remote/modules";
 import { PositionedRow } from "@/layouts/types";
 import { getVanillaModule } from "@/tasks/vanilla";
 import { A, O, TE } from "@/utils/functions";
@@ -9,6 +8,7 @@ import { ColumnGroup } from "./ColumnGroup";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { HouseGroup } from "./HouseGroup";
 import { defaultModuleGroupCreator } from "./ModuleGroup";
+import { BuildModule } from "@/data/build-systems";
 
 export type RowGroupUserData = {
   rowIndex: number;
