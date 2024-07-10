@@ -1,7 +1,7 @@
-import { A, TE } from "@/utils/functions";
+import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { z } from "zod";
-import { cachedHousesTE } from "./cache";
+import userDB from "./cache";
 
 export const houseParser = z.object({
   houseId: z.string().min(1),
@@ -39,3 +39,42 @@ export const getFriendlyNameTE = () =>
   pipe(cachedHousesTE, TE.map(getFriendlyName));
 
 export type House = z.infer<typeof houseParser>;
+
+export const createCachedHouse =
+  (house: House): TE.TaskEither<Error, House> =>
+  () =>
+    userDB.houses
+      .put(house)
+      .then(() => E.right(house))
+      .catch(E.left);
+
+export const deleteCachedHouse =
+  (houseId: string): TE.TaskEither<Error, string> =>
+  () =>
+    userDB.houses
+      .delete(houseId)
+      .then(() => E.right(houseId))
+      .catch(E.left);
+
+export const updateCachedHouse =
+  (houseId: string, changes: Partial<House>): TE.TaskEither<Error, string> =>
+  () =>
+    userDB.houses
+      .update(houseId, changes)
+      .then(() => E.right(houseId))
+      .catch(E.left);
+
+export const cachedHousesTE: TE.TaskEither<Error, Array<House>> = () =>
+  userDB.houses.toArray().then(E.right).catch(E.left);
+
+export const defaultCachedHousesOps = {
+  onHouseCreate: (house: House) => {
+    createCachedHouse(house)();
+  },
+  onHouseUpdate: (houseId: string, changes: Partial<House>) => {
+    updateCachedHouse(houseId, changes)();
+  },
+  onHouseDelete: (houseId: string) => {
+    deleteCachedHouse(houseId)();
+  },
+};

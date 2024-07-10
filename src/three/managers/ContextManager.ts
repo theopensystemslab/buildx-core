@@ -4,25 +4,25 @@ import { z } from "zod";
 import { ElementGroup } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 
-export const SiteCtxModeEnum = z.enum(["SITE", "BUILDING", "ROW"]);
+export const SceneContextModeLabel = z.enum(["SITE", "BUILDING", "ROW"]);
 
-export type SiteCtxModeEnum = z.infer<typeof SiteCtxModeEnum>;
+export type SceneContextModeLabel = z.infer<typeof SceneContextModeLabel>;
 
-export type SiteCtxMode = {
-  label: SiteCtxModeEnum;
+export type SceneContextMode = {
+  label: SceneContextModeLabel;
   buildingHouseGroup: O.Option<HouseGroup>;
   buildingRowIndex: O.Option<number>;
 };
 
 type ContextManagerConfig = {
-  onModeChange?: (prev: SiteCtxMode, next: SiteCtxMode) => void;
+  onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
 };
 
 class ContextManager {
   _buildingHouseGroup: O.Option<HouseGroup>;
   _buildingRowIndex: O.Option<number>;
 
-  onModeChange?: (prev: SiteCtxMode, next: SiteCtxMode) => void;
+  onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
 
   constructor(config?: ContextManagerConfig) {
     const { onModeChange } = config ?? {};
@@ -47,16 +47,16 @@ class ContextManager {
     return O.isSome(this._buildingRowIndex);
   }
 
-  get mode(): SiteCtxMode {
+  get mode(): SceneContextMode {
     const { buildingHouseGroup, buildingRowIndex } = this;
 
     const mode = (function () {
-      if (O.isNone(buildingHouseGroup)) return SiteCtxModeEnum.Enum.SITE;
+      if (O.isNone(buildingHouseGroup)) return SceneContextModeLabel.Enum.SITE;
       else if (O.isSome(buildingHouseGroup)) {
         if (O.isSome(buildingRowIndex)) {
-          return SiteCtxModeEnum.Enum.ROW;
+          return SceneContextModeLabel.Enum.ROW;
         } else {
-          return SiteCtxModeEnum.Enum.BUILDING;
+          return SceneContextModeLabel.Enum.BUILDING;
         }
       } else {
         throw new Error(`invalid mode state on ContextManager`);

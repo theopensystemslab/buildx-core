@@ -1,4 +1,6 @@
-import ContextManager, { SiteCtxMode } from "@/three/managers/ContextManager";
+import ContextManager, {
+  SceneContextMode,
+} from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { House } from "@/user-data/houses";
@@ -69,7 +71,7 @@ type BuildXSceneConfig = {
   onHouseCreate?: (house: House) => void;
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
   onHouseDelete?: (houseId: string) => void;
-  onModeChange?: (prev: SiteCtxMode, next: SiteCtxMode) => void;
+  onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
 };
 
 class BuildXScene extends Scene {

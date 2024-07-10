@@ -1,6 +1,7 @@
+import { formatCurrency } from "@/utils/format";
 import Dexie from "dexie";
+import { useLiveQuery } from "dexie-react-hooks";
 import { House } from "./houses";
-import { E, TE } from "@/utils/functions";
 
 const PROJECT_DATA_KEY = "PROJECT_DATA_KEY";
 
@@ -10,12 +11,18 @@ type ProjectData = {
   region: "UK" | "EU";
 };
 
-class UserDatabase extends Dexie {
+const defaultProjectData: ProjectData = {
+  key: PROJECT_DATA_KEY,
+  projectName: "My BuildX Project",
+  region: "UK",
+};
+
+class UserDataCache extends Dexie {
   houses: Dexie.Table<House, string>;
   projectData: Dexie.Table<ProjectData, string>;
 
   constructor() {
-    super("UserDatabase");
+    super("UserDataCache");
     this.version(1).stores({
       houses: "houseId,&friendlyName",
       projectData: "&key",
@@ -27,45 +34,51 @@ class UserDatabase extends Dexie {
   }
 }
 
-const userDB = new UserDatabase();
+const userDB = new UserDataCache();
 
-export const createCachedHouse =
-  (house: House): TE.TaskEither<Error, House> =>
-  () =>
-    userDB.houses
-      .put(house)
-      .then(() => E.right(house))
-      .catch(E.left);
+export const useProjectData = () =>
+  useLiveQuery(
+    async (): Promise<ProjectData> => {
+      const projectData = await userDB.projectData.get(PROJECT_DATA_KEY);
+      if (projectData === undefined) {
+        await userDB.projectData.put(defaultProjectData);
+        return defaultProjectData;
+      }
+      return projectData;
+    },
+    [],
+    defaultProjectData
+  );
 
-export const deleteCachedHouse =
-  (houseId: string): TE.TaskEither<Error, string> =>
-  () =>
-    userDB.houses
-      .delete(houseId)
-      .then(() => E.right(houseId))
-      .catch(E.left);
+export const useProjectCurrency = () => {
+  const { region } = useProjectData();
+  const symbol = region === "UK" ? "£" : "€";
+  const code = region === "UK" ? "GBP" : "EUR";
 
-export const updateCachedHouse =
-  (houseId: string, changes: Partial<House>): TE.TaskEither<Error, string> =>
-  () =>
-    userDB.houses
-      .update(houseId, changes)
-      .then(() => E.right(houseId))
-      .catch(E.left);
+  // const format = (d: number) => {
+  //   const formatted =
+  //     Math.abs(d) > 1000
+  //       ? `${Math.floor(d / 1000)}k`
+  //       : d.toLocaleString("en-GB", {
+  //           maximumFractionDigits: 1,
+  //         });
+  //   return formatted;
+  // };
 
-export const cachedHousesTE: TE.TaskEither<Error, Array<House>> = () =>
-  userDB.houses.toArray().then(E.right).catch(E.left);
+  // const formatWithUnit = (d: number, unitOfMeasurement: string) => {
+  //   const formatted = format(d);
+  //   const formattedWithUnit = ["€", "£", "$"].includes(unitOfMeasurement)
+  //     ? `${unitOfMeasurement}${formatted}`
+  //     : `${formatted}${unitOfMeasurement}`;
+  //   return formattedWithUnit;
+  // };
 
-export const defaultCachedHousesOps = {
-  onHouseCreate: (house: House) => {
-    createCachedHouse(house)();
-  },
-  onHouseUpdate: (houseId: string, changes: Partial<House>) => {
-    updateCachedHouse(houseId, changes)();
-  },
-  onHouseDelete: (houseId: string) => {
-    deleteCachedHouse(houseId)();
-  },
+  return {
+    symbol,
+    code,
+    formatWithSymbol: (x: number) => formatCurrency(x, symbol),
+    formatWithCode: (x: number) => formatCurrency(x, code),
+  };
 };
 
 export default userDB;
