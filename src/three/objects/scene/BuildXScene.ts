@@ -229,7 +229,6 @@ class BuildXScene extends Scene {
                   position,
                 } = houseGroup;
 
-                console.log(`updating`, { houseId, position });
                 houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
               };
             }

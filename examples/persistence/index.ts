@@ -22,7 +22,6 @@ pipe(
   TE.chain(flow(A.traverse(TE.ApplicativePar)(houseGroupTE))),
   TE.map(
     A.map((houseGroup) => {
-      console.log(houseGroup.position);
       scene.addHouseGroup(houseGroup);
     })
   )
