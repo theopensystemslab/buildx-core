@@ -1,4 +1,4 @@
-import { cachedModulesTE } from "@/build-systems/cache";
+import { cachedModulesTE } from "@/data/build-systems/cache";
 import { applyPlanarProjectionUVs } from "@/three/utils/applyPlanarProjectionUVs";
 import { A, O, R, T, TE } from "@/utils/functions";
 import getSpeckleObject from "@/utils/speckle/getSpeckleObject";

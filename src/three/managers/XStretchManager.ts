@@ -1,4 +1,4 @@
-import { SectionType } from "@/build-systems/remote/sectionTypes";
+import { SectionType } from "@/data/build-systems/remote/sectionTypes";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { A, O, S, TE } from "@/utils/functions";

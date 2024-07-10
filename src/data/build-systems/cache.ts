@@ -9,7 +9,7 @@ import {
   BufferGeometryLoader,
   NormalBufferAttributes,
 } from "three";
-import { A, E, O, R, TE, runUntilFirstSuccess } from "../utils/functions";
+import { A, E, O, R, TE, runUntilFirstSuccess } from "@/utils/functions";
 import { BuildElement, remoteElementsTE } from "./remote/elements";
 import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
 import { LevelType, remoteLevelTypesTE } from "./remote/levelTypes";

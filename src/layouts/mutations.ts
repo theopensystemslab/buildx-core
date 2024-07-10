@@ -1,4 +1,4 @@
-import { BuildModule } from "@/build-systems/remote/modules";
+import { BuildModule } from "@/data/build-systems/remote/modules";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Column, ColumnLayout, Row } from "./types";

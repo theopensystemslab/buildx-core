@@ -1,4 +1,7 @@
-import { cachedHouseTypesTE, cachedModulesTE } from "@/build-systems/cache";
+import {
+  cachedHouseTypesTE,
+  cachedModulesTE,
+} from "@/data/build-systems/cache";
 import { createRowLayout, dnasToModules, modulesToRows } from "@/layouts/init";
 import { defaultRowGroupCreator } from "@/three/objects/house/RowGroup";
 import { A, TE } from "@/utils/functions";

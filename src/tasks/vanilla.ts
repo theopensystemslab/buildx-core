@@ -1,5 +1,5 @@
-import { cachedModulesTE } from "@/build-systems/cache";
-import { BuildModule } from "@/build-systems/remote/modules";
+import { cachedModulesTE } from "@/data/build-systems/cache";
+import { BuildModule } from "@/data/build-systems/remote/modules";
 import { createColumn } from "@/layouts/init";
 import { A, S, TE, all } from "@/utils/functions";
 import { contramap } from "fp-ts/lib/Ord";

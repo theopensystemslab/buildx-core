@@ -1,8 +1,8 @@
 import {
   defaultMaterialGettersTE,
   getCachedModelTE,
-} from "@/build-systems/cache";
-import { BuildModule } from "@/build-systems/remote/modules";
+} from "@/data/build-systems/cache";
+import { BuildModule } from "@/data/build-systems/remote/modules";
 import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";

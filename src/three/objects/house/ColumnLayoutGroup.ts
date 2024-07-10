@@ -1,5 +1,5 @@
-import { getSectionType } from "@/build-systems/cache";
-import { SectionType } from "@/build-systems/remote/sectionTypes";
+import { getSectionType } from "@/data/build-systems/cache";
+import { SectionType } from "@/data/build-systems/remote/sectionTypes";
 import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";

@@ -3,7 +3,7 @@ import ContextManager, {
 } from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
-import { House } from "@/user-data/houses";
+import { House } from "@/data/user/houses";
 import CameraControls from "camera-controls";
 import {
   AmbientLight,

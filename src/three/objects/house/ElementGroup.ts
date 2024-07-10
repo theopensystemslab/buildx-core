@@ -1,4 +1,4 @@
-import { BuildElement } from "@/build-systems/remote/elements";
+import { BuildElement } from "@/data/build-systems/remote/elements";
 import { ThreeMaterial } from "@/three/materials/types";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { BufferGeometry, Group, NormalBufferAttributes } from "three";

@@ -2,12 +2,12 @@ import {
   CachedWindowType,
   cachedModulesTE,
   cachedWindowTypesTE,
-} from "@/build-systems/cache";
+} from "@/data/build-systems/cache";
 import {
   BuildModule,
   StructuredDna,
   parseDna,
-} from "@/build-systems/remote/modules";
+} from "@/data/build-systems/remote/modules";
 import { getVanillaModule } from "@/tasks/vanilla";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { Side } from "@/three/utils/camera";

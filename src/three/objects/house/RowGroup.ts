@@ -1,4 +1,4 @@
-import { BuildModule } from "@/build-systems/remote/modules";
+import { BuildModule } from "@/data/build-systems/remote/modules";
 import { PositionedRow } from "@/layouts/types";
 import { getVanillaModule } from "@/tasks/vanilla";
 import { A, O, TE } from "@/utils/functions";
