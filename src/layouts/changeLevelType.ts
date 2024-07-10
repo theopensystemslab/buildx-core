@@ -1,6 +1,3 @@
-import { cachedLevelTypesTE, cachedModulesTE } from "@/build-systems/cache";
-import { LevelType } from "@/build-systems/remote/levelTypes";
-import { BuildModule } from "@/build-systems/remote/modules";
 import { getVanillaModule } from "@/tasks/vanilla";
 import { A, O, TE, reduceToOption, someOrError } from "@/utils/functions";
 import { roundp, sign } from "@/utils/math";
@@ -8,6 +5,12 @@ import { flow, pipe } from "fp-ts/lib/function";
 import { columnLayoutToDnas } from "./init";
 import { ColumnLayout, PositionedBuildModule, PositionedRow } from "./types";
 import { filterCompatibleModules, topCandidateByHamming } from "./utils";
+import {
+  cachedLevelTypesTE,
+  LevelType,
+  cachedModulesTE,
+  BuildModule,
+} from "@/data/build-systems";
 
 export const getAltLevelTypeLayouts = ({
   systemId,

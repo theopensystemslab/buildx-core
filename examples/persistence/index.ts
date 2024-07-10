@@ -1,10 +1,11 @@
+import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { cachedHousesTE, defaultCachedHousesOps } from "@/user-data/houses";
 import { A, NEA, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
+import OutputsWorker from "./outputs.worker?worker";
 
 // right-click delete house
 
@@ -18,7 +19,7 @@ const scene = new BuildXScene({
 });
 
 pipe(
-  cachedHousesTE,
+  localHousesTE,
   TE.chain(flow(A.traverse(TE.ApplicativePar)(houseGroupTE))),
   TE.map(
     A.map((houseGroup) => {
@@ -58,3 +59,5 @@ pipe(
     });
   })
 )();
+
+new OutputsWorker();

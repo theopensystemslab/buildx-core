@@ -1,5 +1,3 @@
-import { getSectionType } from "@/build-systems/cache";
-import { SectionType } from "@/build-systems/remote/sectionTypes";
 import { columnLayoutToLevelTypes } from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
@@ -12,6 +10,7 @@ import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
+import { getSectionType, SectionType } from "@/data/build-systems";
 
 export const AABB_OFFSET = 10;
 

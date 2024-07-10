@@ -1,13 +1,3 @@
-import {
-  CachedWindowType,
-  cachedModulesTE,
-  cachedWindowTypesTE,
-} from "@/build-systems/cache";
-import {
-  BuildModule,
-  StructuredDna,
-  parseDna,
-} from "@/build-systems/remote/modules";
 import { getVanillaModule } from "@/tasks/vanilla";
 import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
 import { Side } from "@/three/utils/camera";
@@ -17,6 +7,14 @@ import { pipe } from "fp-ts/lib/function";
 import { columnLayoutToDnas } from "./init";
 import { modifyLayoutAt } from "./mutations";
 import { ColumnLayout } from "./types";
+import {
+  CachedWindowType,
+  BuildModule,
+  cachedWindowTypesTE,
+  parseDna,
+  cachedModulesTE,
+  StructuredDna,
+} from "@/data/build-systems";
 
 type AltWindowTypeLayout = {
   layout: ColumnLayout;

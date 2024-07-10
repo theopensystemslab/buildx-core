@@ -2,7 +2,6 @@ import { createBasicScene } from "@/index";
 import GroundCircle from "@/three/objects/GroundCircle";
 import OBBMesh from "@/three/objects/OBBMesh";
 import { cameraFrameOBB2 } from "@/three/utils/camera";
-import { PngSnapshotsWorker } from "@/three/workers";
 import { PI, floor, random } from "@/utils/math";
 import { GUI } from "dat.gui";
 import {
@@ -15,6 +14,7 @@ import {
   Vector3,
 } from "three";
 import { OBB } from "three-stdlib";
+import PngSnapshotsWorker from "./png-snapshots.worker?worker";
 
 const snapshotWorker = new PngSnapshotsWorker();
 
