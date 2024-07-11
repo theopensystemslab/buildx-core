@@ -37,7 +37,7 @@ export const getFriendlyName = (houses: House[]) => {
 };
 
 export const getFriendlyNameTE = () =>
-  pipe(cachedHousesTE, TE.map(getFriendlyName));
+  pipe(localHousesTE, TE.map(getFriendlyName));
 
 export type House = z.infer<typeof houseParser>;
 
@@ -65,7 +65,7 @@ export const updateCachedHouse =
       .then(() => E.right(houseId))
       .catch(E.left);
 
-export const cachedHousesTE: TE.TaskEither<Error, Array<House>> = () =>
+export const localHousesTE: TE.TaskEither<Error, Array<House>> = () =>
   userCache.houses.toArray().then(E.right).catch(E.left);
 
 export const defaultCachedHousesOps = {

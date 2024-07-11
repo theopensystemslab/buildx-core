@@ -36,19 +36,25 @@ class UserCache extends Dexie {
 
 const userCache = new UserCache();
 
-export const useProjectData = () =>
-  useLiveQuery(
-    async (): Promise<ProjectData> => {
-      const projectData = await userCache.projectData.get(PROJECT_DATA_KEY);
-      if (projectData === undefined) {
-        await userCache.projectData.put(defaultProjectData);
-        return defaultProjectData;
-      }
-      return projectData;
-    },
-    [],
-    defaultProjectData
+userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
+  if (typeof x === "undefined") {
+    userCache.projectData.put(defaultProjectData);
+  }
+});
+
+export const useProjectData = () => {
+  const projectData = useLiveQuery(() =>
+    userCache.projectData.get(PROJECT_DATA_KEY)
   );
+
+  if (typeof projectData !== "undefined") {
+    return projectData;
+  }
+
+  userCache.projectData.put(defaultProjectData);
+
+  return defaultProjectData;
+};
 
 export const useProjectCurrency = () => {
   const { region } = useProjectData();

@@ -615,7 +615,7 @@ const getHouseModules = (house: House, modules: BuildModule[]) => {
 //   );
 // };
 
-export const useAnalyseData = (selectedHouseIds: string[]) => {
+export const useAnalyseData = (explicitSelectedHouseIds?: string[]) => {
   const houses = useHouses();
   const modules = useBuildModules();
   const spaceTypes = useSpaceTypes();
@@ -623,6 +623,9 @@ export const useAnalyseData = (selectedHouseIds: string[]) => {
   const materials = useBuildMaterials();
   const elements = useBuildElements();
   const energyInfos = useEnergyInfos();
+
+  const selectedHouseIds =
+    explicitSelectedHouseIds ?? houses.map((x) => x.houseId);
 
   const byHouse = pipe(
     houses,

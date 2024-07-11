@@ -5,7 +5,7 @@ import { A, E, O, R, TE, runUntilFirstSuccess } from "@/utils/functions";
 import Dexie from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { sequenceT } from "fp-ts/lib/Apply";
-import { flow, identity, pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import {
   BufferGeometry,
   BufferGeometryLoader,
@@ -122,16 +122,7 @@ export const cachedElementsTE = runUntilFirstSuccess([
 ]);
 
 export const useBuildElements = (): BuildElement[] =>
-  useLiveQuery(
-    () =>
-      cachedElementsTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching elements`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.elements.toArray(), [], []);
 
 export const elementGetterTE = pipe(
   cachedElementsTE,
@@ -173,16 +164,7 @@ export const cachedModulesTE = runUntilFirstSuccess([
 ]);
 
 export const useBuildModules = (): BuildModule[] =>
-  useLiveQuery(
-    () =>
-      cachedModulesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching modules`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.modules.toArray(), [], []);
 
 // MATERIALS
 
@@ -233,16 +215,7 @@ export const cachedMaterialsTE = runUntilFirstSuccess([
 ]);
 
 export const useBuildMaterials = (): CachedBuildMaterial[] =>
-  useLiveQuery(
-    () =>
-      cachedMaterialsTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching materials`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.materials.toArray(), [], []);
 
 type MaterialGetters = {
   getElement: (
@@ -340,16 +313,7 @@ export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
   ]);
 
 export const useHouseTypes = (): CachedHouseType[] =>
-  useLiveQuery(
-    () =>
-      cachedHouseTypesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching house types`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.houseTypes.toArray(), [], []);
 
 // MODELS
 
@@ -442,16 +406,7 @@ export const cachedModelsTE = runUntilFirstSuccess([
 ]);
 
 export const useBuildModels = (): BuildModel[] =>
-  useLiveQuery(
-    () =>
-      cachedModelsTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching models`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.models.toArray(), [], []);
 
 // SECTION TYPES
 
@@ -479,16 +434,7 @@ export const cachedSectionTypesTE = runUntilFirstSuccess([
 ]);
 
 export const useSectionTypes = (): SectionType[] =>
-  useLiveQuery(
-    () =>
-      cachedSectionTypesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching section types`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.sectionTypes.toArray(), [], []);
 
 export const getSectionType = ({
   systemId,
@@ -533,16 +479,7 @@ export const cachedLevelTypesTE = runUntilFirstSuccess([
 ]);
 
 export const useLevelTypes = (): LevelType[] =>
-  useLiveQuery(
-    () =>
-      cachedLevelTypesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching level types`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.levelTypes.toArray(), [], []);
 
 export const getLevelType = ({
   systemId,
@@ -600,16 +537,7 @@ export const cachedWindowTypesTE = runUntilFirstSuccess([
 ]);
 
 export const useWindowTypes = (): CachedWindowType[] =>
-  useLiveQuery(
-    () =>
-      cachedWindowTypesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching window types`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.windowTypes.toArray(), [], []);
 
 export const getWindowType = ({
   systemId,
@@ -655,16 +583,7 @@ export const cachedBlocksTE = runUntilFirstSuccess([
 ]);
 
 export const useBlocks = (): Block[] =>
-  useLiveQuery(
-    () =>
-      cachedBlocksTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching blocks`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.blocks.toArray(), [], []);
 
 // BLOCK MODULE ENTRIES
 
@@ -696,16 +615,7 @@ export const cachedBlockModuleEntriesTE = runUntilFirstSuccess([
 ]);
 
 export const useBlockModuleEntries = (): BlockModulesEntry[] =>
-  useLiveQuery(
-    () =>
-      cachedBlockModuleEntriesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching block module entries`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.blockModuleEntries.toArray(), [], []);
 
 // SPACE TYPES
 
@@ -732,16 +642,7 @@ export const cachedSpaceTypesTE = runUntilFirstSuccess([
 ]);
 
 export const useSpaceTypes = (): SpaceType[] =>
-  useLiveQuery(
-    () =>
-      cachedSpaceTypesTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching space types`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.spaceTypes.toArray(), [], []);
 
 // ENERGY INFOS
 
@@ -769,16 +670,7 @@ export const cachedEnergyInfosTE = runUntilFirstSuccess([
 ]);
 
 export const useEnergyInfos = (): EnergyInfo[] =>
-  useLiveQuery(
-    () =>
-      cachedEnergyInfosTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching energy infos`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.energyInfos.toArray(), [], []);
 
 // SYSTEM SETTINGS
 
@@ -806,15 +698,6 @@ export const cachedSystemSettingsTE = runUntilFirstSuccess([
 ]);
 
 export const useSystemSettings = (): SystemSettings[] =>
-  useLiveQuery(
-    () =>
-      cachedSystemSettingsTE().then(
-        E.fold(() => {
-          throw new Error(`error fetching system settings`);
-        }, identity)
-      ),
-    [],
-    []
-  );
+  useLiveQuery(() => buildSystemsCache.settings.toArray(), [], []);
 
 export default buildSystemsCache;

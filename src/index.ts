@@ -1,7 +1,7 @@
 import { cachedHouseTypesTE } from "./data/build-systems/cache";
 import { cameraFrameOBB } from "./three/utils/camera";
 import createBasicScene from "./three/utils/createBasicScene";
-import { PngSnapshotsWorker } from "./three/workers";
+import { OutputsWorker, PngSnapshotsWorker } from "./three/workers";
 
 import type { CachedHouseType } from "./data/build-systems/cache";
 import BuildXScene from "./three/objects/scene/BuildXScene";
@@ -14,12 +14,17 @@ import type { SceneContextMode } from "./three/managers/ContextManager";
 import { useProjectCurrency, useProjectData } from "./data/user/cache";
 import { useOrderListData } from "./data/outputs/metrics";
 import { useAnalyseData } from "./data/outputs/analysisData";
+import { useHouses } from "./data/user/houses";
 
-export { defaultCachedHousesOps, cachedHousesTE } from "./data/user/houses";
+export {
+  defaultCachedHousesOps,
+  localHousesTE as cachedHousesTE,
+} from "./data/user/houses";
 
 export {
   createBasicScene,
   cameraFrameOBB,
+  OutputsWorker,
   PngSnapshotsWorker,
   cachedHouseTypesTE,
   houseGroupTE,
@@ -34,4 +39,5 @@ export {
   useProjectCurrency,
   useOrderListData,
   useAnalyseData,
+  useHouses,
 };
