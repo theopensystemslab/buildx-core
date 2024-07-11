@@ -1,28 +1,32 @@
 import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
 import { ThreeMaterial } from "@/three/materials/types";
 import { fetchImageAsBlob } from "@/utils/airtable";
+import { A, E, O, R, TE, runUntilFirstSuccess } from "@/utils/functions";
 import Dexie from "dexie";
+import { useLiveQuery } from "dexie-react-hooks";
 import { sequenceT } from "fp-ts/lib/Apply";
-import { flow, pipe } from "fp-ts/lib/function";
+import { flow, identity, pipe } from "fp-ts/lib/function";
 import {
   BufferGeometry,
   BufferGeometryLoader,
   NormalBufferAttributes,
 } from "three";
-import { A, E, O, R, TE, runUntilFirstSuccess } from "@/utils/functions";
+import {
+  BlockModulesEntry,
+  remoteBlockModulesEntriesTE,
+} from "./remote/blockModulesEntries";
+import { Block, remoteBlocksTE } from "./remote/blocks";
 import { BuildElement, remoteElementsTE } from "./remote/elements";
+import { EnergyInfo, remoteEnergyInfosTE } from "./remote/energyInfos";
 import { HouseType, remoteHouseTypesTE } from "./remote/houseTypes";
 import { LevelType, remoteLevelTypesTE } from "./remote/levelTypes";
 import { BuildMaterial, remoteMaterialsTE } from "./remote/materials";
 import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
 import { SectionType, remoteSectionTypesTE } from "./remote/sectionTypes";
+import { SystemSettings, remoteSystemSettingsTE } from "./remote/settings";
+import { SpaceType, remoteSpaceTypesTE } from "./remote/spaceTypes";
 import { WindowType, remoteWindowTypesTE } from "./remote/windowTypes";
-import { Block, remoteBlocksTE } from "./remote/blocks";
-import {
-  BlockModulesEntry,
-  remoteBlockModulesEntriesTE,
-} from "./remote/blockModulesEntries";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -52,9 +56,9 @@ class BuildSystemsCache extends Dexie {
   windowTypes: Dexie.Table<CachedWindowType, string>;
   blocks: Dexie.Table<Block, string>;
   blockModuleEntries: Dexie.Table<BlockModulesEntry, string>;
-  // spaceTypes: Dexie.Table<SpaceType, string>
-  // energyInfos: Dexie.Table<EnergyInfo, string>
-  // settings: Dexie.Table<SystemSettings, string>
+  spaceTypes: Dexie.Table<SpaceType, string>;
+  energyInfos: Dexie.Table<EnergyInfo, string>;
+  settings: Dexie.Table<SystemSettings, string>;
 
   constructor() {
     super("BuildSystemsCache");
@@ -70,9 +74,9 @@ class BuildSystemsCache extends Dexie {
       windowTypes: "[systemId+code]",
       blocks: "[systemId+name]",
       blockModuleEntries: "id",
-      // spaceTypes: "id",
-      // energyInfos: "id",
-      // settings: "systemId",
+      spaceTypes: "id",
+      energyInfos: "id",
+      settings: "systemId",
     });
     this.modules = this.table("modules");
     this.houseTypes = this.table("houseTypes");
@@ -84,9 +88,9 @@ class BuildSystemsCache extends Dexie {
     this.windowTypes = this.table("windowTypes");
     this.blocks = this.table("blocks");
     this.blockModuleEntries = this.table("blockModuleEntries");
-    // this.spaceTypes = this.table("spaceTypes")
-    // this.energyInfos = this.table("energyInfos")
-    // this.settings = this.table("settings")
+    this.spaceTypes = this.table("spaceTypes");
+    this.energyInfos = this.table("energyInfos");
+    this.settings = this.table("settings");
   }
 }
 
@@ -108,7 +112,6 @@ export const localElementsTE: TE.TaskEither<Error, BuildElement[]> =
 
 export const cachedElementsTE = runUntilFirstSuccess([
   localElementsTE,
-  // I need to do like this but for all of the other similar functions too
   pipe(
     remoteElementsTE,
     TE.map((elements) => {
@@ -117,6 +120,18 @@ export const cachedElementsTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+export const useBuildElements = (): BuildElement[] =>
+  useLiveQuery(
+    () =>
+      cachedElementsTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching elements`);
+        }, identity)
+      ),
+    [],
+    []
+  );
 
 export const elementGetterTE = pipe(
   cachedElementsTE,
@@ -156,6 +171,18 @@ export const cachedModulesTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+export const useBuildModules = (): BuildModule[] =>
+  useLiveQuery(
+    () =>
+      cachedModulesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching modules`);
+        }, identity)
+      ),
+    [],
+    []
+  );
 
 // MATERIALS
 
@@ -204,6 +231,18 @@ export const cachedMaterialsTE = runUntilFirstSuccess([
     )
   ),
 ]);
+
+export const useBuildMaterials = (): CachedBuildMaterial[] =>
+  useLiveQuery(
+    () =>
+      cachedMaterialsTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching materials`);
+        }, identity)
+      ),
+    [],
+    []
+  );
 
 type MaterialGetters = {
   getElement: (
@@ -300,6 +339,18 @@ export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
     ),
   ]);
 
+export const useHouseTypes = (): CachedHouseType[] =>
+  useLiveQuery(
+    () =>
+      cachedHouseTypesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching house types`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
 // MODELS
 
 export const localModelTE = (
@@ -390,6 +441,18 @@ export const cachedModelsTE = runUntilFirstSuccess([
   ),
 ]);
 
+export const useBuildModels = (): BuildModel[] =>
+  useLiveQuery(
+    () =>
+      cachedModelsTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching models`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
 // SECTION TYPES
 
 export const localSectionTypesTE: TE.TaskEither<Error, SectionType[]> =
@@ -414,6 +477,18 @@ export const cachedSectionTypesTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+export const useSectionTypes = (): SectionType[] =>
+  useLiveQuery(
+    () =>
+      cachedSectionTypesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching section types`);
+        }, identity)
+      ),
+    [],
+    []
+  );
 
 export const getSectionType = ({
   systemId,
@@ -456,6 +531,18 @@ export const cachedLevelTypesTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+export const useLevelTypes = (): LevelType[] =>
+  useLiveQuery(
+    () =>
+      cachedLevelTypesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching level types`);
+        }, identity)
+      ),
+    [],
+    []
+  );
 
 export const getLevelType = ({
   systemId,
@@ -512,6 +599,18 @@ export const cachedWindowTypesTE = runUntilFirstSuccess([
   ),
 ]);
 
+export const useWindowTypes = (): CachedWindowType[] =>
+  useLiveQuery(
+    () =>
+      cachedWindowTypesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching window types`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
 export const getWindowType = ({
   systemId,
   code,
@@ -555,6 +654,18 @@ export const cachedBlocksTE = runUntilFirstSuccess([
   ),
 ]);
 
+export const useBlocks = (): Block[] =>
+  useLiveQuery(
+    () =>
+      cachedBlocksTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching blocks`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
 // BLOCK MODULE ENTRIES
 
 export const localBlockModuleEntriesTE: TE.TaskEither<
@@ -583,5 +694,127 @@ export const cachedBlockModuleEntriesTE = runUntilFirstSuccess([
     })
   ),
 ]);
+
+export const useBlockModuleEntries = (): BlockModulesEntry[] =>
+  useLiveQuery(
+    () =>
+      cachedBlockModuleEntriesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching block module entries`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
+// SPACE TYPES
+
+export const localSpaceTypesTE: TE.TaskEither<Error, SpaceType[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.spaceTypes.toArray().then((spaceTypes) => {
+      if (A.isEmpty(spaceTypes)) {
+        throw new Error("No spaceTypes found in cache");
+      }
+      return spaceTypes;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedSpaceTypesTE = runUntilFirstSuccess([
+  localSpaceTypesTE,
+  pipe(
+    remoteSpaceTypesTE,
+    TE.map((spaceTypes) => {
+      buildSystemsCache.spaceTypes.bulkPut(spaceTypes);
+      return spaceTypes;
+    })
+  ),
+]);
+
+export const useSpaceTypes = (): SpaceType[] =>
+  useLiveQuery(
+    () =>
+      cachedSpaceTypesTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching space types`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
+// ENERGY INFOS
+
+export const localEnergyInfosTE: TE.TaskEither<Error, EnergyInfo[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.energyInfos.toArray().then((energyInfos) => {
+        if (A.isEmpty(energyInfos)) {
+          throw new Error("No energyInfos found in cache");
+        }
+        return energyInfos;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedEnergyInfosTE = runUntilFirstSuccess([
+  localEnergyInfosTE,
+  pipe(
+    remoteEnergyInfosTE,
+    TE.map((energyInfos) => {
+      buildSystemsCache.energyInfos.bulkPut(energyInfos);
+      return energyInfos;
+    })
+  ),
+]);
+
+export const useEnergyInfos = (): EnergyInfo[] =>
+  useLiveQuery(
+    () =>
+      cachedEnergyInfosTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching energy infos`);
+        }, identity)
+      ),
+    [],
+    []
+  );
+
+// SYSTEM SETTINGS
+
+export const localSystemSettingsTE: TE.TaskEither<Error, SystemSettings[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.settings.toArray().then((systemSettings) => {
+        if (A.isEmpty(systemSettings)) {
+          throw new Error("No systemSettings found in cache");
+        }
+        return systemSettings;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedSystemSettingsTE = runUntilFirstSuccess([
+  localSystemSettingsTE,
+  pipe(
+    remoteSystemSettingsTE,
+    TE.map((systemSettings) => {
+      buildSystemsCache.settings.bulkPut(systemSettings);
+      return systemSettings;
+    })
+  ),
+]);
+
+export const useSystemSettings = (): SystemSettings[] =>
+  useLiveQuery(
+    () =>
+      cachedSystemSettingsTE().then(
+        E.fold(() => {
+          throw new Error(`error fetching system settings`);
+        }, identity)
+      ),
+    [],
+    []
+  );
 
 export default buildSystemsCache;

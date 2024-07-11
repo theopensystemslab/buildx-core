@@ -2,6 +2,7 @@ import { A, E, R, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { z } from "zod";
 import userCache from "./cache";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export const houseParser = z.object({
   houseId: z.string().min(1),
@@ -98,3 +99,6 @@ export const housesToArray = (housesRecord: Record<string, House>): House[] => {
     A.map(([, house]) => house) // We only care about the House value, not the houseId key.
   );
 };
+
+export const useHouses = (): House[] =>
+  useLiveQuery(() => userCache.houses.toArray(), [], []);

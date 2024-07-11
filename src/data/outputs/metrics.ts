@@ -1,6 +1,8 @@
 import { A } from "@/utils/functions";
 import { useLiveQuery } from "dexie-react-hooks";
 import outputsCache from "./cache";
+import { useProjectCurrency } from "../user/cache";
+import { pipe } from "fp-ts/lib/function";
 
 export type OrderListRow = {
   houseId: string;
@@ -171,3 +173,46 @@ export const getBlockCountsByHouse = A.reduce(
 //     fmt,
 //   }
 // }
+
+export const useOrderListData = (selectedHouseIds?: string[]) => {
+  const orderListRows = useLiveQuery(
+    async () => {
+      const orderListRows = await outputsCache.orderListRows.toArray();
+      if (!selectedHouseIds) return orderListRows;
+      return orderListRows.filter((x) => selectedHouseIds.includes(x.houseId));
+    },
+    [selectedHouseIds],
+    [] as OrderListRow[]
+  );
+
+  const { code: currencyCode } = useProjectCurrency();
+
+  const fmt = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  const { totalMaterialCost, totalManufacturingCost, totalTotalCost } = pipe(
+    orderListRows,
+    A.reduce(
+      { totalMaterialCost: 0, totalManufacturingCost: 0, totalTotalCost: 0 },
+      ({ totalMaterialCost, totalManufacturingCost, totalTotalCost }, row) => ({
+        totalMaterialCost: totalMaterialCost + row.materialsCost,
+        totalManufacturingCost: totalManufacturingCost + row.manufacturingCost,
+        totalTotalCost: totalTotalCost + row.totalCost,
+      })
+    )
+    // R.map(fmt)
+  );
+
+  return {
+    totalMaterialCost,
+    totalManufacturingCost,
+    totalTotalCost,
+    orderListRows,
+    blockCountsByHouse: getBlockCountsByHouse(orderListRows),
+    fmt,
+  };
+};

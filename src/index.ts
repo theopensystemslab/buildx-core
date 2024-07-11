@@ -12,6 +12,8 @@ import type { OpeningsChangeInfo } from "./three/managers/OpeningsManager";
 import { SceneContextModeLabel } from "./three/managers/ContextManager";
 import type { SceneContextMode } from "./three/managers/ContextManager";
 import { useProjectCurrency, useProjectData } from "./data/user/cache";
+import { useOrderListData } from "./data/outputs/metrics";
+import { useAnalyseData } from "./data/outputs/analysisData";
 
 export { defaultCachedHousesOps, cachedHousesTE } from "./data/user/houses";
 
@@ -30,4 +32,6 @@ export {
   SceneContextMode,
   useProjectData,
   useProjectCurrency,
+  useOrderListData,
+  useAnalyseData,
 };
