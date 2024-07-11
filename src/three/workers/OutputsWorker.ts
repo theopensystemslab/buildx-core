@@ -1,7 +1,19 @@
-import buildSystemsCache, {
+import {
+  CachedBuildMaterial,
   CachedWindowType,
+  cachedBlockModuleEntriesTE,
+  cachedBlocksTE,
+  cachedElementsTE,
+  cachedMaterialsTE,
+  cachedModulesTE,
+  cachedWindowTypesTE,
 } from "@/data/build-systems/cache";
-import { ElementNotFoundError } from "@/data/build-systems/remote/elements";
+import { BlockModulesEntry } from "@/data/build-systems/remote/blockModulesEntries";
+import { Block } from "@/data/build-systems/remote/blocks";
+import {
+  BuildElement,
+  ElementNotFoundError,
+} from "@/data/build-systems/remote/elements";
 import { MaterialNotFoundError } from "@/data/build-systems/remote/materials";
 import { BuildModule } from "@/data/build-systems/remote/modules";
 import outputsCache, { FILES_DOCUMENT_KEY } from "@/data/outputs/cache";
@@ -12,46 +24,14 @@ import {
 } from "@/data/outputs/metrics";
 import userCache from "@/data/user/cache";
 import { House, housesToRecord } from "@/data/user/houses";
-import { A, O, R, S } from "@/utils/functions";
+import { A, O, R, S, TE } from "@/utils/functions";
 import { csvFormatRows } from "d3-dsv";
 import { liveQuery } from "dexie";
 import { values } from "fp-ts-std/Record";
+import { sequenceT } from "fp-ts/lib/Apply";
 import { identity, pipe } from "fp-ts/lib/function";
 import { produce } from "immer";
 import JSZip from "jszip";
-
-const deps = liveQuery(async () => {
-  const [
-    houses,
-    modules,
-    blocks,
-    blockModulesEntries,
-    elements,
-    materials,
-    windowTypes,
-  ] = await Promise.all([
-    userCache.houses.toArray(),
-    buildSystemsCache.modules.toArray(),
-    buildSystemsCache.blocks.toArray(),
-    buildSystemsCache.blockModuleEntries.toArray(),
-    buildSystemsCache.elements.toArray(),
-    buildSystemsCache.materials.toArray(),
-    buildSystemsCache.windowTypes.toArray(),
-  ]);
-
-  return {
-    houses,
-    modules,
-    blocks,
-    blockModulesEntries,
-    elements,
-    materials,
-    windowTypes,
-  };
-});
-
-// @ts-ignore
-type T = Parameters<Parameters<typeof deps.subscribe>[0]>[0];
 
 const materialsProc = ({
   modules,
@@ -60,7 +40,16 @@ const materialsProc = ({
   windowTypes,
   houses,
   orderListRows,
-}: T & { orderListRows: OrderListRow[] }) => {
+}: {
+  houses: House[];
+  modules: BuildModule[];
+  blocks: Block[];
+  blockModulesEntries: BlockModulesEntry[];
+  elements: BuildElement[];
+  materials: CachedBuildMaterial[];
+  windowTypes: CachedWindowType[];
+  orderListRows: OrderListRow[];
+}) => {
   outputsCache.materialsListRows.clear();
 
   const housesRecord = housesToRecord(houses);
@@ -301,7 +290,17 @@ const materialsProc = ({
   return materialsListRows;
 };
 
-const orderListProc = ({ houses, modules, blocks, blockModulesEntries }: T) => {
+const orderListProc = ({
+  houses,
+  modules,
+  blocks,
+  blockModulesEntries,
+}: {
+  houses: House[];
+  modules: BuildModule[];
+  blocks: Block[];
+  blockModulesEntries: BlockModulesEntry[];
+}) => {
   outputsCache.orderListRows.clear();
 
   const accum: Record<string, number> = {};
@@ -496,21 +495,59 @@ const updateAllFiles = async () => {
 // then update materials list
 // then update csv's
 // then update the all files zip
-deps.subscribe(async (stuff) => {
-  const orderListRows = orderListProc(stuff);
-  if (orderListRows.length === 0) return;
+liveQuery(() => userCache.houses.toArray()).subscribe(async (houses) => {
+  pipe(
+    sequenceT(TE.ApplicativePar)(
+      cachedModulesTE,
+      cachedBlocksTE,
+      cachedBlockModuleEntriesTE,
+      cachedElementsTE,
+      cachedMaterialsTE,
+      cachedWindowTypesTE
+    ),
+    TE.map(
+      ([
+        modules,
+        blocks,
+        blockModulesEntries,
+        elements,
+        materials,
+        windowTypes,
+      ]) => {
+        const orderListRows = orderListProc({
+          houses,
+          modules,
+          blocks,
+          blockModulesEntries,
+        });
 
-  const materialsListRows = materialsProc({ ...stuff, orderListRows });
+        if (orderListRows.length === 0) return;
 
-  const orderListCsv = orderListToCSV(orderListRows);
-  const materialsListCsv = materialsListToCSV(materialsListRows);
+        const materialsListRows = materialsProc({
+          houses,
+          modules,
+          blocks,
+          blockModulesEntries,
+          orderListRows,
+          elements,
+          materials,
+          windowTypes,
+        });
 
-  await outputsCache.files.update(FILES_DOCUMENT_KEY, {
-    materialsListCsv,
-    orderListCsv,
-  });
+        const orderListCsv = orderListToCSV(orderListRows);
+        const materialsListCsv = materialsListToCSV(materialsListRows);
 
-  updateAllFiles();
+        outputsCache.files
+          .update(FILES_DOCUMENT_KEY, {
+            materialsListCsv,
+            orderListCsv,
+          })
+          .then(() => {
+            updateAllFiles();
+          });
+      }
+    )
+  )();
 });
 
 // if update models then update all models zip

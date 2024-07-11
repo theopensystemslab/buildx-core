@@ -49,4 +49,10 @@ class OutputsCache extends Dexie {
 
 const outputsCache = new OutputsCache();
 
+outputsCache.files.toArray().then((files) => {
+  if (files.length === 0) {
+    outputsCache.files.put({ key: FILES_DOCUMENT_KEY });
+  }
+});
+
 export default outputsCache;
