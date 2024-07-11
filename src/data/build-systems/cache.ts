@@ -18,6 +18,11 @@ import { BuildModel, remoteModelTE, remoteModelsTE } from "./remote/models";
 import { BuildModule, remoteModulesTE } from "./remote/modules";
 import { SectionType, remoteSectionTypesTE } from "./remote/sectionTypes";
 import { WindowType, remoteWindowTypesTE } from "./remote/windowTypes";
+import { Block, remoteBlocksTE } from "./remote/blocks";
+import {
+  BlockModulesEntry,
+  remoteBlockModulesEntriesTE,
+} from "./remote/blockModulesEntries";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -45,8 +50,8 @@ class BuildSystemsCache extends Dexie {
   sectionTypes: Dexie.Table<SectionType, string>;
   levelTypes: Dexie.Table<LevelType, string>;
   windowTypes: Dexie.Table<CachedWindowType, string>;
-  // blocks: Dexie.Table<Block, string>
-  // blockModuleEntries: Dexie.Table<BlockModulesEntry, string>
+  blocks: Dexie.Table<Block, string>;
+  blockModuleEntries: Dexie.Table<BlockModulesEntry, string>;
   // spaceTypes: Dexie.Table<SpaceType, string>
   // energyInfos: Dexie.Table<EnergyInfo, string>
   // settings: Dexie.Table<SystemSettings, string>
@@ -63,8 +68,8 @@ class BuildSystemsCache extends Dexie {
       sectionTypes: "[systemId+code]",
       levelTypes: "[systemId+code]",
       windowTypes: "[systemId+code]",
-      // blocks: "[systemId+name]",
-      // blockModuleEntries: "id",
+      blocks: "[systemId+name]",
+      blockModuleEntries: "id",
       // spaceTypes: "id",
       // energyInfos: "id",
       // settings: "systemId",
@@ -77,8 +82,8 @@ class BuildSystemsCache extends Dexie {
     this.sectionTypes = this.table("sectionTypes");
     this.levelTypes = this.table("levelTypes");
     this.windowTypes = this.table("windowTypes");
-    // this.blocks = this.table("blocks")
-    // this.blockModuleEntries = this.table("blockModuleEntries")
+    this.blocks = this.table("blocks");
+    this.blockModuleEntries = this.table("blockModuleEntries");
     // this.spaceTypes = this.table("spaceTypes")
     // this.energyInfos = this.table("energyInfos")
     // this.settings = this.table("settings")
@@ -525,3 +530,58 @@ export const getWindowType = ({
       )
     )
   );
+
+// BLOCKS
+
+export const localBlocksTE: TE.TaskEither<Error, Block[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.blocks.toArray().then((blocks) => {
+      if (A.isEmpty(blocks)) {
+        throw new Error("No blocks found in cache");
+      }
+      return blocks;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedBlocksTE = runUntilFirstSuccess([
+  localBlocksTE,
+  pipe(
+    remoteBlocksTE,
+    TE.map((blocks) => {
+      buildSystemsCache.blocks.bulkPut(blocks);
+      return blocks;
+    })
+  ),
+]);
+
+// BLOCK MODULE ENTRIES
+
+export const localBlockModuleEntriesTE: TE.TaskEither<
+  Error,
+  BlockModulesEntry[]
+> = TE.tryCatch(
+  () =>
+    buildSystemsCache.blockModuleEntries
+      .toArray()
+      .then((blockModuleEntries) => {
+        if (A.isEmpty(blockModuleEntries)) {
+          throw new Error("No blockModuleEntries found in cache");
+        }
+        return blockModuleEntries;
+      }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedBlockModuleEntriesTE = runUntilFirstSuccess([
+  localBlockModuleEntriesTE,
+  pipe(
+    remoteBlockModulesEntriesTE,
+    TE.map((blockModuleEntries) => {
+      buildSystemsCache.blockModuleEntries.bulkPut(blockModuleEntries);
+      return blockModuleEntries;
+    })
+  ),
+]);
+
+export default buildSystemsCache;

@@ -113,3 +113,10 @@ export const remoteElementsTE: TE.TaskEither<Error, BuildElement[]> =
         }`
       )
   );
+
+export class ElementNotFoundError extends Error {
+  constructor(public elementName: string, public systemId: string) {
+    super(`No element found for ${elementName} in system ${systemId}`);
+    this.name = "ElementNotFoundError";
+  }
+}

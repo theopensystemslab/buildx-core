@@ -122,3 +122,10 @@ export const remoteMaterialsTE: TE.TaskEither<Error, BuildMaterial[]> =
         }`
       )
   );
+
+export class MaterialNotFoundError extends Error {
+  constructor(public elementName: string, public systemId: string) {
+    super(`No material found for ${elementName} in system ${systemId}`);
+    this.name = "MaterialNotFoundError";
+  }
+}

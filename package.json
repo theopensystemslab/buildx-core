@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@speckle/objectloader": "^2.18.10",
+    "@types/d3-dsv": "^3.0.7",
     "@types/dat.gui": "^0.7.12",
     "@types/node": "^20.11.26",
     "@types/react": "^18.3.1",
@@ -32,6 +33,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "airtable": "^0.12.2",
     "camera-controls": "^2.8.3",
+    "d3-dsv": "^3.0.1",
     "dat.gui": "^0.7.9",
     "dexie": "^4.0.1",
     "dexie-react-hooks": "^1.1.7",
@@ -40,6 +42,7 @@
     "glob": "^10.3.10",
     "graphql-request": "^6.1.0",
     "immer": "^10.0.4",
+    "jszip": "^3.10.1",
     "nanoid": "^5.0.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

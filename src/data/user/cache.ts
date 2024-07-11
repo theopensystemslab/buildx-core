@@ -17,7 +17,7 @@ const defaultProjectData: ProjectData = {
   region: "UK",
 };
 
-class UserDataCache extends Dexie {
+class UserCache extends Dexie {
   houses: Dexie.Table<House, string>;
   projectData: Dexie.Table<ProjectData, string>;
 
@@ -34,14 +34,14 @@ class UserDataCache extends Dexie {
   }
 }
 
-const userDB = new UserDataCache();
+const userCache = new UserCache();
 
 export const useProjectData = () =>
   useLiveQuery(
     async (): Promise<ProjectData> => {
-      const projectData = await userDB.projectData.get(PROJECT_DATA_KEY);
+      const projectData = await userCache.projectData.get(PROJECT_DATA_KEY);
       if (projectData === undefined) {
-        await userDB.projectData.put(defaultProjectData);
+        await userCache.projectData.put(defaultProjectData);
         return defaultProjectData;
       }
       return projectData;
@@ -81,4 +81,4 @@ export const useProjectCurrency = () => {
   };
 };
 
-export default userDB;
+export default userCache;
