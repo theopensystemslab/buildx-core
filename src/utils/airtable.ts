@@ -7,7 +7,9 @@ if (!apiKey) {
   throw new Error("Airtable API key is not defined in environment variables.");
 }
 
-Airtable.configure({ apiKey });
+Airtable.configure({
+  apiKey,
+});
 
 const airtable = new Airtable();
 

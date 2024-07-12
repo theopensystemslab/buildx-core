@@ -700,4 +700,21 @@ export const cachedSystemSettingsTE = runUntilFirstSuccess([
 export const useSystemSettings = (): SystemSettings[] =>
   useLiveQuery(() => buildSystemsCache.settings.toArray(), [], []);
 
+export const fetchAllBuildSystems = () =>
+  sequenceT(TE.ApplicativePar)(
+    cachedModulesTE,
+    cachedHouseTypesTE,
+    cachedElementsTE,
+    cachedMaterialsTE,
+    cachedModelsTE,
+    cachedSectionTypesTE,
+    cachedLevelTypesTE,
+    cachedWindowTypesTE,
+    cachedBlocksTE,
+    cachedBlockModuleEntriesTE,
+    cachedSpaceTypesTE,
+    cachedEnergyInfosTE,
+    cachedSystemSettingsTE
+  )();
+
 export default buildSystemsCache;
