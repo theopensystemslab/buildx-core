@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.2.8-experimental",
+  "version": "0.3.0",
   "type": "module",
   "main": "dist/buildx-core.js",
   "types": "dist/buildx-core.d.ts",

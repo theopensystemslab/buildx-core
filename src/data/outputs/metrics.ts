@@ -1,8 +1,8 @@
 import { A } from "@/utils/functions";
 import { useLiveQuery } from "dexie-react-hooks";
 import outputsCache from "./cache";
-import { useProjectCurrency } from "../user/cache";
 import { pipe } from "fp-ts/lib/function";
+import { useProjectCurrency } from "../user/utils";
 
 export type OrderListRow = {
   houseId: string;

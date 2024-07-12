@@ -102,3 +102,9 @@ export const housesToArray = (housesRecord: Record<string, House>): House[] => {
 
 export const useHouses = (): House[] =>
   useLiveQuery(() => userCache.houses.toArray(), [], []);
+
+export const setHouses = (houses: House[]) => {
+  userCache.houses.clear().then(() => {
+    userCache.houses.bulkPut(houses);
+  });
+};

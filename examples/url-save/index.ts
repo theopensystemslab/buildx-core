@@ -1,11 +1,12 @@
+import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
+import { decodeShareUrlPayload } from "@/data/user/utils";
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { localHousesTE, defaultCachedHousesOps } from "@/data/user/houses";
 import { A, NEA, TE, pipeLog } from "@/utils/functions";
+import { OutputsWorker, SharingWorker } from "@/workers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import { OutputsWorker } from "@/workers";
 
 // right-click delete house
 
@@ -62,3 +63,33 @@ pipe(
 )();
 
 new OutputsWorker();
+new SharingWorker();
+
+// liveQuery(() => userCache.projectData.get(PROJECT_DATA_KEY)).subscribe(
+//   (projectData) => {
+//     if (projectData && projectData.shareUrlPayload !== null) {
+//       const decodedShareUrlPayload = decodeShareUrlPayload(
+//         projectData.shareUrlPayload
+//       );
+//       console.log({ decodedShareUrlPayload });
+//     }
+//   }
+// );
+
+const urlParams = new URLSearchParams(window.location.search);
+const queryValue = urlParams.get("q");
+
+if (queryValue) {
+  // Use the queryValue for your application state
+  console.log("Query value:", queryValue);
+
+  try {
+    const decodedShareUrlPayload = decodeShareUrlPayload(queryValue);
+    console.log({ decodedShareUrlPayload });
+  } catch (error) {
+    console.error("Error decoding share URL payload:", error);
+  }
+} else {
+  // Handle the case when the 'q' parameter is not present
+  console.log("No query value provided");
+}
