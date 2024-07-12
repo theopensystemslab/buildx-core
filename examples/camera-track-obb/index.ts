@@ -2,7 +2,7 @@ import { createBasicScene } from "@/index";
 import GroundCircle from "@/three/objects/GroundCircle";
 import OBBMesh from "@/three/objects/OBBMesh";
 import { cameraFrameOBB2 } from "@/three/utils/camera";
-import { PngSnapshotsWorker } from "@/three/workers";
+import { PngSnapshotsWorker } from "@/workers";
 import { PI, floor, random } from "@/utils/math";
 import { GUI } from "dat.gui";
 import {

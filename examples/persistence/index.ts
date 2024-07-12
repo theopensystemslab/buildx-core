@@ -5,7 +5,7 @@ import { localHousesTE, defaultCachedHousesOps } from "@/data/user/houses";
 import { A, NEA, TE, pipeLog } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import { OutputsWorker } from "@/three/workers";
+import { OutputsWorker } from "@/workers";
 
 // right-click delete house
 

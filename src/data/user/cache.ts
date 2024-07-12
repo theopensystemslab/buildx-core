@@ -9,12 +9,14 @@ type ProjectData = {
   key: typeof PROJECT_DATA_KEY;
   projectName: string;
   region: "UK" | "EU";
+  saveString: string | null;
 };
 
 const defaultProjectData: ProjectData = {
   key: PROJECT_DATA_KEY,
   projectName: "My BuildX Project",
   region: "UK",
+  saveString: null,
 };
 
 class UserCache extends Dexie {
@@ -84,6 +86,10 @@ export const useProjectCurrency = () => {
     code,
     format: (x: number) => formatCurrency(x, code),
   };
+};
+
+export const updateSaveString = (saveString: string) => {
+  userCache.projectData.update(PROJECT_DATA_KEY, { saveString });
 };
 
 export default userCache;

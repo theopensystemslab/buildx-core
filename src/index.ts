@@ -4,7 +4,7 @@ import {
 } from "./data/build-systems/cache";
 import { cameraFrameOBB } from "./three/utils/camera";
 import createBasicScene from "./three/utils/createBasicScene";
-import { OutputsWorker, PngSnapshotsWorker } from "./three/workers";
+import { OutputsWorker, PngSnapshotsWorker, SharingWorker } from "./workers";
 
 import type { CachedHouseType } from "./data/build-systems/cache";
 import type { AnalysisData } from "./data/outputs/analysisData";
@@ -37,6 +37,7 @@ export {
   OpeningsChangeInfo,
   OrderListRow,
   OutputsWorker,
+  SharingWorker,
   PngSnapshotsWorker,
   SceneContextMode,
   SceneContextModeLabel,
