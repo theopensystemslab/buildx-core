@@ -82,8 +82,7 @@ export const useProjectCurrency = () => {
   return {
     symbol,
     code,
-    formatWithSymbol: (x: number) => formatCurrency(x, symbol),
-    formatWithCode: (x: number) => formatCurrency(x, code),
+    format: (x: number) => formatCurrency(x, code),
   };
 };
 

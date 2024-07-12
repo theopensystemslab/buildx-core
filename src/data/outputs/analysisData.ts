@@ -615,7 +615,7 @@ const getHouseModules = (house: House, modules: BuildModule[]) => {
 //   );
 // };
 
-export const useAnalyseData = (explicitSelectedHouseIds?: string[]) => {
+export const useAnalysisData = (explicitSelectedHouseIds?: string[]) => {
   const houses = useHouses();
   const modules = useBuildModules();
   const spaceTypes = useSpaceTypes();
@@ -676,4 +676,4 @@ export const useAnalyseData = (explicitSelectedHouseIds?: string[]) => {
   };
 };
 
-export type AnalyseData = ReturnType<typeof useAnalyseData>;
+export type AnalysisData = ReturnType<typeof useAnalysisData>;

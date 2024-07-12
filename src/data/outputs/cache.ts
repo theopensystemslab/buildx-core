@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 import { MaterialsListRow, OrderListRow } from "./metrics";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export type HouseModelsRow = {
   houseId: string;
@@ -54,5 +55,10 @@ outputsCache.files.toArray().then((files) => {
     outputsCache.files.put({ key: FILES_DOCUMENT_KEY });
   }
 });
+
+export const useOutputsFiles = () =>
+  useLiveQuery(() => outputsCache.files.get(FILES_DOCUMENT_KEY), [], {
+    key: FILES_DOCUMENT_KEY,
+  }) as FilesDocument;
 
 export default outputsCache;
