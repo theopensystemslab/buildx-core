@@ -1,12 +1,15 @@
 import {
   cachedHouseTypesTE,
   fetchAllBuildSystems,
+  useBuildModules,
+  useSystemModules,
 } from "./data/build-systems/cache";
 import { cameraFrameOBB } from "./three/utils/camera";
 import createBasicScene from "./three/utils/createBasicScene";
 import { OutputsWorker, PngSnapshotsWorker, SharingWorker } from "./workers";
 
 import type { CachedHouseType } from "./data/build-systems/cache";
+import type { BuildModule } from "./data/build-systems/remote/modules";
 import type { AnalysisData } from "./data/outputs/analysisData";
 import { useAnalysisData } from "./data/outputs/analysisData";
 import { useOutputsFiles } from "./data/outputs/cache";
@@ -23,9 +26,11 @@ import type { ScopeElement } from "./three/objects/types";
 import { format, formatWithUnit } from "./utils/format";
 import {
   decodeShareUrlPayload,
+  deleteProject,
   useProjectCurrency,
   useProjectData,
 } from "./data/user/utils";
+import { useMaterialsListRows } from "./data/outputs/materialsList";
 
 export {
   localHousesTE as cachedHousesTE,
@@ -62,4 +67,9 @@ export {
   useProjectData,
   decodeShareUrlPayload,
   setHouses,
+  useMaterialsListRows,
+  deleteProject,
+  useSystemModules,
+  useBuildModules,
+  BuildModule,
 };

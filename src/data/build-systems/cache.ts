@@ -27,6 +27,7 @@ import { SectionType, remoteSectionTypesTE } from "./remote/sectionTypes";
 import { SystemSettings, remoteSystemSettingsTE } from "./remote/settings";
 import { SpaceType, remoteSpaceTypesTE } from "./remote/spaceTypes";
 import { WindowType, remoteWindowTypesTE } from "./remote/windowTypes";
+import { StairType, remoteStairTypesTE } from "./remote/stairTypes";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -57,6 +58,7 @@ class BuildSystemsCache extends Dexie {
   blocks: Dexie.Table<Block, string>;
   blockModuleEntries: Dexie.Table<BlockModulesEntry, string>;
   spaceTypes: Dexie.Table<SpaceType, string>;
+  stairTypes: Dexie.Table<StairType, string>;
   energyInfos: Dexie.Table<EnergyInfo, string>;
   settings: Dexie.Table<SystemSettings, string>;
 
@@ -75,6 +77,7 @@ class BuildSystemsCache extends Dexie {
       blocks: "[systemId+name]",
       blockModuleEntries: "id",
       spaceTypes: "id",
+      stairTypes: "id",
       energyInfos: "id",
       settings: "systemId",
     });
@@ -89,6 +92,7 @@ class BuildSystemsCache extends Dexie {
     this.blocks = this.table("blocks");
     this.blockModuleEntries = this.table("blockModuleEntries");
     this.spaceTypes = this.table("spaceTypes");
+    this.stairTypes = this.table("stairTypes");
     this.energyInfos = this.table("energyInfos");
     this.settings = this.table("settings");
   }
@@ -165,6 +169,14 @@ export const cachedModulesTE = runUntilFirstSuccess([
 
 export const useBuildModules = (): BuildModule[] =>
   useLiveQuery(() => buildSystemsCache.modules.toArray(), [], []);
+
+export const useSystemModules = (systemId: string): BuildModule[] =>
+  useLiveQuery(
+    () =>
+      buildSystemsCache.modules.where("systemId").equals(systemId).toArray(),
+    [],
+    []
+  );
 
 // MATERIALS
 
@@ -699,6 +711,30 @@ export const cachedSystemSettingsTE = runUntilFirstSuccess([
 
 export const useSystemSettings = (): SystemSettings[] =>
   useLiveQuery(() => buildSystemsCache.settings.toArray(), [], []);
+
+// STAIR TYPES
+
+export const localStairTypesTE: TE.TaskEither<Error, StairType[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.stairTypes.toArray().then((stairTypes) => {
+      if (A.isEmpty(stairTypes)) {
+        throw new Error("No stairTypes found in cache");
+      }
+      return stairTypes;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedStairTypesTE = runUntilFirstSuccess([
+  localStairTypesTE,
+  pipe(
+    remoteStairTypesTE,
+    TE.map((stairTypes) => {
+      buildSystemsCache.stairTypes.bulkPut(stairTypes);
+      return stairTypes;
+    })
+  ),
+]);
 
 export const fetchAllBuildSystems = () =>
   sequenceT(TE.ApplicativePar)(

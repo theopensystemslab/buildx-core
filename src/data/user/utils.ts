@@ -11,6 +11,7 @@ import userCache, {
 import { z } from "zod";
 import { houseParser } from "./houses";
 import { Buffer } from "buffer";
+import { PromiseExtended } from "dexie";
 
 export const useProjectData = (): ProjectData =>
   useLiveQuery(
@@ -94,3 +95,25 @@ export const decodeShareUrlPayload = flow(
 //     throw error;
 //   }
 // };
+
+export const deleteProject = () => {
+  const dbs = [
+    userCache,
+    // exportsDB
+  ];
+
+  // Create an array to hold all the promises
+  const clearTablePromises: PromiseExtended<void>[] = [];
+
+  dbs.forEach((database) => {
+    database.tables.forEach((table) => {
+      // Assume `clear()` returns a promise. Push each promise to the array.
+      clearTablePromises.push(table.clear());
+    });
+  });
+
+  // trashMapPolygon();
+
+  // Wait for all the clear table promises to resolve
+  return Promise.all(clearTablePromises);
+};
