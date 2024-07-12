@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 import { MaterialsListRow, OrderListRow } from "./metrics";
+import { OutputsWorker } from "@/three/workers";
 
 export type HouseModelsRow = {
   houseId: string;
@@ -54,5 +55,11 @@ outputsCache.files.toArray().then((files) => {
     outputsCache.files.put({ key: FILES_DOCUMENT_KEY });
   }
 });
+
+const ENABLE_OUTPUTS = true;
+
+if (ENABLE_OUTPUTS) {
+  new OutputsWorker();
+}
 
 export default outputsCache;

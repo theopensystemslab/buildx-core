@@ -90,6 +90,9 @@ export default defineConfig(({ mode }) => {
             { find: "@@", replacement: resolve(__dirname) },
           ],
         },
+        define: {
+          "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+        },
       };
     }
   }
