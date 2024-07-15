@@ -21,8 +21,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       camera-controls:
-        specifier: ^2.8.3
-        version: 2.8.3(three@0.163.0)
+        specifier: ^2.8.5
+        version: 2.8.5(three@0.163.0)
       d3-dsv:
         specifier: ^3.0.1
         version: 3.0.1
@@ -712,8 +712,8 @@ packages:
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
-  camera-controls@2.8.3:
-    resolution: {integrity: sha512-zFjqUR6onLkG+z1A6vAWfzovxZxWVSvp6e5t3lfZgfgPZtX3n74aykNAUaoRbq8Y3tOxadHkDjbfGDOP9hFf2w==}
+  camera-controls@2.8.5:
+    resolution: {integrity: sha512-7VTwRk7Nu1nRKsY7bEt9HVBfKt8DETvzyYhLN4OW26OByBayMDB5fUaNcPI+z++vG23RH5yqn6ZRhZcgLQy2rA==}
     peerDependencies:
       three: '>=0.126.1'
 
@@ -2197,7 +2197,7 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  camera-controls@2.8.3(three@0.163.0):
+  camera-controls@2.8.5(three@0.163.0):
     dependencies:
       three: 0.163.0
 
