@@ -1,6 +1,6 @@
 import { Material } from "three";
 import createThreeMaterial from "./createThreeMaterial";
-import { CachedBuildMaterial } from "@/data/build-systems/cache";
+import { CachedBuildMaterial } from "@/data/build-systems";
 
 // Define the cache type
 type MaterialCache = Map<string, Material>;

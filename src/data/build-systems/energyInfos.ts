@@ -1,7 +1,9 @@
 import airtable from "@/utils/airtable";
-import { A, O, TE } from "@/utils/functions";
+import { A, O, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { allSystemIds, systemFromId } from "./systems";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 export type EnergyInfo = {
   id: string;
@@ -83,8 +85,34 @@ export const remoteEnergyInfosTE: TE.TaskEither<Error, EnergyInfo[]> =
     () => energyInfosQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch energy infos: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
   );
+
+export const localEnergyInfosTE: TE.TaskEither<Error, EnergyInfo[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.energyInfos.toArray().then((energyInfos) => {
+        if (A.isEmpty(energyInfos)) {
+          throw new Error("No energyInfos found in cache");
+        }
+        return energyInfos;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedEnergyInfosTE = runUntilFirstSuccess([
+  localEnergyInfosTE,
+  pipe(
+    remoteEnergyInfosTE,
+    TE.map((energyInfos) => {
+      buildSystemsCache.energyInfos.bulkPut(energyInfos);
+      return energyInfos;
+    })
+  ),
+]);
+
+export const useEnergyInfos = (): EnergyInfo[] =>
+  useLiveQuery(() => buildSystemsCache.energyInfos.toArray(), [], []);

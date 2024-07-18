@@ -1,4 +1,4 @@
-import { CachedBuildMaterial } from "@/data/build-systems/cache";
+import { CachedBuildMaterial } from "@/data/build-systems";
 import { DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from "three";
 
 const createThreeMaterial = (material: CachedBuildMaterial) => {

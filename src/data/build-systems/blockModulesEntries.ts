@@ -2,8 +2,10 @@ import { QueryParams } from "airtable/lib/query_params";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import airtable from "@/utils/airtable";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 const selector: QueryParams<any> = {
   filterByFormula: 'AND(modules!="", block!="")',
@@ -82,8 +84,38 @@ export const remoteBlockModulesEntriesTE: TE.TaskEither<
   () => blockModulesEntriesQuery(),
   (reason) =>
     new Error(
-      `Failed to fetch elements: ${
+      `Failed to fetch block modules entries: ${
         reason instanceof Error ? reason.message : String(reason)
       }`
     )
 );
+
+export const localBlockModuleEntriesTE: TE.TaskEither<
+  Error,
+  BlockModulesEntry[]
+> = TE.tryCatch(
+  () =>
+    buildSystemsCache.blockModuleEntries
+      .toArray()
+      .then((blockModuleEntries) => {
+        if (A.isEmpty(blockModuleEntries)) {
+          throw new Error("No blockModuleEntries found in cache");
+        }
+        return blockModuleEntries;
+      }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedBlockModuleEntriesTE = runUntilFirstSuccess([
+  localBlockModuleEntriesTE,
+  pipe(
+    remoteBlockModulesEntriesTE,
+    TE.map((blockModuleEntries) => {
+      buildSystemsCache.blockModuleEntries.bulkPut(blockModuleEntries);
+      return blockModuleEntries;
+    })
+  ),
+]);
+
+export const useBlockModuleEntries = (): BlockModulesEntry[] =>
+  useLiveQuery(() => buildSystemsCache.blockModuleEntries.toArray(), [], []);

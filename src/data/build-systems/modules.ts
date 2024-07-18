@@ -1,9 +1,11 @@
 import airtable from "@/utils/airtable";
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 // import { useAllWindowTypes } from "../../app/db/systems";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,7 +183,7 @@ export const remoteModulesTE: TE.TaskEither<Error, BuildModule[]> = TE.tryCatch(
   () => modulesQuery(),
   (reason) =>
     new Error(
-      `Failed to fetch elements: ${
+      `Failed to fetch modules: ${
         reason instanceof Error ? reason.message : String(reason)
       }`
     )
@@ -216,3 +218,36 @@ export const remoteModulesTE: TE.TaskEither<Error, BuildModule[]> = TE.tryCatch(
 //       })
 //     );
 // };
+
+export const localModulesTE: TE.TaskEither<Error, BuildModule[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.modules.toArray().then((modules) => {
+      if (A.isEmpty(modules)) {
+        throw new Error("No modules found in cache");
+      }
+      return modules;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedModulesTE = runUntilFirstSuccess([
+  localModulesTE,
+  pipe(
+    remoteModulesTE,
+    TE.map((modules) => {
+      buildSystemsCache.modules.bulkPut(modules);
+      return modules;
+    })
+  ),
+]);
+
+export const useBuildModules = (): BuildModule[] =>
+  useLiveQuery(() => buildSystemsCache.modules.toArray(), [], []);
+
+export const useSystemModules = (systemId: string): BuildModule[] =>
+  useLiveQuery(
+    () =>
+      buildSystemsCache.modules.where("systemId").equals(systemId).toArray(),
+    [],
+    []
+  );

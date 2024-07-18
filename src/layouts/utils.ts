@@ -1,7 +1,4 @@
-import {
-  BuildModule,
-  StructuredDna,
-} from "@/data/build-systems/remote/modules";
+import { StructuredDna, BuildModule } from "@/data/build-systems";
 import { A, Num, O, Ord, R, SG } from "@/utils/functions";
 import { abs, hamming } from "@/utils/math";
 import { sum } from "fp-ts-std/Array";

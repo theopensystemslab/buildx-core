@@ -1,4 +1,5 @@
 import Airtable from "airtable";
+import { TE } from "./functions";
 
 // Access the environment variable with import.meta.env
 const apiKey = import.meta.env.VITE_AIRTABLE_API_KEY;
@@ -24,3 +25,15 @@ export const fetchImageAsBlob = (url: string): Promise<Blob> => {
     return response.blob();
   });
 };
+
+export const tryCatchImageBlob = (imageUrl: string | undefined) =>
+  TE.tryCatch(
+    () => {
+      return typeof imageUrl === "undefined"
+        ? Promise.resolve(undefined)
+        : fetchImageAsBlob(imageUrl);
+    },
+    (reason) => {
+      return reason instanceof Error ? reason : new Error(String(reason));
+    }
+  );

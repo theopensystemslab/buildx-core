@@ -1,8 +1,10 @@
 import * as z from "zod";
 import { pipe } from "fp-ts/lib/function";
 import { allSystemIds, systemFromId } from "./systems";
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import airtable from "@/utils/airtable";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 type ClampedDimension = {
   min: number;
@@ -97,8 +99,34 @@ export const remoteSystemSettingsTE: TE.TaskEither<Error, SystemSettings[]> =
     () => systemSettingsQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch system settings: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
   );
+
+export const localSystemSettingsTE: TE.TaskEither<Error, SystemSettings[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.settings.toArray().then((systemSettings) => {
+        if (A.isEmpty(systemSettings)) {
+          throw new Error("No systemSettings found in cache");
+        }
+        return systemSettings;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedSystemSettingsTE = runUntilFirstSuccess([
+  localSystemSettingsTE,
+  pipe(
+    remoteSystemSettingsTE,
+    TE.map((systemSettings) => {
+      buildSystemsCache.settings.bulkPut(systemSettings);
+      return systemSettings;
+    })
+  ),
+]);
+
+export const useSystemSettings = (): SystemSettings[] =>
+  useLiveQuery(() => buildSystemsCache.settings.toArray(), [], []);

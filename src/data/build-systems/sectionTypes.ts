@@ -1,8 +1,10 @@
-import { A, TE } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
 import airtable from "@/utils/airtable";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 export type SectionType = {
   id: string;
@@ -79,8 +81,53 @@ export const remoteSectionTypesTE: TE.TaskEither<Error, SectionType[]> =
     () => sectionTypesQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch section types: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
+  );
+
+export const localSectionTypesTE: TE.TaskEither<Error, SectionType[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.sectionTypes.toArray().then((sectionTypes) => {
+        if (A.isEmpty(sectionTypes)) {
+          throw new Error("No modules found in cache");
+        }
+        return sectionTypes;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedSectionTypesTE = runUntilFirstSuccess([
+  localSectionTypesTE,
+  pipe(
+    remoteSectionTypesTE,
+    TE.map((sectionTypes) => {
+      buildSystemsCache.sectionTypes.bulkPut(sectionTypes);
+      return sectionTypes;
+    })
+  ),
+]);
+
+export const useSectionTypes = (): SectionType[] =>
+  useLiveQuery(() => buildSystemsCache.sectionTypes.toArray(), [], []);
+
+export const getSectionType = ({
+  systemId,
+  code,
+}: {
+  systemId: string;
+  code: string;
+}) =>
+  pipe(
+    cachedSectionTypesTE,
+    TE.chain(
+      flow(
+        A.findFirst((x) => x.code === code && x.systemId === systemId),
+        TE.fromOption(
+          () => new Error(`no section type found for ${code} in ${systemId}`)
+        )
+      )
+    )
   );

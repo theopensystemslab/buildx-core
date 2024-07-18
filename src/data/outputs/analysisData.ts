@@ -1,20 +1,20 @@
 import { A, O, R } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
+import { House, housesToRecord, useHouses } from "../user/houses";
 import {
+  BuildModule,
+  BuildElement,
   CachedBuildMaterial,
+  EnergyInfo,
+  SpaceType,
   CachedWindowType,
-  useBuildElements,
-  useBuildMaterials,
   useBuildModules,
-  useEnergyInfos,
   useSpaceTypes,
   useWindowTypes,
-} from "../build-systems/cache";
-import { BuildElement } from "../build-systems/remote/elements";
-import { EnergyInfo } from "../build-systems/remote/energyInfos";
-import { BuildModule } from "../build-systems/remote/modules";
-import { SpaceType } from "../build-systems/remote/spaceTypes";
-import { House, housesToRecord, useHouses } from "../user/houses";
+  useBuildMaterials,
+  useBuildElements,
+  useEnergyInfos,
+} from "../build-systems";
 
 export interface DashboardData {
   byHouse: Record<string, HouseInfo>;
@@ -586,34 +586,6 @@ const getHouseModules = (house: House, modules: BuildModule[]) => {
     )
   );
 };
-
-// const getHouseModules = (
-//   houseId: string
-// ): TE.TaskEither<Error, BuildModule[]> => {
-//   const houseTE: TE.TaskEither<Error, House> = () =>
-//     userCache.houses.get(houseId).then(
-//       flow(
-//         O.fromNullable,
-//         O.fold(() => E.left(Error(`no house found for ${houseId}`)), E.right)
-//       )
-//     );
-
-//   return pipe(
-//     sequenceT(TE.ApplicativePar)(houseTE, cachedModulesTE),
-//     TE.chain(([house, modules]) =>
-//       pipe(
-//         house.dnas,
-//         A.traverse(O.Applicative)((dna) =>
-//           pipe(
-//             modules,
-//             A.findFirst((x) => x.systemId === house.systemId && x.dna === dna)
-//           )
-//         ),
-//         TE.fromOption(() => Error(`no modules found for ${house.houseId}`))
-//       )
-//     )
-//   );
-// };
 
 export const useAnalysisData = (explicitSelectedHouseIds?: string[]) => {
   const houses = useHouses();

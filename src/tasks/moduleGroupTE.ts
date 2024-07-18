@@ -1,7 +1,4 @@
-import {
-  cachedHouseTypesTE,
-  cachedModulesTE,
-} from "@/data/build-systems/cache";
+import { cachedHouseTypesTE, cachedModulesTE } from "@/data/build-systems";
 import { dnasToModules, modulesToMatrix } from "@/layouts/init";
 import { defaultModuleGroupCreator } from "@/three/objects/house/ModuleGroup";
 import { A, O, TE } from "@/utils/functions";

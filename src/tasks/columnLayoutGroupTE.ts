@@ -1,4 +1,4 @@
-import { cachedModulesTE } from "@/data/build-systems/cache";
+import { cachedModulesTE } from "@/data/build-systems";
 import {
   createColumnLayout,
   dnasToModules,

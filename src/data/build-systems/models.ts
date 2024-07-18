@@ -1,17 +1,30 @@
 import { applyPlanarProjectionUVs } from "@/three/utils/applyPlanarProjectionUVs";
-import { A, O, R, T, TE } from "@/utils/functions";
+import { A, O, R, runUntilFirstSuccess, T, TE } from "@/utils/functions";
 import speckleIfcParser from "@/utils/speckle/speckleIfcParser";
 import ObjectLoader, { SpeckleObject } from "@speckle/objectloader";
 import { flow, pipe } from "fp-ts/lib/function";
 import { gql, request } from "graphql-request";
 import { produce } from "immer";
-import { BufferGeometry, NormalBufferAttributes } from "three";
+import {
+  BufferGeometry,
+  BufferGeometryLoader,
+  NormalBufferAttributes,
+} from "three";
 import { mergeBufferGeometries } from "three-stdlib";
-import { remoteModulesTE } from "./modules";
+import { cachedModulesTE } from "./modules";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
+
+const bufferGeometryLoader = new BufferGeometryLoader();
 
 export type BuildModel = {
   speckleBranchUrl: string;
   geometries: Record<string, BufferGeometry<NormalBufferAttributes>>;
+};
+
+export type CachedBuildModel = {
+  speckleBranchUrl: string;
+  geometries: any;
 };
 
 const extractStreamId = (urlString: string) => {
@@ -118,7 +131,7 @@ export const remoteModelTE = (
   );
 
 export const remoteModelsTE: TE.TaskEither<Error, BuildModel[]> = pipe(
-  remoteModulesTE,
+  cachedModulesTE,
   TE.chain(
     flow(
       A.traverse(TE.ApplicativePar)(({ speckleBranchUrl }) =>
@@ -127,3 +140,94 @@ export const remoteModelsTE: TE.TaskEither<Error, BuildModel[]> = pipe(
     )
   )
 );
+
+export const localModelTE = (
+  speckleBranchUrl: string
+): TE.TaskEither<Error, BuildModel> => {
+  return pipe(
+    TE.tryCatch(
+      () => buildSystemsCache.models.get(speckleBranchUrl),
+      (reason) => new Error(String(reason))
+    ),
+    TE.flatMap(
+      flow(
+        O.fromNullable,
+        TE.fromOption(
+          () => new Error(`no model in cache for ${speckleBranchUrl}`)
+        )
+      )
+    ),
+    TE.map(({ speckleBranchUrl, geometries }) => {
+      return {
+        speckleBranchUrl,
+        geometries: pipe(
+          geometries,
+          R.map(
+            (x) =>
+              bufferGeometryLoader.parse(
+                x
+              ) as BufferGeometry<NormalBufferAttributes>
+          )
+        ),
+      };
+    })
+  );
+};
+
+export const getCachedModelTE = (speckleBranchUrl: string) => {
+  return runUntilFirstSuccess([
+    localModelTE(speckleBranchUrl),
+    pipe(
+      remoteModelTE(speckleBranchUrl),
+      TE.map((remoteModel) => {
+        const { speckleBranchUrl, geometries } = remoteModel;
+
+        buildSystemsCache.models.put({
+          speckleBranchUrl,
+          geometries: pipe(
+            geometries,
+            R.map((geometry) => geometry.toJSON())
+          ),
+        });
+        return remoteModel;
+      })
+    ),
+  ]);
+};
+
+export const localModelsTE: TE.TaskEither<Error, BuildModel[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.models.toArray().then((models) => {
+      if (A.isEmpty(models)) {
+        throw new Error("No models found in cache");
+      }
+
+      return models.map((x) => ({
+        ...x,
+        geometries: pipe(
+          x.geometries,
+          R.map(
+            (x) =>
+              bufferGeometryLoader.parse(
+                x
+              ) as BufferGeometry<NormalBufferAttributes>
+          )
+        ),
+      }));
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedModelsTE = runUntilFirstSuccess([
+  localModelsTE,
+  pipe(
+    remoteModelsTE,
+    TE.map((models) => {
+      buildSystemsCache.models.bulkPut(models);
+      return models;
+    })
+  ),
+]);
+
+export const useBuildModels = (): BuildModel[] =>
+  useLiveQuery(() => buildSystemsCache.models.toArray(), [], []);

@@ -1,8 +1,10 @@
 import airtable from "@/utils/airtable";
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 export type Block = {
   id: string;
@@ -92,8 +94,33 @@ export const remoteBlocksTE: TE.TaskEither<Error, Block[]> = TE.tryCatch(
   () => blocksQuery(),
   (reason) =>
     new Error(
-      `Failed to fetch elements: ${
+      `Failed to fetch blocks: ${
         reason instanceof Error ? reason.message : String(reason)
       }`
     )
 );
+
+export const localBlocksTE: TE.TaskEither<Error, Block[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.blocks.toArray().then((blocks) => {
+      if (A.isEmpty(blocks)) {
+        throw new Error("No blocks found in cache");
+      }
+      return blocks;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedBlocksTE = runUntilFirstSuccess([
+  localBlocksTE,
+  pipe(
+    remoteBlocksTE,
+    TE.map((blocks) => {
+      buildSystemsCache.blocks.bulkPut(blocks);
+      return blocks;
+    })
+  ),
+]);
+
+export const useBlocks = (): Block[] =>
+  useLiveQuery(() => buildSystemsCache.blocks.toArray(), [], []);

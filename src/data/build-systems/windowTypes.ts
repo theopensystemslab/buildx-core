@@ -1,8 +1,10 @@
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
-import airtable from "@/utils/airtable";
-import { A, TE } from "@/utils/functions";
+import airtable, { tryCatchImageBlob } from "@/utils/airtable";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
+import buildSystemsCache, { BlobbedImage } from "./cache";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export type WindowType = {
   id: string;
@@ -15,6 +17,8 @@ export type WindowType = {
   openingPerimeter: number;
   lastModified: number;
 };
+
+export type CachedWindowType = BlobbedImage<WindowType>;
 
 export const windowTypeParser = z.object({
   id: z.string().min(1),
@@ -94,8 +98,64 @@ export const remoteWindowTypesTE: TE.TaskEither<Error, WindowType[]> =
     () => windowTypesQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch window types: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
+  );
+
+export const localWindowTypesTE: TE.TaskEither<Error, CachedWindowType[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.windowTypes.toArray().then((windowTypes) => {
+        if (A.isEmpty(windowTypes)) {
+          throw new Error("No window types found in cache");
+        }
+        return windowTypes;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedWindowTypesTE = runUntilFirstSuccess([
+  localWindowTypesTE,
+  pipe(
+    remoteWindowTypesTE,
+    TE.chain((remoteWindowTypes) =>
+      pipe(
+        remoteWindowTypes,
+        A.traverse(TE.ApplicativePar)(({ imageUrl, ...windowType }) =>
+          pipe(
+            tryCatchImageBlob(imageUrl),
+            TE.map((imageBlob) => ({ ...windowType, imageBlob }))
+          )
+        ),
+        TE.map((materials) => {
+          buildSystemsCache.windowTypes.bulkPut(materials);
+          return materials;
+        })
+      )
+    )
+  ),
+]);
+
+export const useWindowTypes = (): CachedWindowType[] =>
+  useLiveQuery(() => buildSystemsCache.windowTypes.toArray(), [], []);
+
+export const getWindowType = ({
+  systemId,
+  code,
+}: {
+  systemId: string;
+  code: string;
+}) =>
+  pipe(
+    cachedWindowTypesTE,
+    TE.chain(
+      flow(
+        A.findFirst((x) => x.code === code && x.systemId === systemId),
+        TE.fromOption(
+          () => new Error(`no window type found for ${code} in ${systemId}`)
+        )
+      )
+    )
   );

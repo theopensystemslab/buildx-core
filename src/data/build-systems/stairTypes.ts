@@ -1,8 +1,9 @@
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
 import airtable from "@/utils/airtable";
+import buildSystemsCache from "./cache";
 
 export type StairType = {
   id: string;
@@ -59,8 +60,30 @@ export const remoteStairTypesTE = TE.tryCatch(
   () => stairTypesQuery(),
   (reason) =>
     new Error(
-      `Failed to fetch elements: ${
+      `Failed to fetch stair types: ${
         reason instanceof Error ? reason.message : String(reason)
       }`
     )
 );
+
+export const localStairTypesTE: TE.TaskEither<Error, StairType[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.stairTypes.toArray().then((stairTypes) => {
+      if (A.isEmpty(stairTypes)) {
+        throw new Error("No stairTypes found in cache");
+      }
+      return stairTypes;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedStairTypesTE = runUntilFirstSuccess([
+  localStairTypesTE,
+  pipe(
+    remoteStairTypesTE,
+    TE.map((stairTypes) => {
+      buildSystemsCache.stairTypes.bulkPut(stairTypes);
+      return stairTypes;
+    })
+  ),
+]);

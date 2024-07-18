@@ -1,8 +1,3 @@
-import {
-  defaultMaterialGettersTE,
-  getCachedModelTE,
-} from "@/data/build-systems/cache";
-import { BuildModule } from "@/data/build-systems/remote/modules";
 import { A, E, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
@@ -10,6 +5,11 @@ import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { defaultElementGroupCreator } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
+import {
+  BuildModule,
+  getCachedModelTE,
+  defaultMaterialGettersTE,
+} from "@/data/build-systems";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;

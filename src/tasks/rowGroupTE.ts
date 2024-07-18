@@ -1,14 +1,11 @@
-import {
-  cachedHouseTypesTE,
-  cachedModulesTE,
-} from "@/data/build-systems/cache";
+import { cachedHouseTypesTE, cachedModulesTE } from "@/data/build-systems";
 import { createRowLayout, dnasToModules, modulesToRows } from "@/layouts/init";
 import { defaultRowGroupCreator } from "@/three/objects/house/RowGroup";
 import { A, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 
-const levelRowGroupTE = ({
+const rowGroupTE = ({
   houseTypeIndex,
   rowIndex,
 }: {
@@ -52,4 +49,4 @@ const levelRowGroupTE = ({
     )
   );
 
-export default levelRowGroupTE;
+export default rowGroupTE;

@@ -1,8 +1,14 @@
-import airtable from "@/utils/airtable";
-import { A, TE } from "@/utils/functions";
+import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
+import { ThreeMaterial } from "@/three/materials/types";
+import airtable, { tryCatchImageBlob } from "@/utils/airtable";
+import { A, E, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
-import { pipe } from "fp-ts/lib/function";
+import { useLiveQuery } from "dexie-react-hooks";
+import { sequenceT } from "fp-ts/lib/Apply";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as z from "zod";
+import buildSystemsCache, { BlobbedImage } from "./cache";
+import { BuildElement, cachedElementsTE } from "./elements";
 import { allSystemIds, systemFromId } from "./systems";
 
 export interface BuildMaterial {
@@ -19,6 +25,8 @@ export interface BuildMaterial {
   unit: string | null;
   lastModified: number;
 }
+
+export type CachedBuildMaterial = BlobbedImage<BuildMaterial>;
 
 export const materialSelector: QueryParams<unknown> = {
   // filterByFormula: 'OR(IFC_model!="",GLB_model!="")',
@@ -117,7 +125,7 @@ export const remoteMaterialsTE: TE.TaskEither<Error, BuildMaterial[]> =
     () => materialsQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch materials: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
@@ -129,3 +137,98 @@ export class MaterialNotFoundError extends Error {
     this.name = "MaterialNotFoundError";
   }
 }
+
+export const localMaterialsTE: TE.TaskEither<Error, CachedBuildMaterial[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.materials.toArray().then((materials) => {
+        if (A.isEmpty(materials)) {
+          throw new Error("No materials found in cache");
+        }
+        return materials;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedMaterialsTE = runUntilFirstSuccess([
+  localMaterialsTE,
+  pipe(
+    remoteMaterialsTE,
+    TE.chain((remoteMaterials) =>
+      pipe(
+        remoteMaterials,
+        A.traverse(TE.ApplicativePar)(({ imageUrl, ...material }) =>
+          pipe(
+            tryCatchImageBlob(imageUrl),
+            TE.map((imageBlob) => ({ ...material, imageBlob }))
+          )
+        ),
+        TE.map((materials) => {
+          buildSystemsCache.materials.bulkPut(materials);
+          return materials;
+        })
+      )
+    )
+  ),
+]);
+
+export const useBuildMaterials = (): CachedBuildMaterial[] =>
+  useLiveQuery(() => buildSystemsCache.materials.toArray(), [], []);
+
+type MaterialGetters = {
+  getElement: (
+    systemId: string,
+    ifcTag: string
+  ) => E.Either<Error, BuildElement>;
+  getMaterial: (
+    systemId: string,
+    specification: string
+  ) => E.Either<Error, CachedBuildMaterial>;
+  getInitialThreeMaterial: (
+    systemId: string,
+    ifcTag: string
+  ) => E.Either<Error, ThreeMaterial>;
+};
+
+export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
+  pipe(
+    sequenceT(TE.ApplicativePar)(cachedElementsTE, cachedMaterialsTE),
+    TE.map(([elements, materials]): MaterialGetters => {
+      const getElement = (systemId: string, ifcTag: string) =>
+        pipe(
+          elements,
+          A.findFirst((x) => x.systemId === systemId && x.ifcTag === ifcTag),
+          E.fromOption(() =>
+            Error(`no element for ${ifcTag} found in ${systemId}`)
+          )
+        );
+
+      const getMaterial = (systemId: string, specification: string) =>
+        pipe(
+          materials,
+          A.findFirst(
+            (m) => m.systemId === systemId && m.specification === specification
+          ),
+          E.fromOption(() =>
+            Error(`no material for ${specification} in ${systemId}`)
+          )
+        );
+
+      const getInitialThreeMaterial = flow(
+        getElement,
+        E.chain(({ systemId, defaultMaterial: specification }) =>
+          pipe(
+            getMaterial(systemId, specification),
+            (x) => x,
+            E.map((x) => getThreeMaterial(x))
+          )
+        )
+      );
+
+      return {
+        getElement,
+        getMaterial,
+        getInitialThreeMaterial,
+      };
+    })
+  );

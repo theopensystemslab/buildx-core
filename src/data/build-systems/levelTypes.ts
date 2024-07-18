@@ -1,8 +1,10 @@
 import airtable from "@/utils/airtable";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 export interface LevelType {
   id: string;
@@ -76,8 +78,52 @@ export const remoteLevelTypesTE: TE.TaskEither<Error, LevelType[]> =
     () => levelTypesQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch level types: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
+  );
+
+export const localLevelTypesTE: TE.TaskEither<Error, LevelType[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.levelTypes.toArray().then((levelTypes) => {
+      if (A.isEmpty(levelTypes)) {
+        throw new Error("No modules found in cache");
+      }
+      return levelTypes;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedLevelTypesTE = runUntilFirstSuccess([
+  localLevelTypesTE,
+  pipe(
+    remoteLevelTypesTE,
+    TE.map((levelTypes) => {
+      buildSystemsCache.levelTypes.bulkPut(levelTypes);
+      return levelTypes;
+    })
+  ),
+]);
+
+export const useLevelTypes = (): LevelType[] =>
+  useLiveQuery(() => buildSystemsCache.levelTypes.toArray(), [], []);
+
+export const getLevelType = ({
+  systemId,
+  code,
+}: {
+  systemId: string;
+  code: string;
+}) =>
+  pipe(
+    cachedLevelTypesTE,
+    TE.chain(
+      flow(
+        A.findFirst((x) => x.code === code && x.systemId === systemId),
+        TE.fromOption(
+          () => new Error(`no section type found for ${code} in ${systemId}`)
+        )
+      )
+    )
   );

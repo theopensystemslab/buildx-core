@@ -1,10 +1,12 @@
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { filter, map } from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
-import airtable from "@/utils/airtable";
+import airtable, { tryCatchImageBlob } from "@/utils/airtable";
+import buildSystemsCache, { BlobbedImage } from "./cache";
+import { useLiveQuery } from "dexie-react-hooks";
 
 const modulesByHouseTypeSelector: QueryParams<any> = {
   filterByFormula: 'module!=""',
@@ -125,13 +127,64 @@ export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
 
 export type HouseType = z.infer<typeof houseTypeParser> & { systemId: string };
 
+export type CachedHouseType = BlobbedImage<HouseType>;
+
 export const remoteHouseTypesTE: TE.TaskEither<Error, HouseType[]> =
   TE.tryCatch(
     () => houseTypesQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch house types: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
   );
+
+export const localHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.houseTypes.toArray().then((houseTypes) => {
+        if (A.isEmpty(houseTypes)) {
+          throw new Error("No house types found in cache");
+        }
+        return houseTypes;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
+  runUntilFirstSuccess([
+    localHouseTypesTE,
+    pipe(
+      remoteHouseTypesTE,
+      TE.chain((remoteHouseTypes) =>
+        pipe(
+          remoteHouseTypes,
+          A.traverse(TE.ApplicativePar)(({ imageUrl, ...houseType }) =>
+            pipe(
+              tryCatchImageBlob(imageUrl),
+              TE.map((imageBlob) => ({ ...houseType, imageBlob }))
+            )
+          ),
+          TE.map((houseTypes) => {
+            buildSystemsCache.houseTypes.bulkPut(houseTypes);
+            return houseTypes;
+          })
+        )
+      )
+    ),
+  ]);
+
+export const useHouseTypes = (): CachedHouseType[] => {
+  const houseTypes = useLiveQuery(
+    () => buildSystemsCache.houseTypes.toArray(),
+    [],
+    []
+  );
+
+  if (houseTypes.length === 0) {
+    cachedHouseTypesTE();
+  }
+
+  return houseTypes;
+};

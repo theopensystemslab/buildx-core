@@ -1,4 +1,3 @@
-import { SectionType } from "@/data/build-systems/remote/sectionTypes";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { A, O, S, TE } from "@/utils/functions";
@@ -11,6 +10,7 @@ import {
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
 import StretchManager from "./StretchManager";
+import { SectionType } from "@/data/build-systems";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;

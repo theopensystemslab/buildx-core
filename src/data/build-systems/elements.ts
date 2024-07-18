@@ -1,9 +1,11 @@
 import airtable from "@/utils/airtable";
-import { A, TE } from "@/utils/functions";
+import { A, E, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { materialsQuery } from "./materials";
 import { allSystemIds, systemFromId } from "./systems";
+import buildSystemsCache from "./cache";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export type BuildElement = {
   id: string;
@@ -120,3 +122,44 @@ export class ElementNotFoundError extends Error {
     this.name = "ElementNotFoundError";
   }
 }
+
+export const localElementsTE: TE.TaskEither<Error, BuildElement[]> =
+  TE.tryCatch(
+    () =>
+      buildSystemsCache.elements.toArray().then((elements) => {
+        if (A.isEmpty(elements)) {
+          throw new Error("No elements found");
+        }
+        return elements;
+      }),
+    (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+  );
+
+export const cachedElementsTE = runUntilFirstSuccess([
+  localElementsTE,
+  pipe(
+    remoteElementsTE,
+    TE.map((elements) => {
+      buildSystemsCache.elements.bulkPut(elements);
+      return elements;
+    })
+  ),
+]);
+
+export const useBuildElements = (): BuildElement[] =>
+  useLiveQuery(() => buildSystemsCache.elements.toArray(), [], []);
+
+export const elementGetterTE = pipe(
+  cachedElementsTE,
+  TE.map(
+    (elements) =>
+      ({ systemId, ifcTag }: { systemId: string; ifcTag: string }) =>
+        pipe(
+          elements,
+          A.findFirst<BuildElement>(
+            (x) => x.systemId === systemId && x.ifcTag === ifcTag
+          ),
+          E.fromOption(() => Error(`no ${ifcTag} element found in ${systemId}`))
+        )
+  )
+);

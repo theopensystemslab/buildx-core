@@ -1,4 +1,3 @@
-import { BuildElement } from "@/data/build-systems/remote/elements";
 import { ThreeMaterial } from "@/three/materials/types";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { BufferGeometry, Group, NormalBufferAttributes } from "three";
@@ -11,6 +10,7 @@ import { ModuleGroup } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
 import { evaluator } from "@/three/managers/CutsManager";
 import BuildXScene from "../scene/BuildXScene";
+import { BuildElement } from "@/data/build-systems";
 
 export class ElementGroup extends Group {
   userData: {

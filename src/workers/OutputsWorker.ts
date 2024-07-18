@@ -1,15 +1,14 @@
-import buildSystemsCache, {
+import {
+  BuildModule,
+  Block,
+  BlockModulesEntry,
+  BuildElement,
   CachedBuildMaterial,
   CachedWindowType,
-} from "@/data/build-systems/cache";
-import { BlockModulesEntry } from "@/data/build-systems/remote/blockModulesEntries";
-import { Block } from "@/data/build-systems/remote/blocks";
-import {
-  BuildElement,
   ElementNotFoundError,
-} from "@/data/build-systems/remote/elements";
-import { MaterialNotFoundError } from "@/data/build-systems/remote/materials";
-import { BuildModule } from "@/data/build-systems/remote/modules";
+  MaterialNotFoundError,
+} from "@/data/build-systems";
+import buildSystemsCache from "@/data/build-systems/cache";
 import outputsCache, { FILES_DOCUMENT_KEY } from "@/data/outputs/cache";
 import {
   MaterialsListRow,

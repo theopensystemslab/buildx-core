@@ -1,8 +1,10 @@
-import { A, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
 import airtable from "@/utils/airtable";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 export type SpaceType = {
   id: string;
@@ -78,8 +80,33 @@ export const remoteSpaceTypesTE: TE.TaskEither<Error, SpaceType[]> =
     () => spaceTypesQuery(),
     (reason) =>
       new Error(
-        `Failed to fetch elements: ${
+        `Failed to fetch space types: ${
           reason instanceof Error ? reason.message : String(reason)
         }`
       )
   );
+
+export const localSpaceTypesTE: TE.TaskEither<Error, SpaceType[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.spaceTypes.toArray().then((spaceTypes) => {
+      if (A.isEmpty(spaceTypes)) {
+        throw new Error("No spaceTypes found in cache");
+      }
+      return spaceTypes;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedSpaceTypesTE = runUntilFirstSuccess([
+  localSpaceTypesTE,
+  pipe(
+    remoteSpaceTypesTE,
+    TE.map((spaceTypes) => {
+      buildSystemsCache.spaceTypes.bulkPut(spaceTypes);
+      return spaceTypes;
+    })
+  ),
+]);
+
+export const useSpaceTypes = (): SpaceType[] =>
+  useLiveQuery(() => buildSystemsCache.spaceTypes.toArray(), [], []);
