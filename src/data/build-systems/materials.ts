@@ -1,14 +1,10 @@
-import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
-import { ThreeMaterial } from "@/three/materials/types";
 import airtable, { tryCatchImageBlob } from "@/utils/airtable";
-import { A, E, runUntilFirstSuccess, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { useLiveQuery } from "dexie-react-hooks";
-import { sequenceT } from "fp-ts/lib/Apply";
-import { flow, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import buildSystemsCache, { BlobbedImage } from "./cache";
-import { BuildElement, cachedElementsTE } from "./elements";
 import { allSystemIds, systemFromId } from "./systems";
 
 export interface BuildMaterial {
@@ -174,61 +170,3 @@ export const cachedMaterialsTE = runUntilFirstSuccess([
 
 export const useBuildMaterials = (): CachedBuildMaterial[] =>
   useLiveQuery(() => buildSystemsCache.materials.toArray(), [], []);
-
-type MaterialGetters = {
-  getElement: (
-    systemId: string,
-    ifcTag: string
-  ) => E.Either<Error, BuildElement>;
-  getMaterial: (
-    systemId: string,
-    specification: string
-  ) => E.Either<Error, CachedBuildMaterial>;
-  getInitialThreeMaterial: (
-    systemId: string,
-    ifcTag: string
-  ) => E.Either<Error, ThreeMaterial>;
-};
-
-export const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> =
-  pipe(
-    sequenceT(TE.ApplicativePar)(cachedElementsTE, cachedMaterialsTE),
-    TE.map(([elements, materials]): MaterialGetters => {
-      const getElement = (systemId: string, ifcTag: string) =>
-        pipe(
-          elements,
-          A.findFirst((x) => x.systemId === systemId && x.ifcTag === ifcTag),
-          E.fromOption(() =>
-            Error(`no element for ${ifcTag} found in ${systemId}`)
-          )
-        );
-
-      const getMaterial = (systemId: string, specification: string) =>
-        pipe(
-          materials,
-          A.findFirst(
-            (m) => m.systemId === systemId && m.specification === specification
-          ),
-          E.fromOption(() =>
-            Error(`no material for ${specification} in ${systemId}`)
-          )
-        );
-
-      const getInitialThreeMaterial = flow(
-        getElement,
-        E.chain(({ systemId, defaultMaterial: specification }) =>
-          pipe(
-            getMaterial(systemId, specification),
-            (x) => x,
-            E.map((x) => getThreeMaterial(x))
-          )
-        )
-      );
-
-      return {
-        getElement,
-        getMaterial,
-        getInitialThreeMaterial,
-      };
-    })
-  );

@@ -1,15 +1,21 @@
+import {
+  BuildElement,
+  BuildModule,
+  CachedBuildMaterial,
+  cachedElementsTE,
+  cachedMaterialsTE,
+  getCachedModelTE,
+} from "@/data/build-systems";
+import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
+import { ThreeMaterial } from "@/three/materials/types";
 import { A, E, TE } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import { sequenceT } from "fp-ts/lib/Apply";
+import { flow, pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { defaultElementGroupCreator } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
-import {
-  BuildModule,
-  getCachedModelTE,
-  defaultMaterialGettersTE,
-} from "@/data/build-systems";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -46,6 +52,62 @@ export class ModuleGroup extends Group {
   }
 }
 
+type MaterialGetters = {
+  getElement: (
+    systemId: string,
+    ifcTag: string
+  ) => E.Either<Error, BuildElement>;
+  getMaterial: (
+    systemId: string,
+    specification: string
+  ) => E.Either<Error, CachedBuildMaterial>;
+  getInitialThreeMaterial: (
+    systemId: string,
+    ifcTag: string
+  ) => E.Either<Error, ThreeMaterial>;
+};
+
+const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> = pipe(
+  sequenceT(TE.ApplicativePar)(cachedElementsTE, cachedMaterialsTE),
+  TE.map(([elements, materials]): MaterialGetters => {
+    const getElement = (systemId: string, ifcTag: string) =>
+      pipe(
+        elements,
+        A.findFirst((x) => x.systemId === systemId && x.ifcTag === ifcTag),
+        E.fromOption(() =>
+          Error(`no element for ${ifcTag} found in ${systemId}`)
+        )
+      );
+
+    const getMaterial = (systemId: string, specification: string) =>
+      pipe(
+        materials,
+        A.findFirst(
+          (m) => m.systemId === systemId && m.specification === specification
+        ),
+        E.fromOption(() =>
+          Error(`no material for ${specification} in ${systemId}`)
+        )
+      );
+
+    const getInitialThreeMaterial = flow(
+      getElement,
+      E.chain(({ systemId, defaultMaterial: specification }) =>
+        pipe(
+          getMaterial(systemId, specification),
+          (x) => x,
+          E.map((x) => getThreeMaterial(x))
+        )
+      )
+    );
+
+    return {
+      getElement,
+      getMaterial,
+      getInitialThreeMaterial,
+    };
+  })
+);
 export const defaultModuleGroupCreator = ({
   moduleIndex,
   buildModule,

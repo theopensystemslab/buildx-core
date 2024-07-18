@@ -63,7 +63,7 @@ class BuildSystemsCache extends Dexie {
     this.windowTypes = this.table("windowTypes");
     this.blocks = this.table("blocks");
     this.blockModuleEntries = this.table("blockModuleEntries");
-    this.spaceTypes = this.table("spggaceTypes");
+    this.spaceTypes = this.table("spaceTypes");
     this.stairTypes = this.table("stairTypes");
     this.energyInfos = this.table("energyInfos");
     this.settings = this.table("settings");
