@@ -40,7 +40,6 @@
     "jszip": "^3.10.1",
     "nanoid": "^5.0.7",
     "pako": "^2.1.0",
-    "suspend-react": "^0.1.3",
     "three-bvh-csg": "^0.0.16",
     "three-mesh-bvh": "^0.7.6",
     "three-stdlib": "^2.30.4",
