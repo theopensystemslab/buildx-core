@@ -1,4 +1,4 @@
-import { TE } from "@/utils/functions";
+import { TE, unwrapTaskEither } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { cachedBlockModuleEntriesTE } from "./blockModulesEntries";
 import { cachedBlocksTE } from "./blocks";
@@ -13,6 +13,8 @@ import { cachedSectionTypesTE } from "./sectionTypes";
 import { cachedSystemSettingsTE } from "./settings";
 import { cachedSpaceTypesTE } from "./spaceTypes";
 import { cachedWindowTypesTE } from "./windowTypes";
+import { suspend } from "suspend-react";
+import { pipe } from "fp-ts/lib/function";
 
 export const housePriorityDataTE = sequenceT(TE.ApplicativePar)(
   cachedModulesTE,
@@ -21,11 +23,11 @@ export const housePriorityDataTE = sequenceT(TE.ApplicativePar)(
   cachedMaterialsTE
 );
 
-export const allBuildDataTE = sequenceT(TE.ApplicativePar)(
-  cachedModulesTE,
+export const allBuildSystemsData = sequenceT(TE.ApplicativePar)(
   cachedHouseTypesTE,
-  cachedElementsTE,
   cachedMaterialsTE,
+  cachedElementsTE,
+  cachedModulesTE,
   cachedModelsTE,
   cachedSectionTypesTE,
   cachedLevelTypesTE,
@@ -36,6 +38,18 @@ export const allBuildDataTE = sequenceT(TE.ApplicativePar)(
   cachedEnergyInfosTE,
   cachedSystemSettingsTE
 );
+
+export const useSuspendAllBuildData = () =>
+  suspend(() => pipe(allBuildSystemsData, unwrapTaskEither), ["allBuildData"]);
+
+export const useSuspendHousePriorityData = () =>
+  suspend(
+    () => pipe(housePriorityDataTE, unwrapTaskEither),
+    ["housePriorityData"]
+  );
+
+export const useSuspendHouseTypes = () =>
+  suspend(() => pipe(cachedHouseTypesTE, unwrapTaskEither), ["houseTypes"]);
 
 export * from "./blockModulesEntries";
 export * from "./blocks";
