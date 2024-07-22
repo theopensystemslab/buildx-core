@@ -1,11 +1,17 @@
 import airtable from "@/utils/airtable";
-import { A, E, runUntilFirstSuccess, TE } from "@/utils/functions";
+import {
+  A,
+  E,
+  runUntilFirstSuccess,
+  TE,
+  unwrapTaskEither,
+} from "@/utils/functions";
+import { useLiveQuery } from "dexie-react-hooks";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
-import { materialsQuery } from "./materials";
-import { allSystemIds, systemFromId } from "./systems";
 import buildSystemsCache from "./cache";
-import { useLiveQuery } from "dexie-react-hooks";
+import { cachedMaterialsTE } from "./materials";
+import { allSystemIds, systemFromId } from "./systems";
 
 export type BuildElement = {
   id: string;
@@ -48,7 +54,7 @@ export const elementParser = z.object({
 export const elementsQuery = async (input?: { systemIds: string[] }) => {
   const { systemIds = allSystemIds } = input ?? {};
 
-  const materials = await materialsQuery({ systemIds });
+  const materials = await unwrapTaskEither(cachedMaterialsTE); // await materialsQuery({ systemIds });
 
   return pipe(
     systemIds,

@@ -2,6 +2,7 @@ import { applyPlanarProjectionUVs } from "@/three/utils/applyPlanarProjectionUVs
 import { A, O, R, runUntilFirstSuccess, T, TE } from "@/utils/functions";
 import speckleIfcParser from "@/utils/speckle/speckleIfcParser";
 import ObjectLoader, { SpeckleObject } from "@speckle/objectloader";
+import { useLiveQuery } from "dexie-react-hooks";
 import { flow, pipe } from "fp-ts/lib/function";
 import { gql, request } from "graphql-request";
 import { produce } from "immer";
@@ -11,9 +12,8 @@ import {
   NormalBufferAttributes,
 } from "three";
 import { mergeBufferGeometries } from "three-stdlib";
-import { cachedModulesTE } from "./modules";
-import { useLiveQuery } from "dexie-react-hooks";
 import buildSystemsCache from "./cache";
+import { cachedModulesTE } from "./modules";
 
 const bufferGeometryLoader = new BufferGeometryLoader();
 
@@ -189,37 +189,22 @@ export const getCachedModelTE = (speckleBranchUrl: string) => {
             R.map((geometry) => geometry.toJSON())
           ),
         });
+
         return remoteModel;
       })
     ),
   ]);
 };
 
-export const localModelsTE: TE.TaskEither<Error, BuildModel[]> = TE.tryCatch(
-  () =>
-    buildSystemsCache.models.toArray().then((models) => {
-      if (A.isEmpty(models)) {
-        throw new Error("No models found in cache");
-      }
-
-      return models.map((x) => ({
-        ...x,
-        geometries: pipe(
-          x.geometries,
-          R.map(
-            (x) =>
-              bufferGeometryLoader.parse(
-                x
-              ) as BufferGeometry<NormalBufferAttributes>
-          )
-        ),
-      }));
-    }),
-  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
-);
-
 export const cachedModelsTE = runUntilFirstSuccess([
-  localModelsTE,
+  pipe(
+    cachedModulesTE,
+    TE.chain(
+      A.traverse(TE.ApplicativePar)(({ speckleBranchUrl }) =>
+        getCachedModelTE(speckleBranchUrl)
+      )
+    )
+  ),
   pipe(
     remoteModelsTE,
     TE.map((models) => {

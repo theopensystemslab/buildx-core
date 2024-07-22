@@ -1,11 +1,31 @@
-import { T } from "@/utils/functions";
-import React, { Suspense } from "react";
-import useTask from "./useTask";
-
-const myTask = T.of("Hello, World!");
+import { cachedModelsTE, localHousesTE } from "@/index";
+import { pipe } from "fp-ts/lib/function";
+import React, { Suspense, useEffect } from "react";
+import useTaskEither from "./useTaskEither";
 
 function MyComponent() {
-  const result = useTask(myTask);
+  const result = useTaskEither(localHousesTE);
+
+  useEffect(() => {
+    // pipe(
+    //   cachedModulesTE,
+    //   TE.map(
+    //     flow(
+    //       A.head,
+    //       O.map(({ speckleBranchUrl }) => {
+    //         getCachedModelTE(speckleBranchUrl)().then((x) => {
+    //           console.log({ x });
+    //         });
+    //       })
+    //     )
+    //   )
+    // )();
+
+    pipe(cachedModelsTE)().then((x) => {
+      console.log({ x });
+    });
+  }, []);
+
   return <div>{JSON.stringify(result, null, 2)}</div>;
 }
 

@@ -23,7 +23,7 @@ import {
   useProjectData,
 } from "./data/user/utils";
 import { useMaterialsListRows } from "./data/outputs/materialsList";
-import useSuspendTE from "./utils/react/useSuspendTE";
+import { cachedHouseTypesTE } from "./data/build-systems";
 
 export { localHousesTE, defaultCachedHousesOps } from "./data/user/houses";
 
@@ -58,5 +58,5 @@ export {
   setHouses,
   useMaterialsListRows,
   deleteProject,
-  useSuspendTE,
+  cachedHouseTypesTE,
 };

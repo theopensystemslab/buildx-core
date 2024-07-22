@@ -251,3 +251,14 @@ export const logTaskPerf =
         )
       )
     );
+
+export function unwrapTaskEither<E, A>(te: TE.TaskEither<E, A>): Promise<A> {
+  return te().then(
+    E.fold(
+      (e) => {
+        throw e;
+      },
+      (a) => a
+    )
+  );
+}

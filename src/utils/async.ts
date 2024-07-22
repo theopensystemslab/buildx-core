@@ -38,18 +38,4 @@ export const withRetry =
     return retry(retryCount, initialDelayMillis);
   };
 
-// Example Task that fails a certain number of times before succeeding
-export const createFailableTask = (failCount: number): Task<number> => {
-  let attempts = 0;
-  return () =>
-    new Promise((resolve, reject) => {
-      attempts++;
-      if (attempts <= failCount) {
-        reject(new Error("Task failed"));
-      } else {
-        resolve(attempts);
-      }
-    });
-};
-
 export const retryTask = withRetry();
