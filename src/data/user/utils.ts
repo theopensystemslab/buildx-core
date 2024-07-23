@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/utils/format";
 import { useLiveQuery } from "dexie-react-hooks";
-import { flow } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import { Base64 } from "js-base64";
 import { deflate, inflate } from "pako";
 import userCache, {
@@ -12,6 +12,9 @@ import { z } from "zod";
 import { houseParser } from "./houses";
 import { Buffer } from "buffer";
 import { PromiseExtended } from "dexie";
+import { Polygon } from "geojson";
+import { polygonFeatureParser } from "./polygon";
+import { O, TE } from "@/utils/functions";
 
 export const useProjectData = (): ProjectData =>
   useLiveQuery(
@@ -25,24 +28,6 @@ export const useProjectCurrency = () => {
   const symbol = region === "UK" ? "£" : "€";
   const code = region === "UK" ? "GBP" : "EUR";
 
-  // const format = (d: number) => {
-  //   const formatted =
-  //     Math.abs(d) > 1000
-  //       ? `${Math.floor(d / 1000)}k`
-  //       : d.toLocaleString("en-GB", {
-  //           maximumFractionDigits: 1,
-  //         });
-  //   return formatted;
-  // };
-
-  // const formatWithUnit = (d: number, unitOfMeasurement: string) => {
-  //   const formatted = format(d);
-  //   const formattedWithUnit = ["€", "£", "$"].includes(unitOfMeasurement)
-  //     ? `${unitOfMeasurement}${formatted}`
-  //     : `${formatted}${unitOfMeasurement}`;
-  //   return formattedWithUnit;
-  // };
-
   return {
     symbol,
     code,
@@ -53,6 +38,31 @@ export const useProjectCurrency = () => {
 export const updateShareUrlPayload = (shareUrlPayload: string) => {
   userCache.projectData.update(PROJECT_DATA_KEY, { shareUrlPayload });
 };
+
+export const polygonTE: TE.TaskEither<Error, Polygon> = pipe(
+  () =>
+    userCache.projectData.get(PROJECT_DATA_KEY).then(
+      flow(
+        O.fromNullable,
+        O.chain((x) => O.fromNullable(x.polygon))
+      )
+    ),
+  TE.fromTaskOption(() => Error("No project data found"))
+);
+
+export const updateLocatePolygon = (polygon: Polygon | null) => {
+  userCache.projectData.update(PROJECT_DATA_KEY, { polygon });
+};
+
+export const useLocatePolygon = () =>
+  useLiveQuery(
+    async (): Promise<Polygon | null> => {
+      const projectData = await userCache.projectData.get(PROJECT_DATA_KEY);
+      return projectData?.polygon ?? null;
+    },
+    [],
+    null
+  );
 
 const textEncoder = new TextEncoder();
 
@@ -70,31 +80,9 @@ export const decodeShareUrlPayload = flow(
   JSON.parse,
   z.object({
     houses: z.array(houseParser),
+    polygon: polygonFeatureParser.nullish().default(null),
   }).parse
 );
-
-// export const decodeShareUrlPayload = (encodedString: string) => {
-//   try {
-//     const uint8Array = Base64.toUint8Array(encodedString);
-
-//     const inflatedData = inflate(uint8Array);
-
-//     const decodedString = new TextDecoder().decode(inflatedData);
-
-//     const parsedData = JSON.parse(decodedString);
-
-//     const result = z
-//       .object({
-//         houses: z.array(houseParser),
-//       })
-//       .parse(parsedData);
-
-//     return result;
-//   } catch (error) {
-//     console.error("Error decoding share URL payload:", error);
-//     throw error;
-//   }
-// };
 
 export const deleteProject = () => {
   const dbs = [

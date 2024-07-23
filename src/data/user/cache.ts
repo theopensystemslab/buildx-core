@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 import { House } from "./houses";
+import { Polygon } from "geojson";
 
 export const PROJECT_DATA_KEY = "PROJECT_DATA_KEY";
 
@@ -7,6 +8,7 @@ export type ProjectData = {
   key: typeof PROJECT_DATA_KEY;
   projectName: string;
   region: "UK" | "EU";
+  polygon: Polygon | null;
   shareUrlPayload: string | null;
 };
 
@@ -14,6 +16,7 @@ export const defaultProjectData: ProjectData = {
   key: PROJECT_DATA_KEY,
   projectName: "My BuildX Project",
   region: "UK",
+  polygon: null,
   shareUrlPayload: null,
 };
 

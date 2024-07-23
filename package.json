@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.3.10",
+  "version": "0.3.13",
   "type": "module",
   "main": "dist/buildx-core.js",
   "types": "dist/buildx-core.d.ts",
@@ -49,6 +49,7 @@
   "devDependencies": {
     "@types/d3-dsv": "^3.0.7",
     "@types/dat.gui": "^0.7.13",
+    "@types/geojson": "^7946.0.14",
     "@types/node": "^20.14.10",
     "@types/pako": "^2.0.3",
     "@types/react": "^18.3.3",
