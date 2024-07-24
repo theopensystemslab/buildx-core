@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.3.13",
+  "version": "0.3.16",
   "type": "module",
   "main": "dist/buildx-core.js",
   "types": "dist/buildx-core.d.ts",
@@ -10,7 +10,8 @@
     "build": "npm run clean && tsc && vite build",
     "build-examples": "npm run clean && tsc && vite build --mode examples",
     "preview": "vite preview",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
@@ -59,7 +60,8 @@
     "rimraf": "^6.0.1",
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
-    "vite-plugin-dts": "^3.9.1"
+    "vite-plugin-dts": "4.0.0-beta.1",
+    "vitest": "^2.0.4"
   },
   "peerDependencies": {
     "react": ">=18.3.1",

@@ -1,11 +1,11 @@
+import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
 import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { localHousesTE, defaultCachedHousesOps } from "@/data/user/houses";
-import { A, NEA, TE, pipeLog } from "@/utils/functions";
+import { A, NEA, TE } from "@/utils/functions";
+import { OutputsWorker } from "@/workers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import { OutputsWorker } from "@/workers";
 
 // right-click delete house
 
@@ -38,7 +38,6 @@ pipe(
         pipe(
           houseTypes,
           A.lookup(Number(key)),
-          pipeLog,
           TE.fromOption(() =>
             Error(
               `no houseType ${key} in houseTypes of length ${houseTypes.length}`

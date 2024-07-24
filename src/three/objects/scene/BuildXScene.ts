@@ -39,6 +39,7 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
+import { Polygon } from "geojson";
 
 const subsetOfTHREE = {
   Vector2,
@@ -72,6 +73,7 @@ type BuildXSceneConfig = {
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
   onHouseDelete?: (houseId: string) => void;
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
+  onPolygonUpdate?: (polygon: Polygon | null) => void;
 };
 
 class BuildXScene extends Scene {
@@ -85,6 +87,7 @@ class BuildXScene extends Scene {
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
   onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
+  onPolygonUpdate?: BuildXSceneConfig["onPolygonUpdate"];
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -107,11 +110,13 @@ class BuildXScene extends Scene {
       onHouseUpdate,
       onHouseDelete,
       onModeChange,
+      onPolygonUpdate,
     } = config;
 
     this.onHouseCreate = onHouseCreate;
     this.onHouseUpdate = onHouseUpdate;
     this.onHouseDelete = onHouseDelete;
+    this.onPolygonUpdate = onPolygonUpdate;
 
     this.clock = new Clock();
 

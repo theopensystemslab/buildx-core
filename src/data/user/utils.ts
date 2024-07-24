@@ -1,20 +1,20 @@
 import { formatCurrency } from "@/utils/format";
-import { useLiveQuery } from "dexie-react-hooks";
-import { flow, pipe } from "fp-ts/lib/function";
-import { Base64 } from "js-base64";
-import { deflate, inflate } from "pako";
-import userCache, {
-  PROJECT_DATA_KEY,
-  ProjectData,
-  defaultProjectData,
-} from "./cache";
-import { z } from "zod";
-import { houseParser } from "./houses";
+import { O, TE } from "@/utils/functions";
 import { Buffer } from "buffer";
 import { PromiseExtended } from "dexie";
+import { useLiveQuery } from "dexie-react-hooks";
+import { flow, pipe } from "fp-ts/lib/function";
 import { Polygon } from "geojson";
-import { polygonFeatureParser } from "./polygon";
-import { O, TE } from "@/utils/functions";
+import { Base64 } from "js-base64";
+import { deflate, inflate } from "pako";
+import { z } from "zod";
+import userCache, {
+  defaultProjectData,
+  PROJECT_DATA_KEY,
+  ProjectData,
+} from "./cache";
+import { houseParser } from "./houses";
+import { polygonGeometryParser } from "./polygon";
 
 export const useProjectData = (): ProjectData =>
   useLiveQuery(
@@ -79,8 +79,8 @@ export const decodeShareUrlPayload = flow(
   (x) => new TextDecoder().decode(x),
   JSON.parse,
   z.object({
-    houses: z.array(houseParser),
-    polygon: polygonFeatureParser.nullish().default(null),
+    houses: z.array(houseParser).nullish().default([]),
+    polygon: polygonGeometryParser.nullish().default(null),
   }).parse
 );
 
