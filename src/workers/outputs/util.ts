@@ -483,11 +483,7 @@ const updateAllFiles = async () => {
   }
 };
 
-// if update houses then update order list
-// then update materials list
-// then update csv's
-// then update the all files zip
-liveQuery(() =>
+const housesAndSystemsQuerier = () =>
   Promise.all([
     userCache.houses.toArray(),
     buildSystemsCache.modules.toArray(),
@@ -496,72 +492,90 @@ liveQuery(() =>
     buildSystemsCache.elements.toArray(),
     buildSystemsCache.materials.toArray(),
     buildSystemsCache.windowTypes.toArray(),
-  ])
-).subscribe(
-  async ([
+  ]);
+
+const housesAndSystemsSubscriber = async ([
+  houses,
+  modules,
+  blocks,
+  blockModulesEntries,
+  elements,
+  materials,
+  windowTypes,
+]: Awaited<ReturnType<typeof housesAndSystemsQuerier>>) => {
+  const orderListRows = orderListProc({
     houses,
     modules,
     blocks,
     blockModulesEntries,
+  });
+
+  if (orderListRows.length === 0) return;
+
+  const materialsListRows = materialsProc({
+    houses,
+    modules,
+    blocks,
+    blockModulesEntries,
+    orderListRows,
     elements,
     materials,
     windowTypes,
-  ]) => {
-    const orderListRows = orderListProc({
-      houses,
-      modules,
-      blocks,
-      blockModulesEntries,
+  });
+
+  const orderListCsv = orderListToCSV(orderListRows);
+  const materialsListCsv = materialsListToCSV(materialsListRows);
+
+  outputsCache.files
+    .update(FILES_DOCUMENT_KEY, {
+      materialsListCsv,
+      orderListCsv,
+    })
+    .then(() => {
+      updateAllFiles();
     });
+};
 
-    if (orderListRows.length === 0) return;
+// if update houses then update order list
+// then update materials list
+// then update csv's
+// then update the all files zip
+export const housesAndSystemsWatcher = () =>
+  liveQuery(housesAndSystemsQuerier).subscribe(housesAndSystemsSubscriber);
 
-    const materialsListRows = materialsProc({
-      houses,
-      modules,
-      blocks,
-      blockModulesEntries,
-      orderListRows,
-      elements,
-      materials,
-      windowTypes,
-    });
+const houseModelsQuerier = () => outputsCache.houseModels.toArray();
 
-    const orderListCsv = orderListToCSV(orderListRows);
-    const materialsListCsv = materialsListToCSV(materialsListRows);
+const houseModelsSubscriber = async (
+  houseModels: Awaited<ReturnType<typeof houseModelsQuerier>>
+) => {
+  const zipper = new JSZip();
 
-    outputsCache.files
-      .update(FILES_DOCUMENT_KEY, {
-        materialsListCsv,
-        orderListCsv,
-      })
-      .then(() => {
-        updateAllFiles();
-      });
-  }
-);
+  houseModels.forEach(({ houseId, glbData, objData }) => {
+    zipper.file(`${houseId}.obj`, objData);
+    zipper.file(`${houseId}.glb`, glbData);
+  });
+
+  const modelsZip = await zipper
+    .generateAsync({
+      type: "blob",
+    })
+    .then((blob) => new File([blob], "models.zip"));
+
+  await outputsCache.files.update(FILES_DOCUMENT_KEY, {
+    modelsZip,
+  });
+
+  updateAllFiles();
+};
 
 // if update models then update all models zip
 // then update the all files zip
-liveQuery(() => outputsCache.houseModels.toArray()).subscribe(
-  async (houseModels) => {
-    const zipper = new JSZip();
+const houseModelsWatcher = () =>
+  liveQuery(houseModelsQuerier).subscribe(houseModelsSubscriber);
 
-    houseModels.forEach(({ houseId, glbData, objData }) => {
-      zipper.file(`${houseId}.obj`, objData);
-      zipper.file(`${houseId}.glb`, glbData);
-    });
+const OutputsWorkerUtils = {
+  housesAndSystemsWatcher,
+  houseModelsWatcher,
+};
 
-    const modelsZip = await zipper
-      .generateAsync({
-        type: "blob",
-      })
-      .then((blob) => new File([blob], "models.zip"));
-
-    await outputsCache.files.update(FILES_DOCUMENT_KEY, {
-      modelsZip,
-    });
-
-    updateAllFiles();
-  }
-);
+export default OutputsWorkerUtils;

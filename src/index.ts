@@ -1,6 +1,5 @@
 import { cameraFrameOBB } from "./three/utils/camera";
 import createBasicScene from "./three/utils/createBasicScene";
-import { OutputsWorker, PngSnapshotsWorker, SharingWorker } from "./workers";
 
 import type { AnalysisData } from "./data/outputs/analysisData";
 import { useAnalysisData } from "./data/outputs/analysisData";
@@ -22,6 +21,8 @@ export * from "./data/user/houses";
 export * from "./data/build-systems";
 export * from "./data/user/utils";
 
+export * from "./workers";
+
 export {
   AnalysisData,
   BuildXScene,
@@ -29,12 +30,9 @@ export {
   MaterialsListRow,
   OpeningsChangeInfo,
   OrderListRow,
-  OutputsWorker,
-  PngSnapshotsWorker,
   SceneContextMode,
   SceneContextModeLabel,
   ScopeElement,
-  SharingWorker,
   cameraFrameOBB,
   createBasicScene,
   format,

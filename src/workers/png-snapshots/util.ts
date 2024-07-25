@@ -27,7 +27,6 @@ renderer.setSize(width, height, false);
 renderer.setClearColor(0xffffff);
 
 const objectLoader = new ObjectLoader();
-
 const positionCamera = (camera: OrthographicCamera, maxDim: number) => {
   const scale = 2; // This factor can be adjusted to increase or decrease the visible area
 
@@ -49,13 +48,13 @@ const positionCamera = (camera: OrthographicCamera, maxDim: number) => {
   camera.updateProjectionMatrix();
 };
 
-self.onmessage = function ({
+const onHouseUpdate = ({
   data: { houseId, objectJson, halfSize },
 }: MessageEvent<{
   houseId: string;
   objectJson: any;
   halfSize: number[];
-}>) {
+}>) => {
   const object = objectLoader.parse(objectJson);
   object.position.set(0, 0, 0);
   object.setRotationFromMatrix(new Matrix4());
@@ -73,3 +72,9 @@ self.onmessage = function ({
     objectsGroup.clear();
   });
 };
+
+const PngSnapshotsWorkerUtils = {
+  onHouseUpdate,
+};
+
+export default PngSnapshotsWorkerUtils;

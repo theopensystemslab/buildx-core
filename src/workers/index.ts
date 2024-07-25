@@ -1,5 +1,12 @@
-import PngSnapshotsWorker from "./PngSnapshotsWorker?worker";
-import OutputsWorker from "./OutputsWorker?worker";
-import SharingWorker from "./SharingWorker?worker";
+import OutputsWorkerUtils from "./outputs/util";
+import PngSnapshotsWorkerUtils from "./png-snapshots/util";
+import SharingWorkerUtils from "./sharing/util";
 
-export { PngSnapshotsWorker, OutputsWorker, SharingWorker };
+export {
+  // OutputsWorker,
+  // PngSnapshotsWorker,
+  // SharingWorker,
+  OutputsWorkerUtils,
+  PngSnapshotsWorkerUtils,
+  SharingWorkerUtils,
+};

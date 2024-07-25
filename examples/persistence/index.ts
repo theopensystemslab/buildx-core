@@ -3,9 +3,9 @@ import { cachedHouseTypesTE } from "@/index";
 import houseGroupTE from "@/tasks/houseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
 import { A, NEA, TE } from "@/utils/functions";
-import { OutputsWorker } from "@/workers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
+import OutputsWorker from "@/workers/outputs/OutputsWorker?worker";
 
 // right-click delete house
 
