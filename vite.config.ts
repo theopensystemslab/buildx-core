@@ -19,8 +19,8 @@ const entry = {
 };
 
 export default defineConfig({
+  base: "./",
   build: {
-    outDir: "./dist/",
     lib: {
       entry,
       name: "BuildXCore",
