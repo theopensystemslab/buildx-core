@@ -29,8 +29,6 @@ class UserCache extends Dexie {
     this.version(1).stores({
       houses: "houseId,&friendlyName",
       projectData: "&key",
-      // orderListRows: "[houseId+blockName]",
-      // materialsListRows: "[houseId+item]",
     });
     this.houses = this.table("houses");
     this.projectData = this.table("projectData");
@@ -41,7 +39,6 @@ const userCache = new UserCache();
 
 userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
   if (typeof x === "undefined") {
-    console.log(`putting default project data`);
     userCache.projectData.put(defaultProjectData);
   }
 });

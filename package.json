@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "type": "module",
   "exports": {
     ".": {
@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "@speckle/objectloader": "^2.19.6",
+    "@turf/turf": "^7.0.0",
     "@use-gesture/vanilla": "^10.3.1",
     "airtable": "^0.12.2",
     "buffer": "^6.0.3",

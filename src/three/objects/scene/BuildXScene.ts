@@ -40,6 +40,7 @@ import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
 import { Polygon } from "geojson";
+import SiteBoundary from "./SiteBoundary";
 
 const subsetOfTHREE = {
   Vector2,
@@ -73,7 +74,6 @@ type BuildXSceneConfig = {
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
   onHouseDelete?: (houseId: string) => void;
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
-  onPolygonUpdate?: (polygon: Polygon | null) => void;
 };
 
 class BuildXScene extends Scene {
@@ -87,10 +87,12 @@ class BuildXScene extends Scene {
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
   onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
-  onPolygonUpdate?: BuildXSceneConfig["onPolygonUpdate"];
+  siteBoundary: SiteBoundary | null;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
+
+    this.siteBoundary = null;
 
     const {
       canvas,
@@ -110,13 +112,11 @@ class BuildXScene extends Scene {
       onHouseUpdate,
       onHouseDelete,
       onModeChange,
-      onPolygonUpdate,
     } = config;
 
     this.onHouseCreate = onHouseCreate;
     this.onHouseUpdate = onHouseUpdate;
     this.onHouseDelete = onHouseDelete;
-    this.onPolygonUpdate = onPolygonUpdate;
 
     this.clock = new Clock();
 
@@ -247,6 +247,18 @@ class BuildXScene extends Scene {
       });
 
     this.animate();
+  }
+
+  updatePolygon(polygon: Polygon | null) {
+    if (this.siteBoundary !== null) {
+      this.siteBoundary.removeFromParent();
+    }
+    if (polygon !== null) {
+      this.siteBoundary = new SiteBoundary(polygon);
+      console.log(`adding polygon`, this.siteBoundary);
+      this.siteBoundary.position.set(0, 0.1, 0);
+      this.addObject(this.siteBoundary, { gestures: false });
+    }
   }
 
   enableLighting() {
