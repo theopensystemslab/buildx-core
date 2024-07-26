@@ -1,8 +1,8 @@
-import userCache, { PROJECT_DATA_KEY } from "@/data/user/cache";
+import userCache, { PROJECT_DATA_KEY } from "../../data/user/cache";
 import {
   encodeShareUrlPayload,
   updateShareUrlPayload,
-} from "@/data/user/utils";
+} from "../../data/user/utils";
 import { liveQuery } from "dexie";
 
 const querier = async () => {
@@ -15,6 +15,7 @@ const subscriber = ({
   houses,
   projectData,
 }: Awaited<ReturnType<typeof querier>>) => {
+  console.log("subscriber");
   const polygon = projectData?.polygon ?? null;
   const encodedShareUrlPayload = encodeShareUrlPayload({ houses, polygon });
 

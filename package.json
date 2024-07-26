@@ -1,13 +1,24 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "type": "module",
-  "main": "dist/buildx-core.js",
-  "types": "dist/buildx-core.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./workers": {
+      "import": "./dist/workers.mjs",
+      "require": "./dist/workers.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "clean": "rimraf dist",
     "dev": "vite",
-    "build": "npm run clean && tsc && vite build",
+    "build": "npm run clean && tsc && vite build --mode library",
     "build-examples": "npm run clean && tsc && vite build --mode examples",
     "preview": "vite preview",
     "prepare": "npm run build",
