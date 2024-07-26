@@ -51,7 +51,13 @@ export const polygonTE: TE.TaskEither<Error, Polygon> = pipe(
 );
 
 export const updateLocatePolygon = (polygon: Polygon | null) => {
-  userCache.projectData.update(PROJECT_DATA_KEY, { polygon });
+  userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
+    if (typeof x === "undefined") {
+      userCache.projectData.put({ ...defaultProjectData, polygon });
+    } else {
+      userCache.projectData.update(PROJECT_DATA_KEY, { polygon });
+    }
+  });
 };
 
 export const useLocatePolygon = () =>

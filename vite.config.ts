@@ -5,7 +5,7 @@ import dtsPlugin from "vite-plugin-dts";
 
 const peerDeps = Object.keys(packageJson.peerDependencies);
 
-const getPackageName = () => packageJson.name;
+// const getPackageName = () => packageJson.name;
 
 const fileName = {
   es: `[name].mjs`,
@@ -20,18 +20,20 @@ const entry = {
 
 export default defineConfig({
   build: {
+    outDir: "./dist/",
     lib: {
       entry,
-      name: getPackageName(),
+      name: "BuildXCore",
       formats: ["es", "cjs"],
       fileName: (format, entryName) =>
-        fileName[format].replace("[name]", entryName),
+        `${fileName[format].replace("[name]", entryName)}`,
     },
     rollupOptions: {
       external: (id) =>
         peerDeps.includes(id) ||
         (!id.startsWith("@") && !id.startsWith(".") && !isAbsolute(id)),
     },
+    minify: "terser",
   },
   resolve: {
     alias: [

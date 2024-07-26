@@ -1,5 +1,4 @@
-import { cachedModelsTE, localHousesTE } from "@/index";
-import { pipe } from "fp-ts/lib/function";
+import { localHousesTE } from "@/index";
 import React, { Suspense, useEffect } from "react";
 import useTaskEither from "./useTaskEither";
 
@@ -20,10 +19,6 @@ function MyComponent() {
     //     )
     //   )
     // )();
-
-    pipe(cachedModelsTE)().then((x) => {
-      console.log({ x });
-    });
   }, []);
 
   return <div>{JSON.stringify(result, null, 2)}</div>;

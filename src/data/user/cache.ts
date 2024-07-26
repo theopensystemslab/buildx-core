@@ -41,6 +41,7 @@ const userCache = new UserCache();
 
 userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
   if (typeof x === "undefined") {
+    console.log(`putting default project data`);
     userCache.projectData.put(defaultProjectData);
   }
 });

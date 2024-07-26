@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.3.18",
+  "version": "0.4.3",
   "type": "module",
   "exports": {
     ".": {
@@ -16,10 +16,13 @@
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "clean": "rimraf dist",
     "dev": "vite",
-    "build": "npm run clean && tsc && vite build --mode library",
+    "build": "npm run clean && tsc && vite build",
     "build-examples": "npm run clean && tsc && vite build --mode examples",
     "preview": "vite preview",
     "prepare": "npm run build",
@@ -34,18 +37,9 @@
   "bugs": {
     "url": "https://github.com/theopensystemslab/buildx-core/issues"
   },
-  "devDependencies": {
+  "dependencies": {
     "@speckle/objectloader": "^2.19.6",
-    "@types/d3-dsv": "^3.0.7",
-    "@types/dat.gui": "^0.7.13",
-    "@types/geojson": "^7946.0.14",
-    "@types/node": "^20.14.10",
-    "@types/pako": "^2.0.3",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@types/three": "^0.163.0",
     "@use-gesture/vanilla": "^10.3.1",
-    "@vitejs/plugin-react": "^4.3.1",
     "airtable": "^0.12.2",
     "buffer": "^6.0.3",
     "camera-controls": "^2.8.5",
@@ -69,11 +63,23 @@
     "three-bvh-csg": "^0.0.16",
     "three-mesh-bvh": "^0.7.6",
     "three-stdlib": "^2.30.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/d3-dsv": "^3.0.7",
+    "@types/dat.gui": "^0.7.13",
+    "@types/geojson": "^7946.0.14",
+    "@types/node": "^20.14.10",
+    "@types/pako": "^2.0.3",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/three": "^0.163.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "terser": "^5.31.3",
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
     "vite-plugin-dts": "4.0.0-beta.1",
-    "vitest": "^2.0.4",
-    "zod": "^3.23.8"
+    "vitest": "^2.0.4"
   },
   "peerDependencies": {
     "react": ">=18.3.1",
