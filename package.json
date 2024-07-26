@@ -7,9 +7,9 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
-    "./workers": {
-      "import": "./dist/workers.mjs",
-      "require": "./dist/workers.cjs"
+    "./worker-utils": {
+      "import": "./dist/worker-utils.mjs",
+      "require": "./dist/worker-utils.cjs"
     }
   },
   "main": "./dist/index.cjs",

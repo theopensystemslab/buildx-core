@@ -14,7 +14,7 @@ const fileName = {
 
 const entry = {
   index: resolve(__dirname, "src/index.ts"),
-  workers: resolve(__dirname, "src/workers/index.ts"),
+  "worker-utils": resolve(__dirname, "src/worker-utils/index.ts"),
   // Add more entry points as needed
 };
 

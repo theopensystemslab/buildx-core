@@ -1,8 +1,7 @@
 import { cameraFrameOBB } from "./three/utils/camera";
 import createBasicScene from "./three/utils/createBasicScene";
 
-import type { AnalysisData } from "./data/outputs/analysisData";
-import { useAnalysisData } from "./data/outputs/analysisData";
+import { AnalysisData, useAnalysisData } from "./data/outputs/analysisData";
 import { useOutputsFiles } from "./data/outputs/cache";
 import type { MaterialsListRow, OrderListRow } from "./data/outputs/metrics";
 import { useOrderListData } from "./data/outputs/metrics";
@@ -21,10 +20,11 @@ export * from "./data/user/houses";
 export * from "./data/build-systems";
 export * from "./data/user/utils";
 
-export * from "./workers";
+// export * from "./worker-utils";
+
+export type { AnalysisData };
 
 export {
-  AnalysisData,
   BuildXScene,
   HouseGroup,
   MaterialsListRow,
