@@ -5,7 +5,7 @@ import BuildXScene from "@/three/objects/scene/BuildXScene";
 import { A, NEA, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import OutputsWorker from "@/workers/outputs/OutputsWorker?worker";
+import OutputsWorker from "./outputs.worker?worker";
 
 // right-click delete house
 

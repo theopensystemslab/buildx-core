@@ -14,7 +14,7 @@ import {
   Vector3,
 } from "three";
 import { OBB } from "three-stdlib";
-import PngSnapshotsWorker from "@/workers/png-snapshots/PngSnapshotsWorker?worker";
+import PngSnapshotsWorker from "./png-snapshots.worker?worker";
 
 const snapshotWorker = new PngSnapshotsWorker();
 
