@@ -159,6 +159,7 @@ class GestureManager {
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
       this.currentGestureObject = intersects[0].object;
+      console.log(this.currentGestureObject);
       this.gestureStarted = true; // Set the gesture started flag
       const intersectionPoint = intersects[0].point;
       this.movementPlaneXZ.setFromNormalAndCoplanarPoint(

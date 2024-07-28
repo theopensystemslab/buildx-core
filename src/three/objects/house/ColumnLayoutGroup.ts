@@ -1,19 +1,44 @@
-import { columnLayoutToLevelTypes } from "@/layouts/init";
+import { BuildModule, getSectionType, SectionType } from "@/data/build-systems";
+import {
+  columnLayoutToDnas,
+  columnLayoutToLevelTypes,
+  createColumnLayout,
+} from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
-import { A, O, TE, someOrError } from "@/utils/functions";
+import { A, O, someOrError, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group, Matrix3, Matrix4, Scene, Vector3 } from "three";
+import {
+  Box3,
+  BoxGeometry,
+  Group,
+  Matrix3,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  Scene,
+  Vector3,
+} from "three";
 import { OBB } from "three-stdlib";
 import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
-import { getSectionType, SectionType } from "@/data/build-systems";
 
 export const AABB_OFFSET = 10;
 
+const obbMaterial = new MeshBasicMaterial({
+  color: "blue",
+  wireframe: true,
+  // transparent: true
+});
+
+const aabbMaterial = new MeshBasicMaterial({
+  color: "red",
+  wireframe: true,
+  // transparent: true
+});
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
   layout: ColumnLayout;
@@ -29,6 +54,9 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
+
+  private debugOBBMesh: Mesh | null = null;
+  private debugAABBMesh: Mesh | null = null;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
@@ -72,46 +100,68 @@ export class ColumnLayoutGroup extends Group {
       : visibleColumnGroups;
   }
 
-  updateDnas() {
-    let result: string[][] = [];
-    pipe(
-      this.getVisibleColumnGroups(),
-      A.map((v) => {
-        v.traverse((node) => {
-          if (node instanceof ModuleGroup && node.visible) {
-            const {
-              module: { dna },
-            } = node.userData as ModuleGroupUserData;
-            if (!(node.parent instanceof RowGroup))
-              throw new Error("non-RowGroup parent of ModuleGroup");
+  getPartitionedColumnGroups(): {
+    startColumnGroup: ColumnGroup;
+    endColumnGroup: ColumnGroup;
+    midColumnGroups: ColumnGroup[];
+    visibleColumnGroups: ColumnGroup[];
+  } {
+    const visibleColumnGroups = this.getVisibleColumnGroups();
 
-            const rowIndex = node.parent.userData.rowIndex;
+    return {
+      startColumnGroup: visibleColumnGroups[0],
+      endColumnGroup: visibleColumnGroups[visibleColumnGroups.length - 1],
+      midColumnGroups: visibleColumnGroups.slice(1, -1),
+      visibleColumnGroups,
+    };
+  }
 
-            if (!result[rowIndex]) {
-              result[rowIndex] = [];
-            }
-            result[rowIndex].push(dna);
+  updateLayout() {
+    let modules: BuildModule[][][] = [];
+
+    this.getVisibleColumnGroups().forEach((columnGroup, columnIndex) => {
+      modules[columnIndex] = [];
+
+      columnGroup.traverse((node) => {
+        if (node instanceof ModuleGroup && node.visible) {
+          const { module } = node.userData as ModuleGroupUserData;
+          if (!(node.parent instanceof RowGroup)) {
+            throw new Error("non-RowGroup parent of ModuleGroup");
           }
-        });
-      })
-    );
-    this.userData.dnas = result.flat();
+
+          const rowIndex = node.parent.userData.rowIndex;
+
+          if (!modules[columnIndex][rowIndex]) {
+            modules[columnIndex][rowIndex] = [];
+          }
+
+          modules[columnIndex][rowIndex].push(module);
+        }
+      });
+    });
+
+    this.userData.layout = createColumnLayout(modules);
+
+    this.updateDnas();
+  }
+
+  private updateDnas() {
+    this.userData.dnas = columnLayoutToDnas(this.userData.layout);
   }
 
   updateDepth() {
     const originalDepth = this.userData.depth;
-
     const nextDepth = this.getVisibleColumnGroups(false).reduce(
       (acc, v) => acc + v.userData.depth,
       0
     );
-
     this.userData.depth = nextDepth;
 
+    const depthDifference = nextDepth - originalDepth;
     this.position.setZ(-nextDepth / 2);
 
     this.houseGroup.position.add(
-      new Vector3(0, 0, (nextDepth - originalDepth) / 2).applyAxisAngle(
+      new Vector3(0, 0, depthDifference / 2).applyAxisAngle(
         new Vector3(0, 1, 0),
         this.houseGroup.rotation.y
       )
@@ -202,12 +252,48 @@ export class ColumnLayoutGroup extends Group {
 
     // Set the AABB
     this.aabb.set(min, max);
+  }
 
-    // if (DEBUG) {
-    //   renderBBs();
-    // }
+  renderOBB() {
+    const scene = this.scene;
 
-    // invalidate();
+    const size = this.obb.halfSize.clone().multiplyScalar(2);
+
+    if (this.debugOBBMesh) {
+      scene.remove(this.debugOBBMesh);
+    }
+
+    const geom = new BoxGeometry(size.x, size.y, size.z);
+    const mesh = new Mesh(geom, obbMaterial);
+    mesh.position.copy(this.obb.center);
+    mesh.setRotationFromMatrix(new Matrix4().setFromMatrix3(this.obb.rotation));
+    mesh.userData.type = "OBB";
+    scene.add(mesh);
+    this.debugOBBMesh = mesh;
+  }
+
+  renderAABB() {
+    return pipe(
+      O.fromNullable(this.parent),
+      O.map((scene) => {
+        const size = new Vector3();
+        this.aabb.getSize(size);
+
+        const center = new Vector3();
+        this.aabb.getCenter(center);
+
+        if (this.debugAABBMesh) {
+          scene.remove(this.debugAABBMesh);
+        }
+
+        const geom = new BoxGeometry(size.x, size.y, size.z);
+        const mesh = new Mesh(geom, aabbMaterial);
+        mesh.position.copy(center);
+        mesh.userData.type = "AABB";
+        scene.add(mesh);
+        this.debugAABBMesh = mesh;
+      })
+    );
   }
 }
 
