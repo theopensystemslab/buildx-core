@@ -73,8 +73,10 @@ class XStretchManager implements StretchManager {
                   TE.map((layoutGroup) => {
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateOBB();
-                    this.houseGroup.cutsManager?.createObjectCuts(layoutGroup);
-                    this.houseGroup.cutsManager?.showAppropriateBrushes(
+                    this.houseGroup.managers.cuts?.createObjectCuts(
+                      layoutGroup
+                    );
+                    this.houseGroup.managers.cuts?.showAppropriateBrushes(
                       layoutGroup
                     );
                     hideObject(layoutGroup);
@@ -146,7 +148,7 @@ class XStretchManager implements StretchManager {
     this.startData = {
       side,
     };
-    this.houseGroup.zStretchManager?.hideHandles();
+    this.houseGroup.managers.zStretch?.hideHandles();
   }
 
   gestureProgress(delta: number) {
@@ -175,11 +177,11 @@ class XStretchManager implements StretchManager {
             const targetWidth = nextWiderLayout.sectionType.width;
 
             // TODO make nicer?
-            if (v >= targetWidth && this.houseGroup.layoutsManager) {
-              this.houseGroup.cutsManager?.showAppropriateBrushes(
+            if (v >= targetWidth && this.houseGroup.managers.layouts) {
+              this.houseGroup.managers.cuts?.showAppropriateBrushes(
                 nextWiderLayout.layoutGroup
               );
-              this.houseGroup.layoutsManager.activeLayoutGroup =
+              this.houseGroup.managers.layouts.activeLayoutGroup =
                 nextWiderLayout.layoutGroup;
               this.progressData!.currentLayoutIndex++;
             }
@@ -196,11 +198,11 @@ class XStretchManager implements StretchManager {
             const targetWidth = nextShorterLayout.sectionType.width;
 
             // TODO make nicer? DRY?
-            if (v <= targetWidth && this.houseGroup.layoutsManager) {
-              this.houseGroup.cutsManager?.showAppropriateBrushes(
+            if (v <= targetWidth && this.houseGroup.managers.layouts) {
+              this.houseGroup.managers.cuts?.showAppropriateBrushes(
                 nextShorterLayout.layoutGroup
               );
-              this.houseGroup.layoutsManager.activeLayoutGroup =
+              this.houseGroup.managers.layouts.activeLayoutGroup =
                 nextShorterLayout.layoutGroup;
               this.progressData!.currentLayoutIndex--;
             }
@@ -222,11 +224,11 @@ class XStretchManager implements StretchManager {
             const targetWidth = nextWiderLayout.sectionType.width;
 
             // TODO make nicer?
-            if (v >= targetWidth && this.houseGroup.layoutsManager) {
-              this.houseGroup.cutsManager?.showAppropriateBrushes(
+            if (v >= targetWidth && this.houseGroup.managers.layouts) {
+              this.houseGroup.managers.cuts?.showAppropriateBrushes(
                 nextWiderLayout.layoutGroup
               );
-              this.houseGroup.layoutsManager.activeLayoutGroup =
+              this.houseGroup.managers.layouts.activeLayoutGroup =
                 nextWiderLayout.layoutGroup;
               this.progressData!.currentLayoutIndex++;
             }
@@ -243,11 +245,11 @@ class XStretchManager implements StretchManager {
             const targetWidth = nextShorterLayout.sectionType.width;
 
             // TODO make nicer? DRY?
-            if (v <= targetWidth && this.houseGroup.layoutsManager) {
-              this.houseGroup.cutsManager?.showAppropriateBrushes(
+            if (v <= targetWidth && this.houseGroup.managers.layouts) {
+              this.houseGroup.managers.cuts?.showAppropriateBrushes(
                 nextShorterLayout.layoutGroup
               );
-              this.houseGroup.layoutsManager.activeLayoutGroup =
+              this.houseGroup.managers.layouts.activeLayoutGroup =
                 nextShorterLayout.layoutGroup;
               this.progressData!.currentLayoutIndex--;
             }
@@ -265,8 +267,8 @@ class XStretchManager implements StretchManager {
   }
 
   gestureEnd() {
-    this.houseGroup.zStretchManager?.init();
-    this.houseGroup.zStretchManager?.showHandles();
+    this.houseGroup.managers.zStretch?.init();
+    this.houseGroup.managers.zStretch?.showHandles();
   }
 
   showHandles() {

@@ -8,6 +8,9 @@ import { HouseGroup } from "./HouseGroup";
 
 export type ColumnGroupUserData = {
   columnIndex: number;
+  // I've just added these two props:
+  width: number;
+  height: number;
   depth: number;
   startColumn?: boolean;
   endColumn?: boolean;
@@ -56,6 +59,8 @@ export const defaultColumnGroupCreator = ({
       const columnGroupUserData: ColumnGroupUserData = {
         columnIndex,
         depth: positionedRows[0].rowDepth,
+        width: positionedRows[0].rowWidth,
+        height: positionedRows.reduce((acc, v) => acc + v.rowHeight, 0),
         startColumn,
         endColumn,
       };

@@ -1,4 +1,4 @@
-// ZStretchManager.ts
+// VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
 import StretchManager from "@/three/managers/StretchManager";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
@@ -6,15 +6,29 @@ import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "@/three/objects/house/ColumnGroup";
-import { hideObject, showObject } from "@/three/utils/layers";
+import {
+  hideObject,
+  showObject,
+  showObjectCameraOnly,
+} from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { Vector3 } from "three";
+import {
+  BoxHelper,
+  BufferGeometry,
+  CanvasTexture,
+  Line,
+  LineBasicMaterial,
+  Sprite,
+  SpriteMaterial,
+  Texture,
+  Vector3,
+} from "three";
 
-const DEFAULT_MAX_DEPTH = 15;
+const DEFAULT_MAX_DEPTH = 5;
 
-class ZStretchManager implements StretchManager {
+class ProgressShowHideManager implements StretchManager {
   houseGroup: HouseGroup;
 
   handles: [StretchHandleGroup, StretchHandleGroup];
@@ -33,6 +47,9 @@ class ZStretchManager implements StretchManager {
     bookendColumn: ColumnGroup;
     lastVisibleIndex: number;
   };
+
+  private targetLine: Line | null = null;
+  private bookendLine: Line | null = null;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
@@ -82,8 +99,8 @@ class ZStretchManager implements StretchManager {
               vanillaColumns.forEach((x) => {
                 hideObject(x);
               });
-              activeLayoutGroup.add(...vanillaColumns);
             }
+            activeLayoutGroup.add(...vanillaColumns);
 
             this.initData = {
               startColumn: startColumnGroup,
@@ -101,20 +118,22 @@ class ZStretchManager implements StretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
-    const { startColumn, endColumn, vanillaColumns, midColumns } =
-      this.initData;
-
-    console.log({ startZ: startColumn.position.z, endZ: endColumn.position.z });
+    const {
+      startColumn: startColumnGroup,
+      endColumn: endColumnGroup,
+      vanillaColumns: vanillaColumnGroups,
+      midColumns: midColumnGroups,
+    } = this.initData;
 
     let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
     // place the vanilla columns
     if (side === -1) {
-      vanillaColumns.forEach((columnGroup, index) => {
-        const reversedIndex = vanillaColumns.length - 1 - index;
+      vanillaColumnGroups.forEach((columnGroup, index) => {
+        const reversedIndex = vanillaColumnGroups.length - 1 - index;
 
-        const startDepth = midColumns[0].position.z;
+        const startDepth = midColumnGroups[0].position.z;
 
         columnGroup.position.set(
           0,
@@ -128,11 +147,11 @@ class ZStretchManager implements StretchManager {
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumns = [...vanillaColumns, ...midColumns];
-      lastVisibleIndex = vanillaColumns.length;
+      orderedColumns = [...vanillaColumnGroups, ...midColumnGroups];
+      lastVisibleIndex = vanillaColumnGroups.length;
     } else if (side === 1) {
-      vanillaColumns.forEach((columnGroup, index) => {
-        const startDepth = endColumn.position.z;
+      vanillaColumnGroups.forEach((columnGroup, index) => {
+        const startDepth = endColumnGroup.position.z;
 
         columnGroup.position.set(
           0,
@@ -144,14 +163,14 @@ class ZStretchManager implements StretchManager {
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumns = [...midColumns, ...vanillaColumns];
-      lastVisibleIndex = midColumns.length - 1;
+      orderedColumns = [...midColumnGroups, ...vanillaColumnGroups];
+      lastVisibleIndex = midColumnGroups.length - 1;
     }
 
     this.startData = {
       side,
       orderedColumns,
-      bookendColumn: side === 1 ? endColumn : startColumn,
+      bookendColumn: side === 1 ? endColumnGroup : startColumnGroup,
       lastVisibleIndex,
     };
   }
@@ -177,6 +196,8 @@ class ZStretchManager implements StretchManager {
           this.startData.lastVisibleIndex++;
         } else {
         }
+
+        this.drawLines(targetZ, bookendZ);
       }
 
       if (delta < 0) {
@@ -192,6 +213,8 @@ class ZStretchManager implements StretchManager {
           hideObject(lastVisibleColumn);
           this.startData.lastVisibleIndex--;
         }
+
+        this.drawLines(targetZ, bookendZ);
       }
     }
 
@@ -218,6 +241,8 @@ class ZStretchManager implements StretchManager {
           this.showVanillaColumn(firstInvisibleColumn);
           this.startData.lastVisibleIndex--;
         }
+
+        this.drawLines(targetZ, bookendZ);
       }
 
       if (delta > 0) {
@@ -237,6 +262,8 @@ class ZStretchManager implements StretchManager {
           hideObject(lastVisibleColumn);
           this.startData.lastVisibleIndex++;
         }
+
+        this.drawLines(targetZ, bookendZ);
       }
     }
 
@@ -244,55 +271,21 @@ class ZStretchManager implements StretchManager {
   }
 
   gestureEnd() {
-    if (!this.initData || !this.startData) return;
-    const { startColumn, endColumn } = this.initData;
+    if (!this.startData) return;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData;
-
-    console.log({ startZ: startColumn.position.z, endZ: endColumn.position.z });
 
     if (side === 1) {
       bookendColumn.position.z =
         orderedColumns[lastVisibleIndex].position.z +
         orderedColumns[lastVisibleIndex].userData.depth;
-
-      // start column stays at 0 on this side
     } else if (side === -1) {
       bookendColumn.position.z =
         orderedColumns[lastVisibleIndex].position.z -
         bookendColumn.userData.depth;
-
-      // bring the start column back to position 0 in the column layout
-      const delta = -bookendColumn.position.z;
-      bookendColumn.position.z = 0;
-
-      // adjust other columns accordingly
-      [...orderedColumns, endColumn].forEach((column) => {
-        column.position.z += delta;
-      });
-
-      // adjust the houseGroup position accordingly
-      this.houseGroup.position.sub(
-        new Vector3(0, 0, delta).applyAxisAngle(
-          new Vector3(0, 1, 0),
-          this.houseGroup.rotation.y
-        )
-      );
     }
 
     this.reindexColumns();
-
-    pipe(
-      this.houseGroup.activeLayoutGroup,
-      O.map((layoutGroup) => {
-        layoutGroup.updateDepth();
-        layoutGroup.updateLayout();
-      })
-    );
-
-    this.houseGroup.managers.xStretch?.init();
-
-    // this.cleanup();
 
     this.init();
   }
@@ -330,7 +323,9 @@ class ZStretchManager implements StretchManager {
     delete this.initData;
     delete this.startData;
   }
-
+  isVanillaColumn(column: ColumnGroup): boolean {
+    return column.userData.columnIndex === -1;
+  }
   showHandles() {
     this.handles.forEach(showObject);
   }
@@ -338,6 +333,128 @@ class ZStretchManager implements StretchManager {
   hideHandles() {
     this.handles.forEach(hideObject);
   }
+
+  private drawLines(targetZ: number, bookendZ: number) {
+    const lineHeight = 10; // Adjust as needed
+    const lineColor = 0xff0000; // Red color
+
+    // Draw target line
+    if (!this.targetLine) {
+      const geometry = new BufferGeometry().setFromPoints([
+        new Vector3(0, 0, targetZ),
+        new Vector3(0, lineHeight, targetZ),
+      ]);
+      const material = new LineBasicMaterial({ color: lineColor });
+      this.targetLine = new Line(geometry, material);
+      showObjectCameraOnly(this.targetLine);
+      pipe(
+        this.houseGroup.activeLayoutGroup,
+        O.map((activeLayoutGroup) => {
+          activeLayoutGroup.add(this.targetLine!);
+        })
+      );
+    } else {
+      const positions = this.targetLine.geometry.attributes.position.array;
+      positions[2] = targetZ;
+      positions[5] = targetZ;
+      this.targetLine.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Draw bookend line
+    if (!this.bookendLine) {
+      const geometry = new BufferGeometry().setFromPoints([
+        new Vector3(0, 0, bookendZ),
+        new Vector3(0, lineHeight, bookendZ),
+      ]);
+      const material = new LineBasicMaterial({ color: lineColor });
+      this.bookendLine = new Line(geometry, material);
+      showObjectCameraOnly(this.bookendLine);
+      pipe(
+        this.houseGroup.activeLayoutGroup,
+        O.map((activeLayoutGroup) => {
+          activeLayoutGroup.add(this.bookendLine!);
+        })
+      );
+    } else {
+      const positions = this.bookendLine.geometry.attributes.position.array;
+      positions[2] = bookendZ;
+      positions[5] = bookendZ;
+      this.bookendLine.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
+  // @ts-ignore
+  private upsertColumnAnnotation(
+    column: ColumnGroup,
+    label: string,
+    color = 0xffffff
+  ) {
+    const spriteHeight = column.userData.height + 1;
+    const spriteZ = column.userData.depth / 2;
+
+    // Update or create sprite
+    let sprite = column.getObjectByName("indexSprite") as Sprite | undefined;
+    if (!sprite) {
+      sprite = new Sprite(new SpriteMaterial({ color }));
+      sprite.name = "indexSprite";
+      column.add(sprite);
+    } else {
+      if (sprite.material instanceof SpriteMaterial) {
+        sprite.material.color.setHex(color);
+      }
+    }
+    sprite.scale.setScalar(1);
+    sprite.position.set(0, spriteHeight, spriteZ);
+    if (sprite.material instanceof SpriteMaterial) {
+      sprite.material.map = this.createTextTexture(label);
+      sprite.material.needsUpdate = true;
+    }
+    showObjectCameraOnly(sprite);
+
+    // Update or create line
+    let line = column.getObjectByName("indexLine") as Line | undefined;
+    const lineGeometry = new BufferGeometry().setFromPoints([
+      new Vector3(0, -column.userData.height / 2, 0),
+      new Vector3(0, column.userData.height * 1.5, 0),
+    ]);
+    if (!line) {
+      const lineMaterial = new LineBasicMaterial({ color });
+      line = new Line(lineGeometry, lineMaterial);
+      line.name = "indexLine";
+      column.add(line);
+    } else {
+      line.geometry.dispose();
+      line.geometry = lineGeometry;
+    }
+    showObjectCameraOnly(line);
+
+    // Update or create BoxHelper
+    let helper = this.houseGroup.scene.getObjectByName(
+      `boxHelper_${column.id}`
+    ) as BoxHelper | undefined;
+
+    if (!helper) {
+      helper = new BoxHelper(column, color); // Create an empty BoxHelper
+      helper.name = `boxHelper_${column.id}`;
+      this.houseGroup.scene.add(helper);
+    } else {
+      helper.update();
+    }
+
+    return { sprite, helper, line };
+  }
+
+  createTextTexture(text: string): Texture {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d")!;
+    canvas.width = 256;
+    canvas.height = 128;
+    context.font = "Bold 24px Arial";
+    context.fillStyle = "white";
+    context.textAlign = "center";
+    context.fillText(text, 128, 64);
+    return new CanvasTexture(canvas);
+  }
 }
 
-export default ZStretchManager;
+export default ProgressShowHideManager;

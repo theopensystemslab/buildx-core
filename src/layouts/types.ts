@@ -11,6 +11,8 @@ export type Row = {
   levelType: string;
   gridUnits: number;
   rowDepth: number;
+  rowWidth: number;
+  rowHeight: number;
 };
 
 export type PositionedRow = Row & {

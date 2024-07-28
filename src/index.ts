@@ -6,7 +6,7 @@ import { useAnalysisData } from "./data/outputs/analysisData";
 import { useOutputsFiles } from "./data/outputs/cache";
 import type { MaterialsListRow, OrderListRow } from "./data/outputs/metrics";
 import { useOrderListData } from "./data/outputs/metrics";
-import houseGroupTE from "./tasks/houseGroupTE";
+import createHouseGroupTE from "./tasks/createHouseGroupTE";
 import type { SceneContextMode } from "./three/managers/ContextManager";
 import { SceneContextModeLabel } from "./three/managers/ContextManager";
 import type { OpeningsChangeInfo } from "./three/managers/OpeningsManager";
@@ -35,7 +35,7 @@ export {
   createBasicScene,
   format,
   formatWithUnit,
-  houseGroupTE,
+  createHouseGroupTE,
   useAnalysisData,
   useOrderListData,
   useOutputsFiles,
