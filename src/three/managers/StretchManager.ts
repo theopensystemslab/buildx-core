@@ -5,6 +5,8 @@ interface StretchManager {
   gestureStart: (side: 1 | -1) => void;
   gestureEnd: () => void;
   gestureProgress: (delta: number) => void;
+  showHandles: () => void;
+  hideHandles: () => void;
 }
 
 export default StretchManager;

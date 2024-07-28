@@ -18,3 +18,10 @@ export const hideObject = (object: Object3D) => {
     node.layers.set(HIDDEN_LAYER);
   });
 };
+
+export const showObjectCameraOnly = (object: Object3D) => {
+  object.visible = true;
+  object.traverse((node) => {
+    node.layers.set(CAMERA_ONLY_LAYER);
+  });
+};

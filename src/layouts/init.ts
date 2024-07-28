@@ -58,6 +58,8 @@ export const createRow = (modules: BuildModule[]): Row => {
     gridUnits,
     rowDepth,
     levelType,
+    rowHeight: positionedModules[0].module.height,
+    rowWidth: positionedModules[0].module.width,
   };
 };
 

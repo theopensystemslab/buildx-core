@@ -1,5 +1,5 @@
 import { cachedHouseTypesTE } from "@/index";
-import houseGroupTE from "@/tasks/houseGroupTE";
+import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
 import { A, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -15,7 +15,7 @@ pipe(
     )
   ),
   TE.chain(({ id: houseTypeId, name, systemId, dnas }) =>
-    houseGroupTE({
+    createHouseGroupTE({
       systemId,
       dnas,
       friendlyName: name,

@@ -1,7 +1,7 @@
 import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
 import { decodeShareUrlPayload } from "@/data/user/utils";
 import { cachedHouseTypesTE } from "@/index";
-import houseGroupTE from "@/tasks/houseGroupTE";
+import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
 import { A, NEA, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -22,7 +22,7 @@ const scene = new BuildXScene({
 
 pipe(
   localHousesTE,
-  TE.chain(flow(A.traverse(TE.ApplicativePar)(houseGroupTE))),
+  TE.chain(flow(A.traverse(TE.ApplicativePar)(createHouseGroupTE))),
   TE.map(
     A.map((houseGroup) => {
       scene.addHouseGroup(houseGroup);
@@ -46,7 +46,7 @@ pipe(
             )
           ),
           TE.chain(({ id: houseTypeId, systemId, dnas }) =>
-            houseGroupTE({
+            createHouseGroupTE({
               systemId,
               dnas,
               houseId: nanoid(),
