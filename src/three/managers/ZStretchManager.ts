@@ -41,7 +41,7 @@ class ZStretchManager implements StretchManager {
   };
 
   progressData?: {
-    lastVisibleMidColumnIndex: number;
+    terminatorIndex: number;
   };
 
   debugGestureLine?: Line;
@@ -186,8 +186,6 @@ class ZStretchManager implements StretchManager {
       return;
     }
 
-    // this.houseGroup.xStretchManager?.hideHandles();
-
     const { startColumnGroup, endColumnGroup, vanillaColumnGroups } =
       this.initData;
 
@@ -208,8 +206,6 @@ class ZStretchManager implements StretchManager {
         : allColumnGroups[0];
 
     const z0 = bookendColumn.position.z;
-
-    // this.setGestureLine(z0);
 
     this.startData = {
       allColumnGroups,
@@ -239,7 +235,7 @@ class ZStretchManager implements StretchManager {
         this.initData.midColumnGroups.length - 1;
 
       this.progressData = {
-        lastVisibleMidColumnIndex,
+        terminatorIndex: lastVisibleMidColumnIndex,
       };
     }
 
@@ -258,8 +254,10 @@ class ZStretchManager implements StretchManager {
         this.houseGroup.cutsManager?.showAppropriateBrushes(columnGroup);
       });
 
+      const firstVisibleMidColumnIndex = vanillaColumnGroups.length;
+
       this.progressData = {
-        lastVisibleMidColumnIndex: 0,
+        terminatorIndex: firstVisibleMidColumnIndex,
       };
     }
   }
@@ -269,7 +267,7 @@ class ZStretchManager implements StretchManager {
 
     const { bookendColumn, side, midColumnGroups } = this.startData;
 
-    const { lastVisibleMidColumnIndex } = this.progressData;
+    const { terminatorIndex } = this.progressData;
 
     const maybeNextPosition = bookendColumn.position.z + delta;
 
@@ -286,7 +284,7 @@ class ZStretchManager implements StretchManager {
 
         pipe(
           midColumnGroups,
-          A.lookup(lastVisibleMidColumnIndex + 1),
+          A.lookup(terminatorIndex + 1),
           O.map((firstInvisibleColumn) => {
             const target =
               firstInvisibleColumn.position.z +
@@ -296,18 +294,18 @@ class ZStretchManager implements StretchManager {
 
             if (bookendColumn.position.z > target) {
               showObject(firstInvisibleColumn);
-              this.progressData!.lastVisibleMidColumnIndex++;
+              this.progressData!.terminatorIndex++;
             }
           })
         );
       } else if (delta < 0) {
-        if (lastVisibleMidColumnIndex === 0) return;
+        if (terminatorIndex === 0) return;
 
         if (maybeNextPosition <= minPosition) return;
 
         pipe(
           midColumnGroups,
-          A.lookup(lastVisibleMidColumnIndex),
+          A.lookup(terminatorIndex),
           O.map((finalVisibleColumn) => {
             const target =
               finalVisibleColumn.position.z +
@@ -317,10 +315,40 @@ class ZStretchManager implements StretchManager {
 
             if (bookendColumn.position.z < target) {
               hideObject(finalVisibleColumn);
-              this.progressData!.lastVisibleMidColumnIndex--;
+              this.progressData!.terminatorIndex--;
             }
           })
         );
+      }
+    } else if (side === -1) {
+      const minPosition = -999;
+      // midColumnGroups[0].position.z - midColumnGroups[0].userData.depth;
+
+      const maxPosition = 999;
+      // midColumnGroups[midColumnGroups.length - 1].position.z +
+      // midColumnGroups[midColumnGroups.length - 1].userData.depth;
+
+      if (delta < 0) {
+        if (maybeNextPosition <= minPosition) return;
+
+        pipe(
+          midColumnGroups,
+          A.lookup(terminatorIndex - 1),
+          O.map((firstInvisibleColumn) => {
+            const target =
+              firstInvisibleColumn.position.z +
+              firstInvisibleColumn.userData.depth / 2;
+
+            // this.setColumnLine(target);
+
+            if (bookendColumn.position.z < target) {
+              showObject(firstInvisibleColumn);
+              this.progressData!.terminatorIndex--;
+            }
+          })
+        );
+      } else if (delta > 0) {
+        if (maybeNextPosition > maxPosition) return;
       }
     }
 
@@ -334,7 +362,7 @@ class ZStretchManager implements StretchManager {
     const { endColumnGroup } = this.initData;
 
     const { bookendColumn, midColumnGroups, side } = this.startData;
-    const { lastVisibleMidColumnIndex } = this.progressData;
+    const { terminatorIndex: lastVisibleMidColumnIndex } = this.progressData;
 
     if (side === 1) {
       bookendColumn.position.z =
