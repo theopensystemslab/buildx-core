@@ -338,9 +338,7 @@ class ZStretchManager implements StretchManager {
           midColumnGroups,
           A.lookup(terminatorIndex - 1),
           O.map((firstInvisibleColumn) => {
-            const target =
-              firstInvisibleColumn.position.z +
-              firstInvisibleColumn.userData.depth / 2;
+            const target = firstInvisibleColumn.position.z;
 
             if (bookendColumn.position.z < target) {
               showObject(firstInvisibleColumn);
@@ -356,9 +354,7 @@ class ZStretchManager implements StretchManager {
           midColumnGroups,
           A.lookup(terminatorIndex),
           O.map((finalVisibleColumn) => {
-            const target =
-              finalVisibleColumn.position.z +
-              finalVisibleColumn.userData.depth / 2;
+            const target = finalVisibleColumn.position.z; // finalVisibleColumn.userData.depth / 2;
 
             if (bookendColumn.position.z > target) {
               hideObject(finalVisibleColumn);
@@ -379,12 +375,16 @@ class ZStretchManager implements StretchManager {
     const { endColumnGroup } = this.initData;
 
     const { bookendColumn, midColumnGroups, side } = this.startData;
-    const { terminatorIndex: lastVisibleMidColumnIndex } = this.progressData;
+    const { terminatorIndex } = this.progressData;
 
     if (side === 1) {
       bookendColumn.position.z =
-        midColumnGroups[lastVisibleMidColumnIndex].position.z +
-        midColumnGroups[lastVisibleMidColumnIndex].userData.depth;
+        midColumnGroups[terminatorIndex].position.z +
+        midColumnGroups[terminatorIndex].userData.depth;
+    } else if (side === -1) {
+      bookendColumn.position.z =
+        midColumnGroups[terminatorIndex].position.z -
+        bookendColumn.userData.depth / 2;
     }
 
     const visibleMidColumnGroups = midColumnGroups.filter((x) => x.visible);
