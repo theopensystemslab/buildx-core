@@ -1,7 +1,6 @@
 import { A, Num, O, Ord, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { BufferGeometry, Line, LineBasicMaterial, Vector3 } from "three";
 import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
@@ -12,13 +11,6 @@ import { hideObject, showObject } from "../utils/layers";
 import StretchManager from "./StretchManager";
 
 const DEFAULT_MAX_DEPTH = 15;
-
-const linePoints = [new Vector3(-10, 0, 0), new Vector3(10, 0, 0)];
-
-const lineGeometry = new BufferGeometry().setFromPoints(linePoints);
-
-const gestureLineMat = new LineBasicMaterial({ color: 0xff0000 }); // Red
-const columnLineMat = new LineBasicMaterial({ color: 0x0000ff }); // Blue
 
 class ZStretchManager implements StretchManager {
   houseGroup: HouseGroup;
@@ -43,10 +35,6 @@ class ZStretchManager implements StretchManager {
   progressData?: {
     terminatorIndex: number;
   };
-
-  debugGestureLine?: Line;
-  debugColumnLine?: Line;
-  debugColumnLines?: Line[];
 
   handles: [StretchHandleGroup, StretchHandleGroup];
 
@@ -245,7 +233,7 @@ class ZStretchManager implements StretchManager {
       const firstVisibleColumnGroup =
         midColumnGroups[firstVisibleMidColumnIndex];
 
-      const startDepth = firstVisibleColumnGroup.position.z; // + something?
+      const startDepth = firstVisibleColumnGroup.position.z;
 
       vanillaColumnGroups.forEach((columnGroup, index) => {
         const reversedIndex = vanillaColumnGroups.length - 1 - index;
@@ -294,8 +282,6 @@ class ZStretchManager implements StretchManager {
             const target =
               firstInvisibleColumn.position.z +
               firstInvisibleColumn.userData.depth / 2;
-
-            // this.setColumnLine(target);
 
             if (bookendColumn.position.z > target) {
               showObject(firstInvisibleColumn);
@@ -354,7 +340,7 @@ class ZStretchManager implements StretchManager {
           midColumnGroups,
           A.lookup(terminatorIndex),
           O.map((finalVisibleColumn) => {
-            const target = finalVisibleColumn.position.z; // finalVisibleColumn.userData.depth / 2;
+            const target = finalVisibleColumn.position.z;
 
             if (bookendColumn.position.z > target) {
               hideObject(finalVisibleColumn);
@@ -366,7 +352,6 @@ class ZStretchManager implements StretchManager {
     }
 
     bookendColumn.position.z += delta;
-    // this.setGestureLine(bookendColumn.position.z);
   }
 
   finalize() {
@@ -409,72 +394,6 @@ class ZStretchManager implements StretchManager {
   gestureEnd() {
     this.finalize();
     this.init();
-    // this.houseGroup.xStretchManager?.init().then(() => {
-    //   this.houseGroup.xStretchManager?.showHandles();
-    // });
-  }
-
-  setGestureLine(z: number) {
-    pipe(
-      this.houseGroup.activeLayoutGroup,
-      O.map((activeLayoutGroup) => {
-        if (this.debugGestureLine) {
-          this.debugGestureLine.position.z = z;
-        } else {
-          this.debugGestureLine = new Line(lineGeometry, gestureLineMat);
-          activeLayoutGroup.add(this.debugGestureLine);
-          this.debugGestureLine.position.z = z;
-        }
-      })
-    );
-  }
-
-  moveGestureLine(delta: number) {
-    if (this.debugGestureLine) this.debugGestureLine.position.z += delta;
-  }
-
-  setColumnLine(z: number) {
-    if (this.progressData) {
-      pipe(
-        this.houseGroup.activeLayoutGroup,
-        O.map((activeLayoutGroup) => {
-          if (!this.debugColumnLine) {
-            this.debugColumnLine = new Line(lineGeometry, gestureLineMat);
-            activeLayoutGroup.add(this.debugColumnLine);
-          }
-          if (this.startData?.midColumnGroups) {
-            this.debugColumnLine.position.z = z;
-          }
-        })
-      );
-    }
-  }
-
-  setColumnLines() {
-    if (!this.startData) return;
-
-    const { allColumnGroups } = this.startData;
-
-    if (this.debugColumnLines) {
-      allColumnGroups.map((columnGroup, index) => {
-        this.debugColumnLines![index].position.z = columnGroup.position.z;
-      });
-    } else {
-      this.debugColumnLines = allColumnGroups.map(() => {
-        const points = [new Vector3(-10, 0, 0), new Vector3(10, 0, 0)];
-        const geometry = new BufferGeometry().setFromPoints(points);
-        const line = new Line(geometry, columnLineMat);
-
-        pipe(
-          this.houseGroup.activeLayoutGroup,
-          O.map((activeLayoutGroup) => {
-            activeLayoutGroup.add(line);
-          })
-        );
-
-        return line;
-      });
-    }
   }
 }
 
