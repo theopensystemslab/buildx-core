@@ -255,7 +255,6 @@ class BuildXScene extends Scene {
     }
     if (polygon !== null) {
       this.siteBoundary = new SiteBoundary(polygon);
-      console.log(`adding polygon`, this.siteBoundary);
       this.siteBoundary.position.set(0, 0.1, 0);
       this.addObject(this.siteBoundary, { gestures: false });
     }

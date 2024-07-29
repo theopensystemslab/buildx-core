@@ -322,7 +322,7 @@ class ZStretchManager implements StretchManager {
 
         pipe(
           midColumnGroups,
-          A.lookup(terminatorIndex - 1),
+          A.lookup(terminatorIndex),
           O.map((firstInvisibleColumn) => {
             const target = firstInvisibleColumn.position.z;
 
@@ -338,7 +338,7 @@ class ZStretchManager implements StretchManager {
 
         pipe(
           midColumnGroups,
-          A.lookup(terminatorIndex),
+          A.lookup(terminatorIndex + 1),
           O.map((firstVisibleColumn) => {
             const target = firstVisibleColumn.position.z;
 
@@ -357,10 +357,8 @@ class ZStretchManager implements StretchManager {
   finalize() {
     if (!this.initData || !this.startData || !this.progressData) return;
 
-    const { startColumnGroup, endColumnGroup } = this.initData;
-
+    const { endColumnGroup } = this.initData;
     const { bookendColumn, midColumnGroups, side } = this.startData;
-
     const { terminatorIndex } = this.progressData;
 
     const visibleMidColumnGroups = midColumnGroups.filter((x) => x.visible);
@@ -371,23 +369,15 @@ class ZStretchManager implements StretchManager {
 
     endColumnGroup.userData.columnIndex = visibleMidColumnGroups.length + 1;
 
-    console.log(
-      startColumnGroup.userData.columnIndex,
-      visibleMidColumnGroups.map((x) => x.userData.columnIndex),
-      endColumnGroup.userData.columnIndex
-    );
-
     if (side === 1) {
       bookendColumn.position.z =
         midColumnGroups[terminatorIndex].position.z +
         midColumnGroups[terminatorIndex].userData.depth;
     } else if (side === -1) {
       bookendColumn.position.z =
-        midColumnGroups[terminatorIndex].position.z -
-        bookendColumn.userData.depth / 2;
+        midColumnGroups[terminatorIndex].position.z +
+        midColumnGroups[terminatorIndex].userData.depth / 2;
     }
-
-    this.cleanup();
 
     pipe(
       this.houseGroup.activeLayoutGroup,
