@@ -240,21 +240,26 @@ class ZStretchManager implements StretchManager {
     }
 
     if (side === -1) {
-      const startDepth = startColumnGroup.userData.depth;
+      const firstVisibleMidColumnIndex = vanillaColumnGroups.length;
+
+      const firstVisibleColumnGroup =
+        midColumnGroups[firstVisibleMidColumnIndex];
+
+      const startDepth = firstVisibleColumnGroup.position.z; // + something?
 
       vanillaColumnGroups.forEach((columnGroup, index) => {
+        const reversedIndex = vanillaColumnGroups.length - 1 - index;
+
         columnGroup.position.set(
           0,
           0,
           startDepth -
-            index * columnGroup.userData.depth -
+            reversedIndex * columnGroup.userData.depth -
             columnGroup.userData.depth
         );
         this.houseGroup.cutsManager?.createObjectCuts(columnGroup);
         this.houseGroup.cutsManager?.showAppropriateBrushes(columnGroup);
       });
-
-      const firstVisibleMidColumnIndex = vanillaColumnGroups.length;
 
       this.progressData = {
         terminatorIndex: firstVisibleMidColumnIndex,
@@ -311,8 +316,6 @@ class ZStretchManager implements StretchManager {
               finalVisibleColumn.position.z +
               finalVisibleColumn.userData.depth / 2;
 
-            // this.setColumnLine(target);
-
             if (bookendColumn.position.z < target) {
               hideObject(finalVisibleColumn);
               this.progressData!.terminatorIndex--;
@@ -321,12 +324,12 @@ class ZStretchManager implements StretchManager {
         );
       }
     } else if (side === -1) {
-      const minPosition = -999;
-      // midColumnGroups[0].position.z - midColumnGroups[0].userData.depth;
+      const minPosition =
+        midColumnGroups[0].position.z - midColumnGroups[0].userData.depth;
 
-      const maxPosition = 999;
-      // midColumnGroups[midColumnGroups.length - 1].position.z +
-      // midColumnGroups[midColumnGroups.length - 1].userData.depth;
+      const maxPosition =
+        midColumnGroups[midColumnGroups.length - 1].position.z +
+        midColumnGroups[midColumnGroups.length - 1].userData.depth;
 
       if (delta < 0) {
         if (maybeNextPosition <= minPosition) return;
@@ -339,8 +342,6 @@ class ZStretchManager implements StretchManager {
               firstInvisibleColumn.position.z +
               firstInvisibleColumn.userData.depth / 2;
 
-            // this.setColumnLine(target);
-
             if (bookendColumn.position.z < target) {
               showObject(firstInvisibleColumn);
               this.progressData!.terminatorIndex--;
@@ -348,7 +349,23 @@ class ZStretchManager implements StretchManager {
           })
         );
       } else if (delta > 0) {
+        if (terminatorIndex === 0) return;
         if (maybeNextPosition > maxPosition) return;
+
+        pipe(
+          midColumnGroups,
+          A.lookup(terminatorIndex),
+          O.map((finalVisibleColumn) => {
+            const target =
+              finalVisibleColumn.position.z +
+              finalVisibleColumn.userData.depth / 2;
+
+            if (bookendColumn.position.z > target) {
+              hideObject(finalVisibleColumn);
+              this.progressData!.terminatorIndex++;
+            }
+          })
+        );
       }
     }
 
