@@ -33,7 +33,7 @@ class ZStretchManager implements StretchManager {
   };
 
   progressData?: {
-    terminatorIndex: number;
+    terminatorIndex: number; // with respect to startData.midColumnGroups
   };
 
   handles: [StretchHandleGroup, StretchHandleGroup];
@@ -310,12 +310,12 @@ class ZStretchManager implements StretchManager {
         );
       }
     } else if (side === -1) {
-      const minPosition =
-        midColumnGroups[0].position.z - midColumnGroups[0].userData.depth;
+      const minPosition = -999;
+      // midColumnGroups[0].position.z - midColumnGroups[0].userData.depth;
 
-      const maxPosition =
-        midColumnGroups[midColumnGroups.length - 1].position.z +
-        midColumnGroups[midColumnGroups.length - 1].userData.depth;
+      // const maxPosition = 999
+      //   midColumnGroups[midColumnGroups.length - 1].position.z +
+      //   midColumnGroups[midColumnGroups.length - 1].userData.depth;
 
       if (delta < 0) {
         if (maybeNextPosition <= minPosition) return;
@@ -334,16 +334,16 @@ class ZStretchManager implements StretchManager {
         );
       } else if (delta > 0) {
         if (terminatorIndex === 0) return;
-        if (maybeNextPosition > maxPosition) return;
+        // if (maybeNextPosition > maxPosition) return;
 
         pipe(
           midColumnGroups,
           A.lookup(terminatorIndex),
-          O.map((finalVisibleColumn) => {
-            const target = finalVisibleColumn.position.z;
+          O.map((firstVisibleColumn) => {
+            const target = firstVisibleColumn.position.z;
 
-            if (bookendColumn.position.z > target) {
-              hideObject(finalVisibleColumn);
+            if (bookendColumn.position.z >= target) {
+              hideObject(firstVisibleColumn);
               this.progressData!.terminatorIndex++;
             }
           })
@@ -357,10 +357,25 @@ class ZStretchManager implements StretchManager {
   finalize() {
     if (!this.initData || !this.startData || !this.progressData) return;
 
-    const { endColumnGroup } = this.initData;
+    const { startColumnGroup, endColumnGroup } = this.initData;
 
     const { bookendColumn, midColumnGroups, side } = this.startData;
+
     const { terminatorIndex } = this.progressData;
+
+    const visibleMidColumnGroups = midColumnGroups.filter((x) => x.visible);
+
+    visibleMidColumnGroups.forEach((v, i) => {
+      v.userData.columnIndex = i + 1;
+    });
+
+    endColumnGroup.userData.columnIndex = visibleMidColumnGroups.length + 1;
+
+    console.log(
+      startColumnGroup.userData.columnIndex,
+      visibleMidColumnGroups.map((x) => x.userData.columnIndex),
+      endColumnGroup.userData.columnIndex
+    );
 
     if (side === 1) {
       bookendColumn.position.z =
@@ -371,14 +386,6 @@ class ZStretchManager implements StretchManager {
         midColumnGroups[terminatorIndex].position.z -
         bookendColumn.userData.depth / 2;
     }
-
-    const visibleMidColumnGroups = midColumnGroups.filter((x) => x.visible);
-
-    visibleMidColumnGroups.forEach((v, i) => {
-      v.userData.columnIndex = i + 1;
-    });
-
-    endColumnGroup.userData.columnIndex = visibleMidColumnGroups.length + 1;
 
     this.cleanup();
 

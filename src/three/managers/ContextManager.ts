@@ -86,7 +86,7 @@ class ContextManager {
         // come out of prev building house
         prev.zStretchManager?.cleanup();
         prev.zStretchManager?.hideHandles();
-        prev.zStretchManager?.cleanup();
+        // prev.xStretchManager?.cleanup();
         prev.xStretchManager?.hideHandles();
       })
     );
