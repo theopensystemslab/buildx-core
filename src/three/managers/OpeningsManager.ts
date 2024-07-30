@@ -67,10 +67,10 @@ class OpeningsManager {
 
                       layoutGroup.updateOBB();
 
-                      this.houseGroup.cutsManager?.createObjectCuts(
+                      this.houseGroup.managers.cuts?.createObjectCuts(
                         layoutGroup
                       );
-                      this.houseGroup.cutsManager?.showAppropriateBrushes(
+                      this.houseGroup.managers.cuts?.showAppropriateBrushes(
                         layoutGroup
                       );
 

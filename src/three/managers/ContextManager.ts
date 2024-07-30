@@ -84,10 +84,10 @@ class ContextManager {
       this._buildingHouseGroup,
       O.map((prev) => {
         // come out of prev building house
-        prev.zStretchManager?.cleanup();
-        prev.zStretchManager?.hideHandles();
+        prev.managers.zStretch?.cleanup();
+        prev.managers.zStretch?.hideHandles();
         // prev.xStretchManager?.cleanup();
-        prev.xStretchManager?.hideHandles();
+        prev.managers.xStretch?.hideHandles();
       })
     );
 
@@ -97,10 +97,10 @@ class ContextManager {
         () => {},
         (next) => {
           // go into next building house
-          next.zStretchManager?.init();
-          next.zStretchManager?.showHandles();
-          next.xStretchManager?.init();
-          next.xStretchManager?.showHandles();
+          next.managers.zStretch?.init();
+          next.managers.zStretch?.showHandles();
+          next.managers.xStretch?.init();
+          next.managers.xStretch?.showHandles();
         }
       )
     );
@@ -135,14 +135,14 @@ class ContextManager {
                 pipe(
                   buildingHouseGroup.activeLayoutGroup,
                   O.map((activeLayoutGroup) => {
-                    buildingHouseGroup.cutsManager?.setClippingBrush({
-                      ...buildingHouseGroup.cutsManager.settings,
+                    buildingHouseGroup.managers.cuts?.setClippingBrush({
+                      ...buildingHouseGroup.managers.cuts.settings,
                       rowIndex: null,
                     });
-                    buildingHouseGroup.cutsManager?.createObjectCuts(
+                    buildingHouseGroup.managers.cuts?.createObjectCuts(
                       activeLayoutGroup
                     );
-                    buildingHouseGroup.cutsManager?.showAppropriateBrushes(
+                    buildingHouseGroup.managers.cuts?.showAppropriateBrushes(
                       activeLayoutGroup
                     );
                   })
@@ -150,24 +150,24 @@ class ContextManager {
               },
               // drill into the row
               (rowIndex) => {
-                const { cutsManager, activeLayoutGroup, xStretchManager } =
-                  buildingHouseGroup;
+                const {
+                  managers: { cuts, xStretch },
+                  activeLayoutGroup,
+                } = buildingHouseGroup;
                 pipe(
                   activeLayoutGroup,
                   O.map((activeLayoutGroup) => {
-                    cutsManager?.setClippingBrush({
-                      ...cutsManager.settings,
+                    cuts?.setClippingBrush({
+                      ...cuts.settings,
                       rowIndex,
                     });
-                    cutsManager?.createObjectCuts(activeLayoutGroup);
-                    cutsManager?.showClippedBrushes(activeLayoutGroup);
+                    cuts?.createObjectCuts(activeLayoutGroup);
+                    cuts?.showClippedBrushes(activeLayoutGroup);
 
-                    xStretchManager?.initData?.alts?.forEach(
-                      ({ layoutGroup }) => {
-                        if (layoutGroup === activeLayoutGroup) return;
-                        cutsManager?.createObjectCuts(layoutGroup);
-                      }
-                    );
+                    xStretch?.initData?.alts?.forEach(({ layoutGroup }) => {
+                      if (layoutGroup === activeLayoutGroup) return;
+                      cuts?.createObjectCuts(layoutGroup);
+                    });
                   })
                 );
               }

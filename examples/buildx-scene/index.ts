@@ -49,19 +49,19 @@ pipe(
         scene.contextManager?.contextUp();
       }
       if (ev.key === "d") {
-        houseGroup.cutsManager?.debugClippingBrush();
+        houseGroup.managers.cuts?.debugClippingBrush();
       }
       if (ev.key === "x") {
-        houseGroup.cutsManager?.toggleXCut();
-        houseGroup.cutsManager?.syncActiveLayout();
+        houseGroup.managers.cuts?.toggleXCut();
+        houseGroup.managers.cuts?.syncActiveLayout();
       }
       if (ev.key === "z") {
-        houseGroup.cutsManager?.toggleZCut();
-        houseGroup.cutsManager?.syncActiveLayout();
+        houseGroup.managers.cuts?.toggleZCut();
+        houseGroup.managers.cuts?.syncActiveLayout();
       }
       if (ev.key === "y") {
-        houseGroup.cutsManager?.toggleGroundCut();
-        houseGroup.cutsManager?.syncActiveLayout();
+        houseGroup.managers.cuts?.toggleGroundCut();
+        houseGroup.managers.cuts?.syncActiveLayout();
       }
     });
   })

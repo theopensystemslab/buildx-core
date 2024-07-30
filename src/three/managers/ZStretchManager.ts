@@ -215,8 +215,8 @@ class ZStretchManager implements StretchManager {
           0,
           startDepth + index * columnGroup.userData.depth
         );
-        this.houseGroup.cutsManager?.createObjectCuts(columnGroup);
-        this.houseGroup.cutsManager?.showAppropriateBrushes(columnGroup);
+        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
       const lastVisibleMidColumnIndex =
@@ -245,8 +245,8 @@ class ZStretchManager implements StretchManager {
             reversedIndex * columnGroup.userData.depth -
             columnGroup.userData.depth
         );
-        this.houseGroup.cutsManager?.createObjectCuts(columnGroup);
-        this.houseGroup.cutsManager?.showAppropriateBrushes(columnGroup);
+        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
       this.progressData = {

@@ -12,10 +12,19 @@ import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import OpeningsManager from "@/three/managers/OpeningsManager";
 import { House } from "@/data/user/houses";
 
-type HouseGroupHooks = {
-  onHouseCreate?: (house: House) => void;
-  onHouseUpdate?: (houseId: string, changes: Partial<House>) => void;
-  onHouseDelete?: (houseId: string) => void;
+type Hooks = {
+  onHouseCreate: (house: House) => void;
+  onHouseUpdate: (houseId: string, changes: Partial<House>) => void;
+  onHouseDelete: (houseId: string) => void;
+};
+
+type Managers = {
+  layouts: LayoutsManager;
+  elements?: ElementsManager;
+  xStretch?: XStretchManager;
+  zStretch?: ZStretchManager;
+  cuts?: CutsManager;
+  openings?: OpeningsManager;
 };
 
 export type HouseGroupUserData = {
@@ -27,14 +36,8 @@ export type HouseGroupUserData = {
 
 export class HouseGroup extends Group {
   userData: HouseGroupUserData;
-
-  elementsManager?: ElementsManager;
-  layoutsManager: LayoutsManager;
-  xStretchManager?: XStretchManager;
-  zStretchManager?: ZStretchManager;
-  cutsManager?: CutsManager;
-  openingsManager?: OpeningsManager;
-  hooks?: HouseGroupHooks;
+  hooks: Partial<Hooks>;
+  managers: Managers;
 
   constructor({
     userData,
@@ -42,26 +45,30 @@ export class HouseGroup extends Group {
     hooks,
     position = { x: 0, y: 0, z: 0 },
     rotation = 0,
+    ...managers
   }: {
     userData: HouseGroupUserData;
     initialColumnLayoutGroup: ColumnLayoutGroup;
-    hooks?: HouseGroupHooks;
+    hooks?: Partial<Hooks>;
     position?: { x: number; y: number; z: number };
     rotation?: number;
-  }) {
+  } & Partial<Managers>) {
     super();
     this.userData = userData;
 
     this.add(initialColumnLayoutGroup);
 
-    this.elementsManager = new ElementsManager(this);
-    this.layoutsManager = new LayoutsManager(this);
-    this.layoutsManager.activeLayoutGroup = initialColumnLayoutGroup;
-    this.zStretchManager = new ZStretchManager(this);
-    this.xStretchManager = new XStretchManager(this);
-    this.cutsManager = new CutsManager(this);
-    this.openingsManager = new OpeningsManager(this);
-    this.hooks = hooks;
+    this.managers = {
+      elements: managers.elements ?? new ElementsManager(this),
+      layouts: managers.layouts ?? new LayoutsManager(this),
+      xStretch: managers.xStretch ?? new XStretchManager(this),
+      zStretch: managers.zStretch ?? new ZStretchManager(this),
+      cuts: managers.cuts ?? new CutsManager(this),
+      openings: managers.openings ?? new OpeningsManager(this),
+    };
+
+    this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
+    this.hooks = hooks ?? {};
 
     this.position.set(position.x, position.y, position.z);
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
@@ -78,7 +85,7 @@ export class HouseGroup extends Group {
 
   get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
     return pipe(
-      this.layoutsManager,
+      this.managers.layouts,
       O.fromNullable,
       O.chain((x) => x.activeLayoutGroup)
     );
