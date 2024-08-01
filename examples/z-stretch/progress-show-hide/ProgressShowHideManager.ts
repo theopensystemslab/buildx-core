@@ -30,7 +30,7 @@ class ProgressShowHideManager implements StretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   initData?: {
-    startColumnGroup: ColumnGroup;
+    startColumn: ColumnGroup;
     endColumn: ColumnGroup;
     midColumns: ColumnGroup[];
     vanillaColumns: ColumnGroup[];
@@ -43,6 +43,9 @@ class ProgressShowHideManager implements StretchManager {
     bookendColumn: ColumnGroup;
     lastVisibleIndex: number;
   };
+
+  private targetLine: Line | null = null;
+  private bookendLine: Line | null = null;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
@@ -96,7 +99,7 @@ class ProgressShowHideManager implements StretchManager {
             activeLayoutGroup.add(...vanillaColumnGroups);
 
             this.initData = {
-              startColumnGroup,
+              startColumn: startColumnGroup,
               midColumns: midColumnGroups,
               endColumn: endColumnGroup,
               vanillaColumns: vanillaColumnGroups,
@@ -112,7 +115,7 @@ class ProgressShowHideManager implements StretchManager {
     if (!this.initData) return;
 
     const {
-      startColumnGroup,
+      startColumn: startColumnGroup,
       endColumn: endColumnGroup,
       vanillaColumns: vanillaColumnGroups,
       midColumns: midColumnGroups,
@@ -170,41 +173,52 @@ class ProgressShowHideManager implements StretchManager {
       lastVisibleIndex = midColumnGroups.length;
     }
 
-    // const target =
-    //   orderedColumns[
-    //     side === 1 ? lastVisibleIndex + 1 : lastVisibleIndex - 1
-    //   ];
-
-    // this.upsertColumnAnnotation(
-    //   target,
-    //   `lastVisible-${side}`,
-    //   this.isVanillaColumn(target) ? 0xfff000 : 0xffffff
-    // );
-
     this.startData = {
       side,
       orderedColumns,
       bookendColumn: side === 1 ? endColumnGroup : startColumnGroup,
       lastVisibleIndex,
     };
-
-    if (side === -1) {
-      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
-      // going in the negative direction remember!
-      const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1];
-      this.upsertColumnAnnotation(lastVisibleColumn, "lastVisible", 0xfff000);
-      this.upsertColumnAnnotation(
-        firstInvisibleColumn,
-        "firstInvisible",
-        0x000fff
-      );
-    }
   }
 
   gestureProgress(delta: number) {
     if (!this.startData) return;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData!;
+
+    if (side === -1) {
+      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+      // going in the negative direction remember!
+      const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1];
+
+      if (delta < 0) {
+        const targetZ = firstInvisibleColumn.position.z;
+        // + firstInvisibleColumn.userData.depth / 2;
+        const bookendZ =
+          bookendColumn.position.z + bookendColumn.userData.depth;
+
+        if (bookendZ < targetZ) {
+          // todo
+          showObject(firstInvisibleColumn);
+          this.startData.lastVisibleIndex--;
+        }
+
+        this.drawLines(targetZ, bookendZ);
+      } else if (delta > 0) {
+        const targetZ = lastVisibleColumn.position.z;
+        // + firstInvisibleColumn.userData.depth / 2;
+        const bookendZ =
+          bookendColumn.position.z + bookendColumn.userData.depth;
+
+        if (bookendZ > targetZ) {
+          // todo
+          hideObject(lastVisibleColumn);
+          this.startData.lastVisibleIndex++;
+        }
+
+        this.drawLines(targetZ, bookendZ);
+      }
+    }
 
     bookendColumn.position.z += delta;
   }
@@ -223,8 +237,40 @@ class ProgressShowHideManager implements StretchManager {
         orderedColumns[lastVisibleIndex].position.z -
         bookendColumn.userData.depth;
     }
+
+    this.reindexColumns();
+
+    this.init();
   }
 
+  reindexColumns() {
+    if (!this.startData || !this.initData) return;
+    const { endColumn } = this.initData;
+    const { orderedColumns } = this.startData;
+
+    [...orderedColumns, endColumn]
+      .filter((x) => x.visible)
+      .forEach((v, i) => {
+        v.userData.columnIndex = i + 1;
+      });
+  }
+
+  cleanup() {
+    if (!this.startData) return;
+    const { orderedColumns } = this.startData;
+
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((layoutGroup) => {
+        const invisibleColumnGroups = orderedColumns.filter((x) => !x.visible);
+        if (invisibleColumnGroups.length > 0)
+          layoutGroup.remove(...invisibleColumnGroups);
+      })
+    );
+
+    delete this.initData;
+    delete this.startData;
+  }
   isVanillaColumn(column: ColumnGroup): boolean {
     return column.userData.columnIndex === -1;
   }
@@ -236,8 +282,59 @@ class ProgressShowHideManager implements StretchManager {
     this.handles.forEach(hideObject);
   }
 
-  upsertColumnAnnotation(column: ColumnGroup, label: string, color = 0xffffff) {
-    showObject(column);
+  private drawLines(targetZ: number, bookendZ: number) {
+    const lineHeight = 10; // Adjust as needed
+    const lineColor = 0xff0000; // Red color
+
+    // Draw target line
+    if (!this.targetLine) {
+      const geometry = new BufferGeometry().setFromPoints([
+        new Vector3(0, 0, targetZ),
+        new Vector3(0, lineHeight, targetZ),
+      ]);
+      const material = new LineBasicMaterial({ color: lineColor });
+      this.targetLine = new Line(geometry, material);
+      pipe(
+        this.houseGroup.activeLayoutGroup,
+        O.map((activeLayoutGroup) => {
+          activeLayoutGroup.add(this.targetLine!);
+        })
+      );
+    } else {
+      const positions = this.targetLine.geometry.attributes.position.array;
+      positions[2] = targetZ;
+      positions[5] = targetZ;
+      this.targetLine.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Draw bookend line
+    if (!this.bookendLine) {
+      const geometry = new BufferGeometry().setFromPoints([
+        new Vector3(0, 0, bookendZ),
+        new Vector3(0, lineHeight, bookendZ),
+      ]);
+      const material = new LineBasicMaterial({ color: lineColor });
+      this.bookendLine = new Line(geometry, material);
+      pipe(
+        this.houseGroup.activeLayoutGroup,
+        O.map((activeLayoutGroup) => {
+          activeLayoutGroup.add(this.bookendLine!);
+        })
+      );
+    } else {
+      const positions = this.bookendLine.geometry.attributes.position.array;
+      positions[2] = bookendZ;
+      positions[5] = bookendZ;
+      this.bookendLine.geometry.attributes.position.needsUpdate = true;
+    }
+  }
+
+  // @ts-ignore
+  private upsertColumnAnnotation(
+    column: ColumnGroup,
+    label: string,
+    color = 0xffffff
+  ) {
     const spriteHeight = column.userData.height + 1;
     const spriteZ = column.userData.depth / 2;
 
@@ -283,12 +380,10 @@ class ProgressShowHideManager implements StretchManager {
     ) as BoxHelper | undefined;
 
     if (!helper) {
-      console.log("creating helper");
       helper = new BoxHelper(column, color); // Create an empty BoxHelper
       helper.name = `boxHelper_${column.id}`;
       this.houseGroup.scene.add(helper);
     } else {
-      console.log("updating helper");
       helper.update();
     }
 
