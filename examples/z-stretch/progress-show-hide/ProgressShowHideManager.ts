@@ -31,15 +31,16 @@ class ProgressShowHideManager implements StretchManager {
 
   initData?: {
     startColumnGroup: ColumnGroup;
-    endColumnGroup: ColumnGroup;
-    midColumnGroups: ColumnGroup[];
-    vanillaColumnGroups: ColumnGroup[];
+    endColumn: ColumnGroup;
+    midColumns: ColumnGroup[];
+    vanillaColumns: ColumnGroup[];
     maxDepth: number;
   };
 
   startData?: {
     side: 1 | -1;
-    orderedColumnGroups: ColumnGroup[];
+    orderedColumns: ColumnGroup[];
+    bookendColumn: ColumnGroup;
     lastVisibleIndex: number;
   };
 
@@ -96,9 +97,9 @@ class ProgressShowHideManager implements StretchManager {
 
             this.initData = {
               startColumnGroup,
-              midColumnGroups,
-              endColumnGroup,
-              vanillaColumnGroups,
+              midColumns: midColumnGroups,
+              endColumn: endColumnGroup,
+              vanillaColumns: vanillaColumnGroups,
               maxDepth,
             };
           })
@@ -112,12 +113,12 @@ class ProgressShowHideManager implements StretchManager {
 
     const {
       startColumnGroup,
-      endColumnGroup,
-      vanillaColumnGroups,
-      midColumnGroups,
+      endColumn: endColumnGroup,
+      vanillaColumns: vanillaColumnGroups,
+      midColumns: midColumnGroups,
     } = this.initData;
 
-    let orderedColumnGroups: ColumnGroup[] = [],
+    let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
     // place the vanilla columns
@@ -139,7 +140,7 @@ class ProgressShowHideManager implements StretchManager {
         this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumnGroups = [
+      orderedColumns = [
         startColumnGroup,
         ...vanillaColumnGroups,
         ...midColumnGroups,
@@ -160,7 +161,7 @@ class ProgressShowHideManager implements StretchManager {
         this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumnGroups = [
+      orderedColumns = [
         startColumnGroup,
         ...midColumnGroups,
         ...vanillaColumnGroups,
@@ -169,27 +170,52 @@ class ProgressShowHideManager implements StretchManager {
       lastVisibleIndex = midColumnGroups.length;
     }
 
-    this.annotateColumn(orderedColumnGroups[lastVisibleIndex], `lastVisible`);
+    // const target =
+    //   orderedColumns[
+    //     side === 1 ? lastVisibleIndex + 1 : lastVisibleIndex - 1
+    //   ];
+
+    // this.upsertColumnAnnotation(
+    //   target,
+    //   `lastVisible-${side}`,
+    //   this.isVanillaColumn(target) ? 0xfff000 : 0xffffff
+    // );
 
     this.startData = {
       side,
-      orderedColumnGroups,
+      orderedColumns,
+      bookendColumn: side === 1 ? endColumnGroup : startColumnGroup,
       lastVisibleIndex,
     };
   }
 
   gestureProgress(delta: number) {
-    const { side } = this.startData!;
-
-    const { startColumnGroup, endColumnGroup } = this.initData!;
-
-    const bookendColumn = side === 1 ? endColumnGroup : startColumnGroup;
+    if (!this.startData) return;
+    const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
+      this.startData!;
 
     bookendColumn.position.z += delta;
   }
 
-  gestureEnd() {}
+  gestureEnd() {
+    if (!this.startData) return;
+    const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
+      this.startData;
 
+    if (side === 1) {
+      bookendColumn.position.z =
+        orderedColumns[lastVisibleIndex].position.z +
+        orderedColumns[lastVisibleIndex].userData.depth;
+    } else if (side === -1) {
+      bookendColumn.position.z =
+        orderedColumns[lastVisibleIndex].position.z -
+        bookendColumn.userData.depth;
+    }
+  }
+
+  isVanillaColumn(column: ColumnGroup): boolean {
+    return column.userData.columnIndex === -1;
+  }
   showHandles() {
     this.handles.forEach(showObject);
   }
@@ -198,81 +224,74 @@ class ProgressShowHideManager implements StretchManager {
     this.handles.forEach(hideObject);
   }
 
-  annotateColumn(column: ColumnGroup, label: string, color = 0xffffff) {
-    const sprite = new Sprite(
-      new SpriteMaterial({
-        map: this.createTextTexture(label),
-        color,
-      })
-    );
-    sprite.scale.setScalar(0.5);
-    sprite.name = "indexSprite";
+  upsertColumnAnnotation(column: ColumnGroup, label: string, color = 0xffffff) {
+    showObject(column);
+    const spriteHeight = column.userData.height + 1;
+    const spriteZ = column.userData.depth / 2;
 
-    sprite.position.set(
-      0,
-      column.userData.height + 1,
-      column.userData.depth / 2
-    );
-    column.add(sprite);
+    // Update or create sprite
+    let sprite = column.getObjectByName("indexSprite") as Sprite | undefined;
+    if (!sprite) {
+      sprite = new Sprite(new SpriteMaterial({ color }));
+      sprite.name = "indexSprite";
+      column.add(sprite);
+    } else {
+      if (sprite.material instanceof SpriteMaterial) {
+        sprite.material.color.setHex(color);
+      }
+    }
+    sprite.scale.setScalar(1);
+    sprite.position.set(0, spriteHeight, spriteZ);
+    if (sprite.material instanceof SpriteMaterial) {
+      sprite.material.map = this.createTextTexture(label);
+      sprite.material.needsUpdate = true;
+    }
+    showObject(sprite);
 
-    const helper = new BoxHelper(column, color);
-    helper.name = `boxHelper_${column.id}`;
-    this.houseGroup.scene.add(helper);
-
+    // Update or create line
+    let line = column.getObjectByName("indexLine") as Line | undefined;
     const lineGeometry = new BufferGeometry().setFromPoints([
       new Vector3(0, -column.userData.height / 2, 0),
       new Vector3(0, column.userData.height * 1.5, 0),
     ]);
-    const lineMaterial = new LineBasicMaterial({ color });
-    const line = new Line(lineGeometry, lineMaterial);
-    line.name = "indexLine";
-    column.add(line);
-  }
-
-  updateColumnAnnotations(column: ColumnGroup, newText?: string) {
-    // Update sprite position and text
-    const sprite = column.getObjectByName("indexSprite") as Sprite | undefined;
-    if (sprite) {
-      sprite.position.set(
-        0,
-        column.userData.height + 1,
-        column.userData.depth / 2
-      );
-      if (newText && sprite.material instanceof SpriteMaterial) {
-        sprite.material.map = this.createTextTexture(newText);
-        sprite.material.needsUpdate = true;
-      }
-    }
-
-    // Update line position
-    const line = column.getObjectByName("indexLine") as Line | undefined;
-    if (line) {
-      const lineGeometry = new BufferGeometry().setFromPoints([
-        new Vector3(0, -column.userData.height / 2, 0),
-        new Vector3(0, column.userData.height * 1.5, 0),
-      ]);
+    if (!line) {
+      const lineMaterial = new LineBasicMaterial({ color });
+      line = new Line(lineGeometry, lineMaterial);
+      line.name = "indexLine";
+      column.add(line);
+    } else {
       line.geometry.dispose();
       line.geometry = lineGeometry;
     }
+    showObject(line);
 
-    // Update BoxHelper
-    const helper = this.houseGroup.scene.getObjectByName(
+    // Update or create BoxHelper
+    let helper = this.houseGroup.scene.getObjectByName(
       `boxHelper_${column.id}`
     ) as BoxHelper | undefined;
-    if (helper) {
+
+    if (!helper) {
+      console.log("creating helper");
+      helper = new BoxHelper(column, color); // Create an empty BoxHelper
+      helper.name = `boxHelper_${column.id}`;
+      this.houseGroup.scene.add(helper);
+    } else {
+      console.log("updating helper");
       helper.update();
     }
+
+    return { sprite, helper, line };
   }
 
   createTextTexture(text: string): Texture {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d")!;
-    canvas.width = 128;
-    canvas.height = 64;
+    canvas.width = 256;
+    canvas.height = 128;
     context.font = "Bold 24px Arial";
     context.fillStyle = "white";
     context.textAlign = "center";
-    context.fillText(text, 64, 32);
+    context.fillText(text, 128, 64);
     return new CanvasTexture(canvas);
   }
 }
