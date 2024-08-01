@@ -1,9 +1,14 @@
+// VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
 import StretchManager from "@/three/managers/StretchManager";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
-import { ColumnGroup } from "@/three/objects/house/ColumnGroup";
+import {
+  ColumnGroup,
+  defaultColumnGroupCreator,
+} from "@/three/objects/house/ColumnGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
-import { O } from "@/utils/functions";
+import { A, O, TE } from "@/utils/functions";
+import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import {
   BoxHelper,
@@ -17,6 +22,8 @@ import {
   Vector3,
 } from "three";
 
+const DEFAULT_MAX_DEPTH = 5;
+
 class VanillaPreparingManager implements StretchManager {
   houseGroup: HouseGroup;
 
@@ -26,6 +33,8 @@ class VanillaPreparingManager implements StretchManager {
     startColumnGroup: ColumnGroup;
     endColumnGroup: ColumnGroup;
     midColumnGroups: ColumnGroup[];
+    vanillaColumnGroups: ColumnGroup[];
+    maxDepth: number;
   };
 
   startData?: {
@@ -44,6 +53,9 @@ class VanillaPreparingManager implements StretchManager {
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
+        const { depth: layoutDepth, vanillaColumn } =
+          activeLayoutGroup.userData;
+
         const {
           startColumnGroup,
           midColumnGroups,
@@ -51,16 +63,12 @@ class VanillaPreparingManager implements StretchManager {
           visibleColumnGroups,
         } = activeLayoutGroup.getPartitionedColumnGroups();
 
-        visibleColumnGroups.forEach((column) => {
-          console.log(`annotating column ${column.userData.columnIndex}`);
-          this.annotateColumn(column, column.userData.columnIndex);
+        visibleColumnGroups.forEach((column, i) => {
+          this.annotateColumn(
+            column,
+            `c:${column.userData.columnIndex} i:${i}`
+          );
         });
-
-        this.initData = {
-          startColumnGroup,
-          midColumnGroups,
-          endColumnGroup,
-        };
 
         this.handles.forEach((x) => {
           x.syncDimensions(activeLayoutGroup);
@@ -68,11 +76,93 @@ class VanillaPreparingManager implements StretchManager {
         const [handleDown, handleUp] = this.handles;
         endColumnGroup.add(handleUp);
         startColumnGroup.add(handleDown);
+
+        const maxDepth = DEFAULT_MAX_DEPTH;
+
+        const maxMoreCols = floor(
+          (maxDepth - layoutDepth) / vanillaColumn.columnDepth
+        );
+
+        const vanillaColumnGroupsTE = pipe(
+          A.makeBy(maxMoreCols, () =>
+            defaultColumnGroupCreator({
+              positionedRows: vanillaColumn.positionedRows,
+              columnIndex: -1,
+            })
+          ),
+          A.sequence(TE.ApplicativePar)
+        );
+
+        pipe(
+          vanillaColumnGroupsTE,
+          TE.map((vanillaColumnGroups) => {
+            if (vanillaColumnGroups.length > 0) {
+              activeLayoutGroup.add(...vanillaColumnGroups);
+            }
+
+            vanillaColumnGroups.forEach((column, i) => {
+              this.annotateColumn(
+                column,
+                `c:${column.userData.columnIndex} i:${i}`,
+                0xfff000
+              );
+            });
+
+            this.initData = {
+              startColumnGroup,
+              midColumnGroups,
+              endColumnGroup,
+              vanillaColumnGroups,
+              maxDepth,
+            };
+          })
+        )();
       })
     );
   }
 
   gestureStart(side: 1 | -1) {
+    if (!this.initData) return;
+
+    const { endColumnGroup, vanillaColumnGroups, midColumnGroups } =
+      this.initData;
+
+    if (side === -1) {
+      vanillaColumnGroups.forEach((columnGroup, index) => {
+        const reversedIndex = vanillaColumnGroups.length - 1 - index;
+
+        const startDepth = midColumnGroups[0].position.z;
+
+        columnGroup.position.set(
+          0,
+          0,
+          startDepth -
+            reversedIndex * columnGroup.userData.depth -
+            columnGroup.userData.depth
+        );
+
+        this.updateColumnAnnotations(columnGroup);
+
+        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
+      });
+    } else if (side === 1) {
+      vanillaColumnGroups.forEach((columnGroup, index) => {
+        const startDepth = endColumnGroup.position.z;
+
+        columnGroup.position.set(
+          0,
+          0,
+          startDepth + index * columnGroup.userData.depth
+        );
+
+        this.updateColumnAnnotations(columnGroup);
+
+        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
+      });
+    }
+
     this.startData = {
       side,
     };
@@ -86,6 +176,8 @@ class VanillaPreparingManager implements StretchManager {
     const bookendColumn = side === 1 ? endColumnGroup : startColumnGroup;
 
     bookendColumn.position.z += delta;
+
+    this.updateColumnAnnotations(bookendColumn);
   }
 
   gestureEnd() {}
@@ -98,11 +190,11 @@ class VanillaPreparingManager implements StretchManager {
     this.handles.forEach(hideObject);
   }
 
-  annotateColumn(column: ColumnGroup, index: number) {
+  annotateColumn(column: ColumnGroup, label: string, color = 0xffffff) {
     const sprite = new Sprite(
       new SpriteMaterial({
-        map: this.createTextTexture(index.toString()),
-        color: 0xff0000,
+        map: this.createTextTexture(label),
+        color,
       })
     );
     sprite.scale.setScalar(0.5);
@@ -115,39 +207,64 @@ class VanillaPreparingManager implements StretchManager {
     );
     column.add(sprite);
 
-    const helper = new BoxHelper(column, 0x00ff00);
+    const helper = new BoxHelper(column, color);
+    helper.name = `boxHelper_${column.id}`;
     this.houseGroup.scene.add(helper);
 
     const lineGeometry = new BufferGeometry().setFromPoints([
       new Vector3(0, -column.userData.height / 2, 0),
       new Vector3(0, column.userData.height * 1.5, 0),
     ]);
-    const lineMaterial = new LineBasicMaterial({ color: 0xff00ff });
+    const lineMaterial = new LineBasicMaterial({ color });
     const line = new Line(lineGeometry, lineMaterial);
+    line.name = "indexLine";
     column.add(line);
   }
 
-  updateColumnAnnotation(column: ColumnGroup, newIndex: number) {
+  updateColumnAnnotations(column: ColumnGroup, newText?: string) {
+    // Update sprite position and text
     const sprite = column.getObjectByName("indexSprite") as Sprite | undefined;
-    if (sprite && sprite.material instanceof SpriteMaterial) {
-      sprite.material.map = this.createTextTexture(newIndex.toString());
-      sprite.material.needsUpdate = true;
-    } else {
-      console.warn(
-        "Sprite not found or invalid material. Creating new annotation."
+    if (sprite) {
+      sprite.position.set(
+        0,
+        column.userData.height + 1,
+        column.userData.depth / 2
       );
-      this.annotateColumn(column, newIndex);
+      if (newText && sprite.material instanceof SpriteMaterial) {
+        sprite.material.map = this.createTextTexture(newText);
+        sprite.material.needsUpdate = true;
+      }
+    }
+
+    // Update line position
+    const line = column.getObjectByName("indexLine") as Line | undefined;
+    if (line) {
+      const lineGeometry = new BufferGeometry().setFromPoints([
+        new Vector3(0, -column.userData.height / 2, 0),
+        new Vector3(0, column.userData.height * 1.5, 0),
+      ]);
+      line.geometry.dispose();
+      line.geometry = lineGeometry;
+    }
+
+    // Update BoxHelper
+    const helper = this.houseGroup.scene.getObjectByName(
+      `boxHelper_${column.id}`
+    ) as BoxHelper | undefined;
+    if (helper) {
+      helper.update();
     }
   }
+
   createTextTexture(text: string): Texture {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d")!;
-    canvas.width = 64;
+    canvas.width = 128;
     canvas.height = 64;
     context.font = "Bold 24px Arial";
     context.fillStyle = "white";
     context.textAlign = "center";
-    context.fillText(text, 32, 32);
+    context.fillText(text, 64, 32);
     return new CanvasTexture(canvas);
   }
 }
