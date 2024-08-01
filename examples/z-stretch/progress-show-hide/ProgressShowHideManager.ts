@@ -187,6 +187,18 @@ class ProgressShowHideManager implements StretchManager {
       bookendColumn: side === 1 ? endColumnGroup : startColumnGroup,
       lastVisibleIndex,
     };
+
+    if (side === -1) {
+      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+      // going in the negative direction remember!
+      const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1];
+      this.upsertColumnAnnotation(lastVisibleColumn, "lastVisible", 0xfff000);
+      this.upsertColumnAnnotation(
+        firstInvisibleColumn,
+        "firstInvisible",
+        0x000fff
+      );
+    }
   }
 
   gestureProgress(delta: number) {
