@@ -1,10 +1,11 @@
+import { House } from "@/data/user/houses";
 import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";
 import GestureManager from "@/three/managers/GestureManager";
-import ZStretchManager from "@/three/managers/ZStretchManager";
-import { House } from "@/data/user/houses";
+import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
+import { Polygon } from "geojson";
 import {
   AmbientLight,
   AxesHelper,
@@ -39,7 +40,6 @@ import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
-import { Polygon } from "geojson";
 import SiteBoundary from "./SiteBoundary";
 
 const subsetOfTHREE = {
@@ -208,13 +208,14 @@ class BuildXScene extends Scene {
             const yAxis = new Vector3(0, 1, 0);
 
             dragProgress = (delta: Vector3) => {
+              // REVIEW: whether to normalize here or in the manager
               const normalizedDelta = delta
                 .clone()
                 .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
               stretchManager.gestureProgress(
-                stretchManager instanceof ZStretchManager
-                  ? normalizedDelta.z
-                  : normalizedDelta.x
+                stretchManager instanceof XStretchManager
+                  ? normalizedDelta.x
+                  : normalizedDelta.z
               );
             };
 

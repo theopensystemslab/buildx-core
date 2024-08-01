@@ -1,9 +1,16 @@
-import { BuildXScene, cachedHouseTypesTE, houseGroupTE } from "@/index";
-import { TE, NEA, A } from "@/utils/functions";
+import {
+  BuildXScene,
+  cachedHouseTypesTE,
+  houseGroupTE as defaultHouseGroupTE,
+} from "@/index";
+import { A, NEA, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 
-export const addNumkeyHouseCreateListeners = (scene: BuildXScene) =>
+export const addNumkeyHouseCreateListeners = (
+  scene: BuildXScene,
+  houseGroupTE: typeof defaultHouseGroupTE = defaultHouseGroupTE
+) =>
   pipe(
     cachedHouseTypesTE,
     TE.map((houseTypes) => {

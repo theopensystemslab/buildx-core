@@ -72,6 +72,22 @@ export class ColumnLayoutGroup extends Group {
       : visibleColumnGroups;
   }
 
+  getPartitionedColumnGroups(): {
+    startColumnGroup: ColumnGroup;
+    endColumnGroup: ColumnGroup;
+    midColumnGroups: ColumnGroup[];
+    visibleColumnGroups: ColumnGroup[];
+  } {
+    const visibleColumnGroups = this.getVisibleColumnGroups();
+
+    return {
+      startColumnGroup: visibleColumnGroups[0],
+      endColumnGroup: visibleColumnGroups[visibleColumnGroups.length - 1],
+      midColumnGroups: visibleColumnGroups.slice(1, -1),
+      visibleColumnGroups,
+    };
+  }
+
   updateDnas() {
     let result: string[][] = [];
     pipe(

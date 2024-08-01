@@ -45,14 +45,15 @@ export class HouseGroup extends Group {
     hooks,
     position = { x: 0, y: 0, z: 0 },
     rotation = 0,
-    ...managers
+    managers = {},
   }: {
     userData: HouseGroupUserData;
     initialColumnLayoutGroup: ColumnLayoutGroup;
     hooks?: Partial<Hooks>;
     position?: { x: number; y: number; z: number };
     rotation?: number;
-  } & Partial<Managers>) {
+    managers?: Partial<Managers>;
+  }) {
     super();
     this.userData = userData;
 
@@ -150,3 +151,5 @@ export class HouseGroup extends Group {
     }
   }
 }
+
+export type { Hooks as HouseGroupHooks, Managers as HouseGroupManagers };

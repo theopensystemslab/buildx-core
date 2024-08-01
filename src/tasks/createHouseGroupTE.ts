@@ -1,11 +1,26 @@
-import { HouseGroup } from "@/three/objects/house/HouseGroup";
+import {
+  HouseGroup,
+  HouseGroupManagers,
+} from "@/three/objects/house/HouseGroup";
 import { O, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import columnLayoutGroupTE from "./columnLayoutGroupTE";
 import { getFriendlyNameTE } from "@/data/user/houses";
 import { nanoid } from "nanoid";
 
-const houseGroupTE = ({
+// Define a type for the houseGroupTE function
+type HouseGroupParams = {
+  systemId: string;
+  dnas: string[];
+  houseId: string;
+  houseTypeId: string;
+  friendlyName?: string;
+  position?: { x: number; y: number; z: number };
+  rotation?: number;
+  managers?: Partial<HouseGroupManagers>;
+};
+
+const createHouseGroupTE = ({
   systemId,
   dnas,
   friendlyName,
@@ -13,15 +28,8 @@ const houseGroupTE = ({
   houseTypeId,
   position,
   rotation,
-}: {
-  systemId: string;
-  friendlyName?: string;
-  houseId?: string;
-  houseTypeId: string;
-  dnas: string[];
-  position?: { x: number; y: number; z: number };
-  rotation?: number;
-}): TE.TaskEither<Error, HouseGroup> =>
+  managers = {},
+}: HouseGroupParams): TE.TaskEither<Error, HouseGroup> =>
   pipe(
     friendlyName,
     O.fromNullable,
@@ -42,6 +50,7 @@ const houseGroupTE = ({
               },
               position,
               rotation,
+              managers,
             })
           )
         )
@@ -49,4 +58,4 @@ const houseGroupTE = ({
     )
   );
 
-export default houseGroupTE;
+export default createHouseGroupTE;

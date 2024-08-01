@@ -1,5 +1,5 @@
 import { cachedHouseTypesTE } from "@/index";
-import houseGroupTE from "@/tasks/houseGroupTE";
+import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
 import {
   deleteCachedHouse,
@@ -33,7 +33,7 @@ pipe(
     )
   ),
   TE.chain(({ id: houseTypeId, name, systemId, dnas }) =>
-    houseGroupTE({
+    createHouseGroupTE({
       systemId,
       dnas,
       friendlyName: name,
