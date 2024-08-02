@@ -186,12 +186,50 @@ class ProgressShowHideManager implements StretchManager {
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData!;
 
-    if (side === -1) {
+    if (side === 1) {
       const lastVisibleColumn = orderedColumns[lastVisibleIndex];
-      // going in the negative direction remember!
-      const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1];
+      const firstInvisibleColumn = orderedColumns[lastVisibleIndex + 1]; // +1 because side 1
+
+      if (delta > 0) {
+        if (!firstInvisibleColumn) return;
+
+        const targetZ = firstInvisibleColumn.position.z;
+        const bookendZ = bookendColumn.position.z; // + bookendColumn.userData.depth;
+
+        if (bookendZ > targetZ) {
+          // todo
+          showObject(firstInvisibleColumn);
+          this.startData.lastVisibleIndex++;
+        }
+
+        this.drawLines(targetZ, bookendZ);
+      }
 
       if (delta < 0) {
+        if (lastVisibleIndex === 1) return;
+        if (!lastVisibleColumn) return;
+
+        const targetZ = lastVisibleColumn.position.z;
+        const bookendZ =
+          bookendColumn.position.z + bookendColumn.userData.depth;
+
+        if (bookendZ < targetZ) {
+          // todo
+          hideObject(lastVisibleColumn);
+          this.startData.lastVisibleIndex--;
+        }
+
+        this.drawLines(targetZ, bookendZ);
+      }
+    }
+
+    if (side === -1) {
+      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+      const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1]; // -1 because side -1
+
+      if (delta < 0) {
+        if (!firstInvisibleColumn) return;
+
         const targetZ = firstInvisibleColumn.position.z;
         // + firstInvisibleColumn.userData.depth / 2;
         const bookendZ =
@@ -204,7 +242,12 @@ class ProgressShowHideManager implements StretchManager {
         }
 
         this.drawLines(targetZ, bookendZ);
-      } else if (delta > 0) {
+      }
+
+      if (delta > 0) {
+        if (lastVisibleIndex === orderedColumns.length - 2) return;
+        if (!lastVisibleColumn) return;
+
         const targetZ = lastVisibleColumn.position.z;
         // + firstInvisibleColumn.userData.depth / 2;
         const bookendZ =
