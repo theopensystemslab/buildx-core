@@ -147,13 +147,8 @@ class ProgressShowHideManager implements StretchManager {
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumns = [
-        startColumnGroup,
-        ...vanillaColumnGroups,
-        ...midColumnGroups,
-        endColumnGroup,
-      ];
-      lastVisibleIndex = vanillaColumnGroups.length + 1;
+      orderedColumns = [...vanillaColumnGroups, ...midColumnGroups];
+      lastVisibleIndex = vanillaColumnGroups.length;
     } else if (side === 1) {
       vanillaColumnGroups.forEach((columnGroup, index) => {
         const startDepth = endColumnGroup.position.z;
@@ -168,13 +163,8 @@ class ProgressShowHideManager implements StretchManager {
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumns = [
-        startColumnGroup,
-        ...midColumnGroups,
-        ...vanillaColumnGroups,
-        endColumnGroup,
-      ];
-      lastVisibleIndex = midColumnGroups.length;
+      orderedColumns = [...midColumnGroups, ...vanillaColumnGroups];
+      lastVisibleIndex = midColumnGroups.length - 1;
     }
 
     this.startData = {
@@ -195,15 +185,16 @@ class ProgressShowHideManager implements StretchManager {
       const firstInvisibleColumn = orderedColumns[lastVisibleIndex + 1]; // +1 because side 1
 
       if (delta > 0) {
-        if (!firstInvisibleColumn) return;
-
+        if (!firstInvisibleColumn) {
+          return;
+        }
         const targetZ = firstInvisibleColumn.position.z;
         const bookendZ = bookendColumn.position.z; // + bookendColumn.userData.depth;
 
         if (bookendZ > targetZ) {
-          // todo
           this.showVanillaColumn(firstInvisibleColumn);
           this.startData.lastVisibleIndex++;
+        } else {
         }
 
         this.drawLines(targetZ, bookendZ);
@@ -232,12 +223,18 @@ class ProgressShowHideManager implements StretchManager {
       const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1]; // -1 because side -1
 
       if (delta < 0) {
-        if (!firstInvisibleColumn) return;
+        if (!firstInvisibleColumn) {
+          return;
+        }
 
         const targetZ = firstInvisibleColumn.position.z;
-        // + firstInvisibleColumn.userData.depth / 2;
         const bookendZ =
           bookendColumn.position.z + bookendColumn.userData.depth;
+
+        // clamp at the top
+        if (lastVisibleIndex === 1 && targetZ - bookendZ < 0) {
+          return;
+        }
 
         if (bookendZ < targetZ) {
           // todo
