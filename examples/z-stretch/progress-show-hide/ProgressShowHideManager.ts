@@ -6,7 +6,11 @@ import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "@/three/objects/house/ColumnGroup";
-import { hideObject, showObject } from "@/three/utils/layers";
+import {
+  hideObject,
+  showObject,
+  showObjectCameraOnly,
+} from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
@@ -90,19 +94,19 @@ class ProgressShowHideManager implements StretchManager {
 
         pipe(
           vanillaColumnGroupsTE,
-          TE.map((vanillaColumnGroups) => {
-            if (vanillaColumnGroups.length > 0) {
-              vanillaColumnGroups.forEach((x) => {
+          TE.map((vanillaColumns) => {
+            if (vanillaColumns.length > 0) {
+              vanillaColumns.forEach((x) => {
                 hideObject(x);
               });
             }
-            activeLayoutGroup.add(...vanillaColumnGroups);
+            activeLayoutGroup.add(...vanillaColumns);
 
             this.initData = {
               startColumn: startColumnGroup,
               midColumns: midColumnGroups,
               endColumn: endColumnGroup,
-              vanillaColumns: vanillaColumnGroups,
+              vanillaColumns,
               maxDepth,
             };
           })
@@ -140,7 +144,7 @@ class ProgressShowHideManager implements StretchManager {
         );
 
         this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
-        this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
+        // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
       orderedColumns = [
@@ -161,7 +165,7 @@ class ProgressShowHideManager implements StretchManager {
         );
 
         this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
-        this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
+        // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
       orderedColumns = [
@@ -198,7 +202,7 @@ class ProgressShowHideManager implements StretchManager {
 
         if (bookendZ > targetZ) {
           // todo
-          showObject(firstInvisibleColumn);
+          this.showVanillaColumn(firstInvisibleColumn);
           this.startData.lastVisibleIndex++;
         }
 
@@ -237,7 +241,7 @@ class ProgressShowHideManager implements StretchManager {
 
         if (bookendZ < targetZ) {
           // todo
-          showObject(firstInvisibleColumn);
+          this.showVanillaColumn(firstInvisibleColumn);
           this.startData.lastVisibleIndex--;
         }
 
@@ -245,16 +249,19 @@ class ProgressShowHideManager implements StretchManager {
       }
 
       if (delta > 0) {
-        if (lastVisibleIndex === orderedColumns.length - 2) return;
-        if (!lastVisibleColumn) return;
-
         const targetZ = lastVisibleColumn.position.z;
-        // + firstInvisibleColumn.userData.depth / 2;
         const bookendZ =
           bookendColumn.position.z + bookendColumn.userData.depth;
 
+        // clamp at the bottom
+        if (
+          lastVisibleIndex === orderedColumns.length - 2 &&
+          targetZ - bookendZ < 0.01
+        ) {
+          return;
+        }
+
         if (bookendZ > targetZ) {
-          // todo
           hideObject(lastVisibleColumn);
           this.startData.lastVisibleIndex++;
         }
@@ -284,6 +291,11 @@ class ProgressShowHideManager implements StretchManager {
     this.reindexColumns();
 
     this.init();
+  }
+
+  showVanillaColumn(column: ColumnGroup) {
+    this.houseGroup.managers.cuts?.showAppropriateBrushes(column);
+    showObject(column);
   }
 
   reindexColumns() {
@@ -337,6 +349,7 @@ class ProgressShowHideManager implements StretchManager {
       ]);
       const material = new LineBasicMaterial({ color: lineColor });
       this.targetLine = new Line(geometry, material);
+      showObjectCameraOnly(this.targetLine);
       pipe(
         this.houseGroup.activeLayoutGroup,
         O.map((activeLayoutGroup) => {
@@ -358,6 +371,7 @@ class ProgressShowHideManager implements StretchManager {
       ]);
       const material = new LineBasicMaterial({ color: lineColor });
       this.bookendLine = new Line(geometry, material);
+      showObjectCameraOnly(this.bookendLine);
       pipe(
         this.houseGroup.activeLayoutGroup,
         O.map((activeLayoutGroup) => {
@@ -398,7 +412,7 @@ class ProgressShowHideManager implements StretchManager {
       sprite.material.map = this.createTextTexture(label);
       sprite.material.needsUpdate = true;
     }
-    showObject(sprite);
+    showObjectCameraOnly(sprite);
 
     // Update or create line
     let line = column.getObjectByName("indexLine") as Line | undefined;
@@ -415,7 +429,7 @@ class ProgressShowHideManager implements StretchManager {
       line.geometry.dispose();
       line.geometry = lineGeometry;
     }
-    showObject(line);
+    showObjectCameraOnly(line);
 
     // Update or create BoxHelper
     let helper = this.houseGroup.scene.getObjectByName(
