@@ -280,19 +280,23 @@ class ZStretchManager implements StretchManager {
       bookendColumn.position.z =
         orderedColumns[lastVisibleIndex].position.z +
         orderedColumns[lastVisibleIndex].userData.depth;
+
+      // start column stays at 0 on this side
     } else if (side === -1) {
       bookendColumn.position.z =
         orderedColumns[lastVisibleIndex].position.z -
         bookendColumn.userData.depth;
 
+      // bring the start column back to position 0 in the column layout
       const delta = -bookendColumn.position.z;
-
       bookendColumn.position.z = 0;
 
+      // adjust other columns accordingly
       [...orderedColumns, endColumn].forEach((column) => {
         column.position.z += delta;
       });
 
+      // adjust the houseGroup position accordingly
       this.houseGroup.position.sub(
         new Vector3(0, 0, delta).applyAxisAngle(
           new Vector3(0, 1, 0),
