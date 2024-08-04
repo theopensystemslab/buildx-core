@@ -77,8 +77,10 @@ export class HouseGroup extends Group {
     this.position.set(position.x, position.y, position.z);
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
 
-    this.rotateHandlesGroup = new RotateHandlesGroup(this);
-    this.rotateHandlesGroup.syncDimensions();
+    this.rotateHandlesGroup = new RotateHandlesGroup(
+      initialColumnLayoutGroup.obb
+    );
+    // this.rotateHandlesGroup.syncDimensions();
     this.hideRotateHandles();
   }
 

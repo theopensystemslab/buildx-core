@@ -1,93 +1,74 @@
-import { PI } from "@/utils/math";
+import { CircleGeometry, Group, Mesh, PlaneGeometry } from "three";
+import { OBB } from "three-stdlib";
 import HandleGroup from "./HandleGroup";
-import RotateHandleMesh from "./RotateHandleMesh";
-import { CircleGeometry, PlaneGeometry } from "three";
 import handleMaterial from "./handleMaterial";
-import { HouseGroup } from "../house/HouseGroup";
-import { O } from "@/utils/functions";
-import { pipe } from "fp-ts/lib/function";
+import RotateHandleGroup from "./RotateHandleGroup";
 
-const rotateHandleCircleGeometry = new CircleGeometry(0.5, 16);
-const ROTATE_HANDLE_OFFSET = 5;
-const ROTATE_HANDLE_SIZE = 0.3;
+const HANDLE_THICKNESS = 0.3;
+const GRIP_RADIUS = 0.5;
 
 class RotateHandlesGroup extends HandleGroup {
-  circleMesh1: RotateHandleMesh;
-  circleMesh2: RotateHandleMesh;
-  planeMesh1: RotateHandleMesh;
-  planeMesh2: RotateHandleMesh;
+  widthHandle: RotateHandleGroup;
+  depthHandle: RotateHandleGroup;
 
-  constructor(houseGroup: HouseGroup) {
+  constructor(obb: OBB) {
     super();
-
-    houseGroup.add(this);
-
-    const { circleMesh1, circleMesh2 } = this.createCircleMeshes();
-    this.circleMesh1 = circleMesh1;
-    this.circleMesh2 = circleMesh2;
-
-    const { planeMesh1, planeMesh2 } = this.createPlaneMeshes();
-    this.planeMesh1 = planeMesh1;
-    this.planeMesh2 = planeMesh2;
-
-    this.add(circleMesh1, circleMesh2, planeMesh1, planeMesh2);
+    this.widthHandle = this.createHandle(obb, "width");
+    this.depthHandle = this.createHandle(obb, "depth");
+    this.add(this.widthHandle, this.depthHandle);
   }
 
-  createCircleMeshes() {
-    const circleMesh1 = new RotateHandleMesh(
-      rotateHandleCircleGeometry,
-      handleMaterial
+  createHandle(obb: OBB, axis: "width" | "depth"): RotateHandleGroup {
+    const isWidthAxis = axis === "width";
+    const length = isWidthAxis ? obb.halfSize.x * 2 : obb.halfSize.z * 2;
+
+    // Create shaft (plane)
+    const shaftGeometry = new PlaneGeometry(length, HANDLE_THICKNESS);
+    const shaftMesh = new Mesh(shaftGeometry, handleMaterial);
+
+    // Create grip (circle)
+    const gripGeometry = new CircleGeometry(GRIP_RADIUS, 32);
+    const gripMesh = new Mesh(gripGeometry, handleMaterial);
+
+    // Position grip at the end of the shaft
+    gripMesh.position.set(
+      isWidthAxis ? length / 2 : 0,
+      0,
+      isWidthAxis ? 0 : length / 2
     );
-    circleMesh1.position.set(0, 0, -ROTATE_HANDLE_OFFSET);
-    circleMesh1.rotation.x = -PI / 2;
-    const circleMesh2 = new RotateHandleMesh(
-      rotateHandleCircleGeometry,
-      handleMaterial
+
+    // Combine shaft and grip
+    const handle = new Group();
+    handle.add(shaftMesh, gripMesh);
+
+    // Position handle
+    handle.position.set(
+      isWidthAxis ? obb.center.x : obb.center.x + obb.halfSize.x,
+      obb.center.y,
+      isWidthAxis ? obb.center.z + obb.halfSize.z : obb.center.z
     );
-    circleMesh2.rotation.x = -PI / 2;
 
-    return { circleMesh1, circleMesh2 };
-  }
-
-  createPlaneMeshes() {
-    const planeMesh1 = new RotateHandleMesh(
-      new PlaneGeometry(ROTATE_HANDLE_SIZE, ROTATE_HANDLE_OFFSET),
-      handleMaterial
-    );
-    planeMesh1.rotation.x = -PI / 2;
-    planeMesh1.position.set(0, 0, -ROTATE_HANDLE_OFFSET / 2);
-    planeMesh1.name = "planeMesh1";
-
-    const planeMesh2 = new RotateHandleMesh(
-      new PlaneGeometry(ROTATE_HANDLE_OFFSET, ROTATE_HANDLE_SIZE),
-      handleMaterial
-    );
-    planeMesh2.rotation.x = -PI / 2;
-    planeMesh2.name = "planeMesh2";
-
-    return { planeMesh1, planeMesh2 };
-  }
-
-  get houseGroup(): HouseGroup {
-    if (this.parent instanceof HouseGroup) {
-      return this.parent;
-    } else {
-      throw new Error(`get houseGroup failed`);
+    // Rotate depth handle to align with z-axis
+    if (!isWidthAxis) {
+      handle.rotateY(Math.PI / 2);
     }
+
+    return handle;
   }
 
-  syncDimensions() {
-    pipe(
-      this.houseGroup.activeLayoutGroup,
-      O.map((activeLayoutGroup) => {
-        const { width, depth } = activeLayoutGroup.userData;
-        this.planeMesh2.position.set(-width / 1.05, 0, depth / 2);
-        this.circleMesh2.position.set(
-          -ROTATE_HANDLE_OFFSET - width / 4,
-          0,
-          depth / 2
-        );
-      })
+  updateHandles(obb: OBB) {
+    this.widthHandle.scale.setX(obb.halfSize.x * 2);
+    this.widthHandle.position.set(
+      obb.center.x,
+      obb.center.y,
+      obb.center.z + obb.halfSize.z
+    );
+
+    this.depthHandle.scale.setX(obb.halfSize.z * 2);
+    this.depthHandle.position.set(
+      obb.center.x + obb.halfSize.x,
+      obb.center.y,
+      obb.center.z
     );
   }
 }
