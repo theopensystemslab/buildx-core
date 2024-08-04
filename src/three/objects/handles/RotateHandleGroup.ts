@@ -1,6 +1,6 @@
-import HandleGroup from "./HandleGroup";
+import { Group } from "three";
 
-class RotateHandleGroup extends HandleGroup {
+class RotateHandleGroup extends Group {
   constructor() {
     super();
   }

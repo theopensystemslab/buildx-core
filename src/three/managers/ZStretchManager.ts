@@ -104,8 +104,6 @@ class ZStretchManager implements StretchManager {
     const { startColumn, endColumn, vanillaColumns, midColumns } =
       this.initData;
 
-    console.log({ startZ: startColumn.position.z, endZ: endColumn.position.z });
-
     let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
@@ -245,11 +243,9 @@ class ZStretchManager implements StretchManager {
 
   gestureEnd() {
     if (!this.initData || !this.startData) return;
-    const { startColumn, endColumn } = this.initData;
+    const { endColumn } = this.initData;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData;
-
-    console.log({ startZ: startColumn.position.z, endZ: endColumn.position.z });
 
     if (side === 1) {
       bookendColumn.position.z =

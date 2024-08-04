@@ -1,16 +1,18 @@
+import { House } from "@/data/user/houses";
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
+import OpeningsManager from "@/three/managers/OpeningsManager";
+import RotateManager from "@/three/managers/RotateManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Vector3 } from "three";
+import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import OpeningsManager from "@/three/managers/OpeningsManager";
-import { House } from "@/data/user/houses";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -20,6 +22,7 @@ type Hooks = {
 
 type Managers = {
   layouts: LayoutsManager;
+  rotate?: RotateManager;
   elements?: ElementsManager;
   xStretch?: XStretchManager;
   zStretch?: ZStretchManager;
@@ -61,18 +64,20 @@ export class HouseGroup extends Group {
 
     this.managers = {
       elements: managers.elements ?? new ElementsManager(this),
+      rotate: managers.rotate ?? new RotateManager(this),
       layouts: managers.layouts ?? new LayoutsManager(this),
       xStretch: managers.xStretch ?? new XStretchManager(this),
       zStretch: managers.zStretch ?? new ZStretchManager(this),
       cuts: managers.cuts ?? new CutsManager(this),
       openings: managers.openings ?? new OpeningsManager(this),
     };
-
     this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
     this.hooks = hooks ?? {};
 
     this.position.set(position.x, position.y, position.z);
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
+
+    this.updateBBs();
   }
 
   get friendlyName(): string {
@@ -89,6 +94,24 @@ export class HouseGroup extends Group {
       this.managers.layouts,
       O.fromNullable,
       O.chain((x) => x.activeLayoutGroup)
+    );
+  }
+
+  get unsafeOBB(): OBB {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      return activeLayoutGroup.value.obb;
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
+  updateBBs() {
+    pipe(
+      this.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        activeLayoutGroup.updateBBs();
+      })
     );
   }
 
