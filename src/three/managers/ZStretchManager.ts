@@ -311,8 +311,11 @@ class ZStretchManager implements StretchManager {
       this.houseGroup.activeLayoutGroup,
       O.map((layoutGroup) => {
         layoutGroup.updateDepth();
+        layoutGroup.updateLayout();
       })
     );
+
+    this.houseGroup.managers.xStretch?.init();
 
     this.init();
   }

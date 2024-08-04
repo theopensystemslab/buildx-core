@@ -1,7 +1,12 @@
-import { columnLayoutToLevelTypes } from "@/layouts/init";
+import { BuildModule, getSectionType, SectionType } from "@/data/build-systems";
+import {
+  columnLayoutToDnas,
+  columnLayoutToLevelTypes,
+  createColumnLayout,
+} from "@/layouts/init";
 import { Column, ColumnLayout } from "@/layouts/types";
 import { createVanillaColumn } from "@/tasks/vanilla";
-import { A, O, TE, someOrError } from "@/utils/functions";
+import { A, O, someOrError, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import {
@@ -20,7 +25,6 @@ import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
-import { getSectionType, SectionType } from "@/data/build-systems";
 
 export const AABB_OFFSET = 10;
 
@@ -112,30 +116,37 @@ export class ColumnLayoutGroup extends Group {
     };
   }
 
-  updateDnas() {
-    let result: string[][] = [];
-    pipe(
-      this.getVisibleColumnGroups(),
-      A.map((v) => {
-        v.traverse((node) => {
-          if (node instanceof ModuleGroup && node.visible) {
-            const {
-              module: { dna },
-            } = node.userData as ModuleGroupUserData;
-            if (!(node.parent instanceof RowGroup))
-              throw new Error("non-RowGroup parent of ModuleGroup");
+  updateLayout() {
+    let modules: BuildModule[][][] = [];
 
-            const rowIndex = node.parent.userData.rowIndex;
+    this.getVisibleColumnGroups().forEach((columnGroup, columnIndex) => {
+      modules[columnIndex] = [];
 
-            if (!result[rowIndex]) {
-              result[rowIndex] = [];
-            }
-            result[rowIndex].push(dna);
+      columnGroup.traverse((node) => {
+        if (node instanceof ModuleGroup && node.visible) {
+          const { module } = node.userData as ModuleGroupUserData;
+          if (!(node.parent instanceof RowGroup)) {
+            throw new Error("non-RowGroup parent of ModuleGroup");
           }
-        });
-      })
-    );
-    this.userData.dnas = result.flat();
+
+          const rowIndex = node.parent.userData.rowIndex;
+
+          if (!modules[columnIndex][rowIndex]) {
+            modules[columnIndex][rowIndex] = [];
+          }
+
+          modules[columnIndex][rowIndex].push(module);
+        }
+      });
+    });
+
+    this.userData.layout = createColumnLayout(modules);
+
+    this.updateDnas();
+  }
+
+  private updateDnas() {
+    this.userData.dnas = columnLayoutToDnas(this.userData.layout);
   }
 
   updateDepth() {
