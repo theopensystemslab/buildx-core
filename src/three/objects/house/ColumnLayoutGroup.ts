@@ -4,7 +4,17 @@ import { createVanillaColumn } from "@/tasks/vanilla";
 import { A, O, TE, someOrError } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { Box3, Group, Matrix3, Matrix4, Scene, Vector3 } from "three";
+import {
+  Box3,
+  BoxGeometry,
+  Group,
+  Matrix3,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  Scene,
+  Vector3,
+} from "three";
 import { OBB } from "three-stdlib";
 import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
@@ -14,6 +24,17 @@ import { getSectionType, SectionType } from "@/data/build-systems";
 
 export const AABB_OFFSET = 10;
 
+const obbMaterial = new MeshBasicMaterial({
+  color: "blue",
+  wireframe: true,
+  // transparent: true
+});
+
+const aabbMaterial = new MeshBasicMaterial({
+  color: "red",
+  wireframe: true,
+  // transparent: true
+});
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
   layout: ColumnLayout;
@@ -29,6 +50,9 @@ export class ColumnLayoutGroup extends Group {
   userData: ColumnLayoutGroupUserData;
   aabb: Box3;
   obb: OBB;
+
+  private debugOBBMesh: Mesh | null = null;
+  private debugAABBMesh: Mesh | null = null;
 
   constructor(userData: ColumnLayoutGroupUserData) {
     super();
@@ -116,18 +140,18 @@ export class ColumnLayoutGroup extends Group {
 
   updateDepth() {
     const originalDepth = this.userData.depth;
-
     const nextDepth = this.getVisibleColumnGroups(false).reduce(
       (acc, v) => acc + v.userData.depth,
       0
     );
-
     this.userData.depth = nextDepth;
 
+    // Update position for both positive and negative stretching
+    const depthDifference = nextDepth - originalDepth;
     this.position.setZ(-nextDepth / 2);
 
     this.houseGroup.position.add(
-      new Vector3(0, 0, (nextDepth - originalDepth) / 2).applyAxisAngle(
+      new Vector3(0, 0, depthDifference / 2).applyAxisAngle(
         new Vector3(0, 1, 0),
         this.houseGroup.rotation.y
       )
@@ -219,11 +243,49 @@ export class ColumnLayoutGroup extends Group {
     // Set the AABB
     this.aabb.set(min, max);
 
-    // if (DEBUG) {
-    //   renderBBs();
-    // }
+    this.renderOBB();
+  }
 
-    // invalidate();
+  renderOBB() {
+    const scene = this.scene;
+
+    const size = this.obb.halfSize.clone().multiplyScalar(2);
+
+    if (this.debugOBBMesh) {
+      scene.remove(this.debugOBBMesh);
+    }
+
+    const geom = new BoxGeometry(size.x, size.y, size.z);
+    const mesh = new Mesh(geom, obbMaterial);
+    mesh.position.copy(this.obb.center);
+    mesh.setRotationFromMatrix(new Matrix4().setFromMatrix3(this.obb.rotation));
+    mesh.userData.type = "OBB";
+    scene.add(mesh);
+    this.debugOBBMesh = mesh;
+  }
+
+  renderAABB() {
+    return pipe(
+      O.fromNullable(this.parent),
+      O.map((scene) => {
+        const size = new Vector3();
+        this.aabb.getSize(size);
+
+        const center = new Vector3();
+        this.aabb.getCenter(center);
+
+        if (this.debugAABBMesh) {
+          scene.remove(this.debugAABBMesh);
+        }
+
+        const geom = new BoxGeometry(size.x, size.y, size.z);
+        const mesh = new Mesh(geom, aabbMaterial);
+        mesh.position.copy(center);
+        mesh.userData.type = "AABB";
+        scene.add(mesh);
+        this.debugAABBMesh = mesh;
+      })
+    );
   }
 }
 
