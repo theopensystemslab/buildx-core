@@ -19,7 +19,7 @@ type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
 type DragHandler = (detail: DragDetail) => void;
 
-type DragDetail = {
+export type DragDetail = {
   initialPoint: Vector3;
   lastPoint: Vector3;
   currentPoint: Vector3;
@@ -159,7 +159,6 @@ class GestureManager {
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
       this.currentGestureObject = intersects[0].object;
-      console.log(this.currentGestureObject);
       this.gestureStarted = true; // Set the gesture started flag
       const intersectionPoint = intersects[0].point;
       this.movementPlaneXZ.setFromNormalAndCoplanarPoint(

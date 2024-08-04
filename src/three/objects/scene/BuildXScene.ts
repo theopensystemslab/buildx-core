@@ -2,7 +2,7 @@ import { House } from "@/data/user/houses";
 import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";
-import GestureManager from "@/three/managers/GestureManager";
+import GestureManager, { DragDetail } from "@/three/managers/GestureManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
 import { Polygon } from "geojson";
@@ -36,6 +36,7 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
@@ -172,7 +173,8 @@ class BuildXScene extends Scene {
     this.selectedElement = null;
     this.hoveredElement = null;
 
-    let dragProgress: ((delta: Vector3) => void) | undefined = undefined,
+    let dragProgress: ((dragDetail: DragDetail) => void) | undefined =
+        undefined,
       dragEnd: (() => void) | undefined = undefined;
 
     if (enableGestures)
@@ -190,6 +192,13 @@ class BuildXScene extends Scene {
             this.contextManager?.contextDown(object.elementGroup);
           }
         },
+        onSingleTap: ({ object }) => {
+          if (object instanceof ElementBrush) {
+            this.contextManager?.setSelectedHouse(
+              object.elementGroup.houseGroup
+            );
+          }
+        },
         onLongTap: ({ object }, pointer) => {
           if (object instanceof ElementBrush) {
             onLongTapBuildElement?.(object.scopeElement, pointer);
@@ -200,49 +209,77 @@ class BuildXScene extends Scene {
             onRightClickBuildElement?.(object.scopeElement, pointer);
           }
         },
-        onDragStart: ({ object }) => {
-          if (object instanceof StretchHandleMesh) {
-            const stretchManager = object.manager;
-            stretchManager.gestureStart(object.side);
+        onDragStart: ({ object, point: currentPoint }) => {
+          switch (true) {
+            case object instanceof StretchHandleMesh: {
+              const stretchManager = object.manager;
+              stretchManager.gestureStart(object.side);
 
-            const yAxis = new Vector3(0, 1, 0);
+              const yAxis = new Vector3(0, 1, 0);
 
-            dragProgress = (delta: Vector3) => {
-              // REVIEW: whether to normalize here or in the manager
-              const normalizedDelta = delta
-                .clone()
-                .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
-              stretchManager.gestureProgress(
-                stretchManager instanceof XStretchManager
-                  ? normalizedDelta.x
-                  : normalizedDelta.z
-              );
-            };
-
-            dragEnd = () => {
-              stretchManager.gestureEnd();
-              dragProgress = undefined;
-            };
-          } else if (object instanceof ElementBrush) {
-            if (this.contextManager?.siteMode) {
-              const houseGroup = object.houseGroup;
-              dragProgress = (delta: Vector3) => {
-                houseGroup.move(delta);
+              dragProgress = ({ delta }: DragDetail) => {
+                // REVIEW: whether to normalize here or in the manager
+                const normalizedDelta = delta
+                  .clone()
+                  .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
+                stretchManager.gestureProgress(
+                  stretchManager instanceof XStretchManager
+                    ? normalizedDelta.x
+                    : normalizedDelta.z
+                );
               };
+
               dragEnd = () => {
+                stretchManager.gestureEnd();
                 dragProgress = undefined;
-
-                const {
-                  userData: { houseId },
-                  position,
-                } = houseGroup;
-
-                houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
               };
+              return;
+            }
+
+            case object instanceof ElementBrush: {
+              if (this.contextManager?.siteMode) {
+                const houseGroup = object.houseGroup;
+
+                this.contextManager.setSelectedHouse(houseGroup);
+
+                dragProgress = ({ delta }: DragDetail) => {
+                  houseGroup.move(delta);
+                };
+
+                dragEnd = () => {
+                  dragProgress = undefined;
+
+                  const {
+                    userData: { houseId },
+                    position,
+                  } = houseGroup;
+
+                  houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
+                  houseGroup.updateBBs();
+                };
+              }
+              return;
+            }
+
+            case object instanceof RotateHandleMesh: {
+              const rotateManager = object.houseGroup.managers.rotate;
+              if (!rotateManager) return;
+
+              rotateManager.initGesture(currentPoint);
+
+              dragProgress = ({ currentPoint }: DragDetail) => {
+                rotateManager.gestureProgress(currentPoint);
+              };
+
+              dragEnd = () => {
+                rotateManager.gestureEnd();
+                dragProgress = undefined;
+              };
+              return;
             }
           }
         },
-        onDragProgress: (v) => dragProgress?.(v.delta),
+        onDragProgress: (v) => dragProgress?.(v),
         onDragEnd: () => dragEnd?.(),
         onTapMissed,
       });
