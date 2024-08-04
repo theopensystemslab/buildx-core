@@ -190,6 +190,14 @@ class BuildXScene extends Scene {
             this.contextManager?.contextDown(object.elementGroup);
           }
         },
+        onSingleTap: ({ object }) => {
+          if (object instanceof ElementBrush) {
+            if (this.contextManager)
+              this.contextManager.selectedHouses = [
+                object.elementGroup.houseGroup,
+              ];
+          }
+        },
         onLongTap: ({ object }, pointer) => {
           if (object instanceof ElementBrush) {
             onLongTapBuildElement?.(object.scopeElement, pointer);
@@ -226,6 +234,7 @@ class BuildXScene extends Scene {
           } else if (object instanceof ElementBrush) {
             if (this.contextManager?.siteMode) {
               const houseGroup = object.houseGroup;
+              this.contextManager.selectedHouses = [houseGroup];
               dragProgress = (delta: Vector3) => {
                 houseGroup.move(delta);
               };

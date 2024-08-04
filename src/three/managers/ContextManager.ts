@@ -10,6 +10,7 @@ export type SceneContextModeLabel = z.infer<typeof SceneContextModeLabel>;
 
 export type SceneContextMode = {
   label: SceneContextModeLabel;
+  selectedHouses: HouseGroup[];
   buildingHouseGroup: O.Option<HouseGroup>;
   buildingRowIndex: O.Option<number>;
 };
@@ -21,6 +22,7 @@ type ContextManagerConfig = {
 class ContextManager {
   _buildingHouseGroup: O.Option<HouseGroup>;
   _buildingRowIndex: O.Option<number>;
+  _selectedHouses: HouseGroup[];
 
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
 
@@ -31,6 +33,28 @@ class ContextManager {
 
     this._buildingHouseGroup = O.none;
     this._buildingRowIndex = O.none;
+
+    this._selectedHouses = [];
+  }
+
+  pushSelectedHouse(houseGroup: HouseGroup) {
+    this._selectedHouses.push(houseGroup);
+  }
+
+  get selectedHouses() {
+    return this._selectedHouses;
+  }
+
+  set selectedHouses(selectedHouses: HouseGroup[]) {
+    this._selectedHouses = selectedHouses;
+
+    selectedHouses.forEach((houseGroup) => {
+      houseGroup.showRotateHandles();
+    });
+  }
+
+  clearSelectedHouses() {
+    this._selectedHouses = [];
   }
 
   get siteMode() {
@@ -67,6 +91,7 @@ class ContextManager {
       label: mode,
       buildingHouseGroup,
       buildingRowIndex,
+      selectedHouses: this._selectedHouses,
     };
   }
 

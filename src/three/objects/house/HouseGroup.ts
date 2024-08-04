@@ -1,16 +1,18 @@
+import { House } from "@/data/user/houses";
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
+import OpeningsManager from "@/three/managers/OpeningsManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
+import { hideObject, showObject } from "@/three/utils/layers";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Vector3 } from "three";
+import RotateHandlesGroup from "../handles/RotateHandlesGroup";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import OpeningsManager from "@/three/managers/OpeningsManager";
-import { House } from "@/data/user/houses";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -38,6 +40,7 @@ export class HouseGroup extends Group {
   userData: HouseGroupUserData;
   hooks: Partial<Hooks>;
   managers: Managers;
+  rotateHandlesGroup: RotateHandlesGroup;
 
   constructor({
     userData,
@@ -73,6 +76,10 @@ export class HouseGroup extends Group {
 
     this.position.set(position.x, position.y, position.z);
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
+
+    this.rotateHandlesGroup = new RotateHandlesGroup(this);
+    this.rotateHandlesGroup.syncDimensions();
+    this.hideRotateHandles();
   }
 
   get friendlyName(): string {
@@ -149,6 +156,15 @@ export class HouseGroup extends Group {
     if (this.scene.contextManager) {
       this.scene.contextManager.buildingHouseGroup = O.some(this);
     }
+  }
+
+  showRotateHandles() {
+    console.log("showRotateHandles");
+    showObject(this.rotateHandlesGroup);
+  }
+
+  hideRotateHandles() {
+    hideObject(this.rotateHandlesGroup);
   }
 }
 
