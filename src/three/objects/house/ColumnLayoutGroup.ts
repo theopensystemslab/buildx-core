@@ -146,7 +146,6 @@ export class ColumnLayoutGroup extends Group {
     );
     this.userData.depth = nextDepth;
 
-    // Update position for both positive and negative stretching
     const depthDifference = nextDepth - originalDepth;
     this.position.setZ(-nextDepth / 2);
 

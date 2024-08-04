@@ -118,22 +118,20 @@ class ZStretchManager implements StretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
-    const {
-      startColumn: startColumnGroup,
-      endColumn: endColumnGroup,
-      vanillaColumns: vanillaColumnGroups,
-      midColumns: midColumnGroups,
-    } = this.initData;
+    const { startColumn, endColumn, vanillaColumns, midColumns } =
+      this.initData;
+
+    console.log({ startZ: startColumn.position.z, endZ: endColumn.position.z });
 
     let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
     // place the vanilla columns
     if (side === -1) {
-      vanillaColumnGroups.forEach((columnGroup, index) => {
-        const reversedIndex = vanillaColumnGroups.length - 1 - index;
+      vanillaColumns.forEach((columnGroup, index) => {
+        const reversedIndex = vanillaColumns.length - 1 - index;
 
-        const startDepth = midColumnGroups[0].position.z;
+        const startDepth = midColumns[0].position.z;
 
         columnGroup.position.set(
           0,
@@ -147,11 +145,11 @@ class ZStretchManager implements StretchManager {
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumns = [...vanillaColumnGroups, ...midColumnGroups];
-      lastVisibleIndex = vanillaColumnGroups.length;
+      orderedColumns = [...vanillaColumns, ...midColumns];
+      lastVisibleIndex = vanillaColumns.length;
     } else if (side === 1) {
-      vanillaColumnGroups.forEach((columnGroup, index) => {
-        const startDepth = endColumnGroup.position.z;
+      vanillaColumns.forEach((columnGroup, index) => {
+        const startDepth = endColumn.position.z;
 
         columnGroup.position.set(
           0,
@@ -163,14 +161,14 @@ class ZStretchManager implements StretchManager {
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
-      orderedColumns = [...midColumnGroups, ...vanillaColumnGroups];
-      lastVisibleIndex = midColumnGroups.length - 1;
+      orderedColumns = [...midColumns, ...vanillaColumns];
+      lastVisibleIndex = midColumns.length - 1;
     }
 
     this.startData = {
       side,
       orderedColumns,
-      bookendColumn: side === 1 ? endColumnGroup : startColumnGroup,
+      bookendColumn: side === 1 ? endColumn : startColumn,
       lastVisibleIndex,
     };
   }
@@ -271,9 +269,12 @@ class ZStretchManager implements StretchManager {
   }
 
   gestureEnd() {
-    if (!this.startData) return;
+    if (!this.initData || !this.startData) return;
+    const { startColumn, endColumn } = this.initData;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData;
+
+    console.log({ startZ: startColumn.position.z, endZ: endColumn.position.z });
 
     if (side === 1) {
       bookendColumn.position.z =
@@ -283,9 +284,31 @@ class ZStretchManager implements StretchManager {
       bookendColumn.position.z =
         orderedColumns[lastVisibleIndex].position.z -
         bookendColumn.userData.depth;
+
+      const delta = -bookendColumn.position.z;
+
+      bookendColumn.position.z = 0;
+
+      [...orderedColumns, endColumn].forEach((column) => {
+        column.position.z += delta;
+      });
+
+      this.houseGroup.position.sub(
+        new Vector3(0, 0, delta).applyAxisAngle(
+          new Vector3(0, 1, 0),
+          this.houseGroup.rotation.y
+        )
+      );
     }
 
     this.reindexColumns();
+
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((layoutGroup) => {
+        layoutGroup.updateDepth();
+      })
+    );
 
     this.init();
   }
@@ -323,6 +346,7 @@ class ZStretchManager implements StretchManager {
     delete this.initData;
     delete this.startData;
   }
+
   isVanillaColumn(column: ColumnGroup): boolean {
     return column.userData.columnIndex === -1;
   }
