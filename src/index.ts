@@ -35,7 +35,7 @@ export {
   createBasicScene,
   format,
   formatWithUnit,
-  createHouseGroupTE as houseGroupTE,
+  createHouseGroupTE,
   useAnalysisData,
   useOrderListData,
   useOutputsFiles,

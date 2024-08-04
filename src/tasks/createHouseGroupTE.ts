@@ -12,7 +12,7 @@ import { nanoid } from "nanoid";
 type HouseGroupParams = {
   systemId: string;
   dnas: string[];
-  houseId: string;
+  houseId?: string;
   houseTypeId: string;
   friendlyName?: string;
   position?: { x: number; y: number; z: number };

@@ -12,7 +12,7 @@ import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { Vector3 } from "three";
 
-const DEFAULT_MAX_DEPTH = 5;
+const DEFAULT_MAX_DEPTH = 15;
 
 class ZStretchManager implements StretchManager {
   houseGroup: HouseGroup;

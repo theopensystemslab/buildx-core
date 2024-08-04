@@ -1,7 +1,7 @@
 import {
   BuildXScene,
   cachedHouseTypesTE,
-  houseGroupTE as defaultHouseGroupTE,
+  createHouseGroupTE as defaultHouseGroupTE,
 } from "@/index";
 import { A, NEA, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
