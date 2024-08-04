@@ -252,8 +252,6 @@ export class ColumnLayoutGroup extends Group {
 
     // Set the AABB
     this.aabb.set(min, max);
-
-    this.renderOBB();
   }
 
   renderOBB() {

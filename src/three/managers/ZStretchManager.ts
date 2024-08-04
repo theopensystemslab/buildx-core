@@ -6,25 +6,11 @@ import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "@/three/objects/house/ColumnGroup";
-import {
-  hideObject,
-  showObject,
-  showObjectCameraOnly,
-} from "@/three/utils/layers";
+import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import {
-  BoxHelper,
-  BufferGeometry,
-  CanvasTexture,
-  Line,
-  LineBasicMaterial,
-  Sprite,
-  SpriteMaterial,
-  Texture,
-  Vector3,
-} from "three";
+import { Vector3 } from "three";
 
 const DEFAULT_MAX_DEPTH = 5;
 
@@ -47,9 +33,6 @@ class ZStretchManager implements StretchManager {
     bookendColumn: ColumnGroup;
     lastVisibleIndex: number;
   };
-
-  private targetLine: Line | null = null;
-  private bookendLine: Line | null = null;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
@@ -194,8 +177,6 @@ class ZStretchManager implements StretchManager {
           this.startData.lastVisibleIndex++;
         } else {
         }
-
-        this.drawLines(targetZ, bookendZ);
       }
 
       if (delta < 0) {
@@ -211,8 +192,6 @@ class ZStretchManager implements StretchManager {
           hideObject(lastVisibleColumn);
           this.startData.lastVisibleIndex--;
         }
-
-        this.drawLines(targetZ, bookendZ);
       }
     }
 
@@ -239,8 +218,6 @@ class ZStretchManager implements StretchManager {
           this.showVanillaColumn(firstInvisibleColumn);
           this.startData.lastVisibleIndex--;
         }
-
-        this.drawLines(targetZ, bookendZ);
       }
 
       if (delta > 0) {
@@ -260,8 +237,6 @@ class ZStretchManager implements StretchManager {
           hideObject(lastVisibleColumn);
           this.startData.lastVisibleIndex++;
         }
-
-        this.drawLines(targetZ, bookendZ);
       }
     }
 
@@ -317,6 +292,8 @@ class ZStretchManager implements StretchManager {
 
     this.houseGroup.managers.xStretch?.init();
 
+    // this.cleanup();
+
     this.init();
   }
 
@@ -354,137 +331,12 @@ class ZStretchManager implements StretchManager {
     delete this.startData;
   }
 
-  isVanillaColumn(column: ColumnGroup): boolean {
-    return column.userData.columnIndex === -1;
-  }
   showHandles() {
     this.handles.forEach(showObject);
   }
 
   hideHandles() {
     this.handles.forEach(hideObject);
-  }
-
-  private drawLines(targetZ: number, bookendZ: number) {
-    const lineHeight = 10; // Adjust as needed
-    const lineColor = 0xff0000; // Red color
-
-    // Draw target line
-    if (!this.targetLine) {
-      const geometry = new BufferGeometry().setFromPoints([
-        new Vector3(0, 0, targetZ),
-        new Vector3(0, lineHeight, targetZ),
-      ]);
-      const material = new LineBasicMaterial({ color: lineColor });
-      this.targetLine = new Line(geometry, material);
-      showObjectCameraOnly(this.targetLine);
-      pipe(
-        this.houseGroup.activeLayoutGroup,
-        O.map((activeLayoutGroup) => {
-          activeLayoutGroup.add(this.targetLine!);
-        })
-      );
-    } else {
-      const positions = this.targetLine.geometry.attributes.position.array;
-      positions[2] = targetZ;
-      positions[5] = targetZ;
-      this.targetLine.geometry.attributes.position.needsUpdate = true;
-    }
-
-    // Draw bookend line
-    if (!this.bookendLine) {
-      const geometry = new BufferGeometry().setFromPoints([
-        new Vector3(0, 0, bookendZ),
-        new Vector3(0, lineHeight, bookendZ),
-      ]);
-      const material = new LineBasicMaterial({ color: lineColor });
-      this.bookendLine = new Line(geometry, material);
-      showObjectCameraOnly(this.bookendLine);
-      pipe(
-        this.houseGroup.activeLayoutGroup,
-        O.map((activeLayoutGroup) => {
-          activeLayoutGroup.add(this.bookendLine!);
-        })
-      );
-    } else {
-      const positions = this.bookendLine.geometry.attributes.position.array;
-      positions[2] = bookendZ;
-      positions[5] = bookendZ;
-      this.bookendLine.geometry.attributes.position.needsUpdate = true;
-    }
-  }
-
-  // @ts-ignore
-  private upsertColumnAnnotation(
-    column: ColumnGroup,
-    label: string,
-    color = 0xffffff
-  ) {
-    const spriteHeight = column.userData.height + 1;
-    const spriteZ = column.userData.depth / 2;
-
-    // Update or create sprite
-    let sprite = column.getObjectByName("indexSprite") as Sprite | undefined;
-    if (!sprite) {
-      sprite = new Sprite(new SpriteMaterial({ color }));
-      sprite.name = "indexSprite";
-      column.add(sprite);
-    } else {
-      if (sprite.material instanceof SpriteMaterial) {
-        sprite.material.color.setHex(color);
-      }
-    }
-    sprite.scale.setScalar(1);
-    sprite.position.set(0, spriteHeight, spriteZ);
-    if (sprite.material instanceof SpriteMaterial) {
-      sprite.material.map = this.createTextTexture(label);
-      sprite.material.needsUpdate = true;
-    }
-    showObjectCameraOnly(sprite);
-
-    // Update or create line
-    let line = column.getObjectByName("indexLine") as Line | undefined;
-    const lineGeometry = new BufferGeometry().setFromPoints([
-      new Vector3(0, -column.userData.height / 2, 0),
-      new Vector3(0, column.userData.height * 1.5, 0),
-    ]);
-    if (!line) {
-      const lineMaterial = new LineBasicMaterial({ color });
-      line = new Line(lineGeometry, lineMaterial);
-      line.name = "indexLine";
-      column.add(line);
-    } else {
-      line.geometry.dispose();
-      line.geometry = lineGeometry;
-    }
-    showObjectCameraOnly(line);
-
-    // Update or create BoxHelper
-    let helper = this.houseGroup.scene.getObjectByName(
-      `boxHelper_${column.id}`
-    ) as BoxHelper | undefined;
-
-    if (!helper) {
-      helper = new BoxHelper(column, color); // Create an empty BoxHelper
-      helper.name = `boxHelper_${column.id}`;
-      this.houseGroup.scene.add(helper);
-    } else {
-      helper.update();
-    }
-
-    return { sprite, helper, line };
-  }
-
-  createTextTexture(text: string): Texture {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d")!;
-    canvas.width = 256;
-    canvas.height = 128;
-    context.font = "Bold 24px Arial";
-    context.fillStyle = "white";
-    context.textAlign = "center";
-    context.fillText(text, 128, 64);
-    return new CanvasTexture(canvas);
   }
 }
 
