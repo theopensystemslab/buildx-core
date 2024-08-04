@@ -10,6 +10,7 @@ export type SceneContextModeLabel = z.infer<typeof SceneContextModeLabel>;
 
 export type SceneContextMode = {
   label: SceneContextModeLabel;
+  selectedHouses: HouseGroup[];
   buildingHouseGroup: O.Option<HouseGroup>;
   buildingRowIndex: O.Option<number>;
 };
@@ -21,6 +22,7 @@ type ContextManagerConfig = {
 class ContextManager {
   _buildingHouseGroup: O.Option<HouseGroup>;
   _buildingRowIndex: O.Option<number>;
+  _selectedHouses: HouseGroup[];
 
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
 
@@ -31,6 +33,41 @@ class ContextManager {
 
     this._buildingHouseGroup = O.none;
     this._buildingRowIndex = O.none;
+
+    this._selectedHouses = [];
+  }
+
+  pushSelectedHouse(houseGroup: HouseGroup) {
+    this._selectedHouses.push(houseGroup);
+  }
+
+  get selectedHouses() {
+    return this._selectedHouses;
+  }
+
+  set selectedHouse(houseGroup: HouseGroup) {
+    this._selectedHouses.forEach((houseGroup) => {
+      houseGroup.managers.rotate?.hideHandles();
+    });
+
+    this._selectedHouses = [houseGroup];
+
+    if (this.mode.label === SceneContextModeLabel.Enum.SITE) {
+      this._selectedHouses.forEach((houseGroup) => {
+        houseGroup.managers.rotate?.showHandles();
+      });
+    }
+  }
+
+  setSelectedHouse(houseGroup: HouseGroup) {
+    this.selectedHouse = houseGroup;
+  }
+
+  clearSelectedHouses() {
+    this._selectedHouses.forEach((houseGroup) => {
+      houseGroup.managers.rotate?.hideHandles();
+    });
+    this._selectedHouses = [];
   }
 
   get siteMode() {
@@ -67,6 +104,7 @@ class ContextManager {
       label: mode,
       buildingHouseGroup,
       buildingRowIndex,
+      selectedHouses: this._selectedHouses,
     };
   }
 
@@ -96,6 +134,8 @@ class ContextManager {
       O.match(
         () => {},
         (next) => {
+          // hide rotate handles
+          next.managers.rotate?.hideHandles();
           // go into next building house
           next.managers.zStretch?.init();
           next.managers.zStretch?.showHandles();
@@ -117,6 +157,8 @@ class ContextManager {
   }
 
   set buildingRowIndex(rowIndex: O.Option<number>) {
+    let prevMode = this.mode;
+
     // 0. if no building house group what?
     pipe(
       this._buildingHouseGroup,
@@ -178,6 +220,10 @@ class ContextManager {
         }
       )
     );
+
+    let nextMode = this.mode;
+
+    this.onModeChange?.(prevMode, nextMode);
   }
 
   contextDown(elementGroup: ElementGroup) {
