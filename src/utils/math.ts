@@ -1,6 +1,6 @@
 import { A } from "./functions";
 
-const { abs, floor, min, max, PI, random, sin, sign } = Math;
+const { abs, floor, min, max, PI, random, sin, sign, atan2 } = Math;
 
 export const roundp = (v: number, precision: number = 3) => {
   const multiplier = Math.pow(10, precision);
@@ -15,4 +15,4 @@ export const hamming = (a: string, b: string) => {
   ).reduce((acc, v) => acc + v, 0);
 };
 
-export { abs, floor, min, max, PI, random, sin, sign };
+export { abs, atan2, floor, min, max, PI, random, sin, sign };

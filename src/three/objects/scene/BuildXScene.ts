@@ -36,6 +36,7 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
@@ -208,46 +209,109 @@ class BuildXScene extends Scene {
             onRightClickBuildElement?.(object.scopeElement, pointer);
           }
         },
-        onDragStart: ({ object }) => {
-          if (object instanceof StretchHandleMesh) {
-            const stretchManager = object.manager;
-            stretchManager.gestureStart(object.side);
+        onDragStart: ({ object }, pointer) => {
+          switch (true) {
+            case object instanceof StretchHandleMesh: {
+              const stretchManager = object.manager;
+              stretchManager.gestureStart(object.side);
 
-            const yAxis = new Vector3(0, 1, 0);
+              const yAxis = new Vector3(0, 1, 0);
 
-            dragProgress = (delta: Vector3) => {
-              // REVIEW: whether to normalize here or in the manager
-              const normalizedDelta = delta
-                .clone()
-                .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
-              stretchManager.gestureProgress(
-                stretchManager instanceof XStretchManager
-                  ? normalizedDelta.x
-                  : normalizedDelta.z
-              );
-            };
-
-            dragEnd = () => {
-              stretchManager.gestureEnd();
-              dragProgress = undefined;
-            };
-          } else if (object instanceof ElementBrush) {
-            if (this.contextManager?.siteMode) {
-              const houseGroup = object.houseGroup;
-              this.contextManager.selectedHouses = [houseGroup];
               dragProgress = (delta: Vector3) => {
-                houseGroup.move(delta);
+                // REVIEW: whether to normalize here or in the manager
+                const normalizedDelta = delta
+                  .clone()
+                  .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
+                stretchManager.gestureProgress(
+                  stretchManager instanceof XStretchManager
+                    ? normalizedDelta.x
+                    : normalizedDelta.z
+                );
               };
+
+              dragEnd = () => {
+                stretchManager.gestureEnd();
+                dragProgress = undefined;
+              };
+              return;
+            }
+
+            case object instanceof ElementBrush: {
+              if (this.contextManager?.siteMode) {
+                const houseGroup = object.houseGroup;
+                this.contextManager.selectedHouses = [houseGroup];
+                dragProgress = (delta: Vector3) => {
+                  houseGroup.move(delta);
+                };
+                dragEnd = () => {
+                  dragProgress = undefined;
+
+                  const {
+                    userData: { houseId },
+                    position,
+                  } = houseGroup;
+
+                  houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
+                };
+              }
+              return;
+            }
+
+            case object instanceof RotateHandleMesh: {
+              const { houseGroup } = object;
+
+              const initialRotation = houseGroup.rotation.y;
+              const center = new Vector3(); // Assume this is the rotation center
+              const initialPointer = new Vector3(pointer.x, 0, pointer.y).sub(
+                center
+              );
+
+              let currentRotation = initialRotation;
+
+              dragProgress = (delta: Vector3) => {
+                const currentPointer = new Vector3(
+                  pointer.x + delta.x,
+                  0,
+                  pointer.y + delta.z
+                ).sub(center);
+
+                // Normalize vectors to get direction
+                const initialDir = initialPointer.clone().normalize();
+                const currentDir = currentPointer.clone().normalize();
+
+                // Calculate rotation quaternion
+                const quaternion = new Quaternion();
+                quaternion.setFromUnitVectors(initialDir, currentDir);
+
+                // Extract rotation around Y-axis
+                const rotationMatrix = new Matrix4().makeRotationFromQuaternion(
+                  quaternion
+                );
+                const rotationY = -Math.atan2(
+                  rotationMatrix.elements[8],
+                  rotationMatrix.elements[10]
+                ); // Negated for correct direction
+
+                // Apply rotation with smoothing
+                const smoothFactor = 0.1; // Adjust this value to change smoothing (0-1)
+                currentRotation +=
+                  (rotationY - (currentRotation - initialRotation)) *
+                  smoothFactor;
+
+                houseGroup.rotation.y = currentRotation;
+              };
+
               dragEnd = () => {
                 dragProgress = undefined;
 
                 const {
                   userData: { houseId },
-                  position,
+                  rotation: { y: rotation },
                 } = houseGroup;
 
-                houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
+                houseGroup.hooks?.onHouseUpdate?.(houseId, { rotation });
               };
+              return;
             }
           }
         },

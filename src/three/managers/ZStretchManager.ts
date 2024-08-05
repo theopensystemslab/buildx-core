@@ -291,6 +291,7 @@ class ZStretchManager implements StretchManager {
     );
 
     this.houseGroup.managers.xStretch?.init();
+    this.houseGroup.updateRotateHandles();
 
     // this.cleanup();
 

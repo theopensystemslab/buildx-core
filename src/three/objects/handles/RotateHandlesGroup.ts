@@ -1,74 +1,79 @@
 import { CircleGeometry, Group, Mesh, PlaneGeometry } from "three";
-import { OBB } from "three-stdlib";
 import HandleGroup from "./HandleGroup";
 import handleMaterial from "./handleMaterial";
-import RotateHandleGroup from "./RotateHandleGroup";
+import { OBB } from "three-stdlib";
+import { HouseGroup } from "../house/HouseGroup";
+import { O } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
+import RotateHandleMesh from "./RotateHandleMesh";
 
 const HANDLE_THICKNESS = 0.3;
-const GRIP_RADIUS = 0.5;
+const ROTATE_HANDLE_OFFSET = 2;
+const CIRCLE_SCALE = 1;
 
-class RotateHandlesGroup extends HandleGroup {
+const circleGeometry = new CircleGeometry(0.5, 16);
+const planeGeometry = new PlaneGeometry(1, 1);
+
+class RotateHandleGroup extends HandleGroup {
+  plane: Mesh;
+  circle: Mesh;
+  axis: "x" | "z";
+
+  constructor(axis: "x" | "z") {
+    super();
+
+    this.axis = axis;
+
+    this.plane = new RotateHandleMesh(planeGeometry, handleMaterial);
+    this.circle = new RotateHandleMesh(circleGeometry, handleMaterial);
+
+    this.add(this.plane, this.circle);
+
+    this.rotation.x = -Math.PI / 2;
+    this.position.y = 0.01;
+  }
+
+  setSize(obb: OBB) {
+    const { halfSize } = obb;
+
+    if (this.axis === "x") {
+      const target = halfSize.x + ROTATE_HANDLE_OFFSET;
+      this.plane.scale.set(target, HANDLE_THICKNESS, 1);
+      this.plane.position.setX(target / 2);
+      this.circle.position.set(target, 0, 0);
+      this.circle.scale.setScalar(CIRCLE_SCALE);
+    }
+    if (this.axis === "z") {
+      const target = halfSize.z + ROTATE_HANDLE_OFFSET;
+      this.plane.scale.set(HANDLE_THICKNESS, target, 1);
+      // y is z because of rotation
+      this.plane.position.set(0, target / 2, 0);
+      this.circle.position.set(0, target, 0);
+      this.circle.scale.setScalar(CIRCLE_SCALE);
+    }
+  }
+}
+
+class RotateHandlesGroup extends Group {
   widthHandle: RotateHandleGroup;
   depthHandle: RotateHandleGroup;
-
-  constructor(obb: OBB) {
+  houseGroup: HouseGroup;
+  constructor(houseGroup: HouseGroup) {
     super();
-    this.widthHandle = this.createHandle(obb, "width");
-    this.depthHandle = this.createHandle(obb, "depth");
-    this.add(this.widthHandle, this.depthHandle);
+    this.houseGroup = houseGroup;
+    this.widthHandle = new RotateHandleGroup("x");
+    this.depthHandle = new RotateHandleGroup("z");
+    this.add(this.widthHandle);
+    this.add(this.depthHandle);
   }
 
-  createHandle(obb: OBB, axis: "width" | "depth"): RotateHandleGroup {
-    const isWidthAxis = axis === "width";
-    const length = isWidthAxis ? obb.halfSize.x * 2 : obb.halfSize.z * 2;
-
-    // Create shaft (plane)
-    const shaftGeometry = new PlaneGeometry(length, HANDLE_THICKNESS);
-    const shaftMesh = new Mesh(shaftGeometry, handleMaterial);
-
-    // Create grip (circle)
-    const gripGeometry = new CircleGeometry(GRIP_RADIUS, 32);
-    const gripMesh = new Mesh(gripGeometry, handleMaterial);
-
-    // Position grip at the end of the shaft
-    gripMesh.position.set(
-      isWidthAxis ? length / 2 : 0,
-      0,
-      isWidthAxis ? 0 : length / 2
-    );
-
-    // Combine shaft and grip
-    const handle = new Group();
-    handle.add(shaftMesh, gripMesh);
-
-    // Position handle
-    handle.position.set(
-      isWidthAxis ? obb.center.x : obb.center.x + obb.halfSize.x,
-      obb.center.y,
-      isWidthAxis ? obb.center.z + obb.halfSize.z : obb.center.z
-    );
-
-    // Rotate depth handle to align with z-axis
-    if (!isWidthAxis) {
-      handle.rotateY(Math.PI / 2);
-    }
-
-    return handle;
-  }
-
-  updateHandles(obb: OBB) {
-    this.widthHandle.scale.setX(obb.halfSize.x * 2);
-    this.widthHandle.position.set(
-      obb.center.x,
-      obb.center.y,
-      obb.center.z + obb.halfSize.z
-    );
-
-    this.depthHandle.scale.setX(obb.halfSize.z * 2);
-    this.depthHandle.position.set(
-      obb.center.x + obb.halfSize.x,
-      obb.center.y,
-      obb.center.z
+  updateHandles() {
+    pipe(
+      this.houseGroup.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        this.widthHandle.setSize(activeLayoutGroup.obb);
+        this.depthHandle.setSize(activeLayoutGroup.obb);
+      })
     );
   }
 }

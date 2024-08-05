@@ -77,11 +77,10 @@ export class HouseGroup extends Group {
     this.position.set(position.x, position.y, position.z);
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
 
-    this.rotateHandlesGroup = new RotateHandlesGroup(
-      initialColumnLayoutGroup.obb
-    );
-    // this.rotateHandlesGroup.syncDimensions();
+    this.rotateHandlesGroup = new RotateHandlesGroup(this);
     this.hideRotateHandles();
+    this.add(this.rotateHandlesGroup);
+    this.rotateHandlesGroup.updateHandles();
   }
 
   get friendlyName(): string {
@@ -167,6 +166,10 @@ export class HouseGroup extends Group {
 
   hideRotateHandles() {
     hideObject(this.rotateHandlesGroup);
+  }
+
+  updateRotateHandles() {
+    this.rotateHandlesGroup.updateHandles();
   }
 }
 
