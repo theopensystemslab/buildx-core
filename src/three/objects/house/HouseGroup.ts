@@ -13,6 +13,8 @@ import { Group, Vector3 } from "three";
 import RotateHandlesGroup from "../handles/RotateHandlesGroup";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import { OBB } from "three-stdlib";
+import RotateManager from "@/three/managers/RotateManager";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -22,6 +24,7 @@ type Hooks = {
 
 type Managers = {
   layouts: LayoutsManager;
+  rotate?: RotateManager;
   elements?: ElementsManager;
   xStretch?: XStretchManager;
   zStretch?: ZStretchManager;
@@ -64,6 +67,7 @@ export class HouseGroup extends Group {
 
     this.managers = {
       elements: managers.elements ?? new ElementsManager(this),
+      rotate: managers.rotate ?? new RotateManager(this),
       layouts: managers.layouts ?? new LayoutsManager(this),
       xStretch: managers.xStretch ?? new XStretchManager(this),
       zStretch: managers.zStretch ?? new ZStretchManager(this),
@@ -97,6 +101,24 @@ export class HouseGroup extends Group {
       this.managers.layouts,
       O.fromNullable,
       O.chain((x) => x.activeLayoutGroup)
+    );
+  }
+
+  get unsafeOBB(): OBB {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      return activeLayoutGroup.value.obb;
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
+  updateBBs() {
+    pipe(
+      this.activeLayoutGroup,
+      O.map((activeLayoutGroup) => {
+        activeLayoutGroup.updateBBs();
+      })
     );
   }
 
