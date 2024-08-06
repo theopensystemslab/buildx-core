@@ -35,14 +35,13 @@ class RotateManager {
     return this.houseGroup.unsafeOBB.center.clone();
   }
 
-  initGesture() {
+  initGesture(currentPoint: Vector3) {
     this.createDebugObjects();
-    this.startAngle = null;
+    this.startAngle = this.calculateAngle(currentPoint);
   }
 
-  gestureProgress(delta: Vector3) {
-    const center = this.center;
-    const currentPoint = new Vector3(delta.x, 0, delta.z).add(center);
+  gestureProgress(currentPoint: Vector3) {
+    // const currentPoint = new Vector3(delta.x, 0, delta.z).add(center);
     this.updateDebugVisuals(currentPoint);
 
     const angle = this.calculateAngle(currentPoint);
@@ -72,6 +71,8 @@ class RotateManager {
 
   private createDebugObjects() {
     const center = this.center;
+
+    console.log(center.toArray());
 
     const centerMarker = new Mesh(
       new SphereGeometry(0.1),

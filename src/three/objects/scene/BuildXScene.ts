@@ -2,7 +2,7 @@ import { House } from "@/data/user/houses";
 import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";
-import GestureManager from "@/three/managers/GestureManager";
+import GestureManager, { DragDetail } from "@/three/managers/GestureManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
 import { Polygon } from "geojson";
@@ -173,7 +173,8 @@ class BuildXScene extends Scene {
     this.selectedElement = null;
     this.hoveredElement = null;
 
-    let dragProgress: ((delta: Vector3) => void) | undefined = undefined,
+    let dragProgress: ((dragDetail: DragDetail) => void) | undefined =
+        undefined,
       dragEnd: (() => void) | undefined = undefined;
 
     if (enableGestures)
@@ -209,7 +210,7 @@ class BuildXScene extends Scene {
             onRightClickBuildElement?.(object.scopeElement, pointer);
           }
         },
-        onDragStart: ({ object }) => {
+        onDragStart: ({ object, point: currentPoint }) => {
           switch (true) {
             case object instanceof StretchHandleMesh: {
               const stretchManager = object.manager;
@@ -217,7 +218,7 @@ class BuildXScene extends Scene {
 
               const yAxis = new Vector3(0, 1, 0);
 
-              dragProgress = (delta: Vector3) => {
+              dragProgress = ({ delta }: DragDetail) => {
                 // REVIEW: whether to normalize here or in the manager
                 const normalizedDelta = delta
                   .clone()
@@ -240,7 +241,7 @@ class BuildXScene extends Scene {
               if (this.contextManager?.siteMode) {
                 const houseGroup = object.houseGroup;
                 this.contextManager.selectedHouses = [houseGroup];
-                dragProgress = (delta: Vector3) => {
+                dragProgress = ({ delta }: DragDetail) => {
                   houseGroup.move(delta);
                 };
                 dragEnd = () => {
@@ -262,10 +263,10 @@ class BuildXScene extends Scene {
               const rotateManager = object.houseGroup.managers.rotate;
               if (!rotateManager) return;
 
-              rotateManager.initGesture();
+              rotateManager.initGesture(currentPoint);
 
-              dragProgress = (delta: Vector3) => {
-                rotateManager.gestureProgress(delta);
+              dragProgress = ({ currentPoint }: DragDetail) => {
+                rotateManager.gestureProgress(currentPoint);
               };
 
               dragEnd = () => {
@@ -276,7 +277,7 @@ class BuildXScene extends Scene {
             }
           }
         },
-        onDragProgress: (v) => dragProgress?.(v.delta),
+        onDragProgress: (v) => dragProgress?.(v),
         onDragEnd: () => dragEnd?.(),
         onTapMissed,
       });

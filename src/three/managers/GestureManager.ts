@@ -19,7 +19,7 @@ type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
 type DragHandler = (detail: DragDetail) => void;
 
-type DragDetail = {
+export type DragDetail = {
   initialPoint: Vector3;
   lastPoint: Vector3;
   currentPoint: Vector3;
