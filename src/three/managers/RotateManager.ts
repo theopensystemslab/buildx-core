@@ -1,3 +1,4 @@
+import RotateHandlesGroup from "../objects/handles/RotateHandlesGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import {
   Vector3,
@@ -12,9 +13,12 @@ import {
   Texture,
   CanvasTexture,
 } from "three";
+import { hideObject, showObject } from "../utils/layers";
 
 class RotateManager {
   private houseGroup: HouseGroup;
+  private rotateHandlesGroup: RotateHandlesGroup;
+  private debug: boolean;
   private debugObjects: {
     centerMarker?: Mesh;
     currentPointMarker?: Mesh;
@@ -22,9 +26,14 @@ class RotateManager {
     textSprite?: Sprite;
   } = {};
   private startAngle: number | null = null;
+  private initialRotation: number | null = null;
 
-  constructor(houseGroup: HouseGroup) {
+  constructor(houseGroup: HouseGroup, debug: boolean = false) {
     this.houseGroup = houseGroup;
+    this.debug = debug;
+    this.rotateHandlesGroup = new RotateHandlesGroup(this.houseGroup);
+    this.hideHandles();
+    this.houseGroup.add(this.rotateHandlesGroup);
   }
 
   get scene() {
@@ -36,22 +45,25 @@ class RotateManager {
   }
 
   initGesture(currentPoint: Vector3) {
-    this.createDebugObjects();
+    if (this.debug) {
+      this.createDebugObjects();
+    }
     this.startAngle = this.calculateAngle(currentPoint);
+    this.initialRotation = this.houseGroup.rotation.y;
   }
 
   gestureProgress(currentPoint: Vector3) {
-    // const currentPoint = new Vector3(delta.x, 0, delta.z).add(center);
-    this.updateDebugVisuals(currentPoint);
+    if (this.debug) {
+      this.updateDebugVisuals(currentPoint);
+    }
 
     const angle = this.calculateAngle(currentPoint);
 
-    if (this.startAngle === null) {
-      this.startAngle = angle;
-    }
-
     this.applyRotation(angle);
-    this.updateDebugInfo(angle);
+
+    if (this.debug) {
+      this.updateDebugInfo(angle);
+    }
   }
 
   gestureEnd() {
@@ -65,14 +77,15 @@ class RotateManager {
     });
     this.houseGroup.updateBBs();
 
-    this.cleanupDebugObjects();
+    if (this.debug) {
+      this.cleanupDebugObjects();
+    }
+
     this.startAngle = null;
   }
 
   private createDebugObjects() {
     const center = this.center;
-
-    console.log(center.toArray());
 
     const centerMarker = new Mesh(
       new SphereGeometry(0.1),
@@ -114,9 +127,22 @@ class RotateManager {
   }
 
   private applyRotation(currentAngle: number) {
-    if (this.startAngle === null) return;
+    if (this.startAngle === null || this.initialRotation === null) return;
     const deltaAngle = currentAngle - this.startAngle;
-    this.houseGroup.rotation.y = -deltaAngle;
+    this.houseGroup.rotation.y = this.initialRotation - deltaAngle;
+  }
+
+  showHandles() {
+    this.rotateHandlesGroup.updateHandles();
+    showObject(this.rotateHandlesGroup);
+  }
+
+  hideHandles() {
+    hideObject(this.rotateHandlesGroup);
+  }
+
+  updateHandles() {
+    this.rotateHandlesGroup.updateHandles();
   }
 
   private updateDebugInfo(angle: number) {

@@ -3,18 +3,16 @@ import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
 import OpeningsManager from "@/three/managers/OpeningsManager";
+import RotateManager from "@/three/managers/RotateManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
-import { hideObject, showObject } from "@/three/utils/layers";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group, Vector3 } from "three";
-import RotateHandlesGroup from "../handles/RotateHandlesGroup";
+import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import { OBB } from "three-stdlib";
-import RotateManager from "@/three/managers/RotateManager";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -43,7 +41,6 @@ export class HouseGroup extends Group {
   userData: HouseGroupUserData;
   hooks: Partial<Hooks>;
   managers: Managers;
-  rotateHandlesGroup: RotateHandlesGroup;
 
   constructor({
     userData,
@@ -74,7 +71,6 @@ export class HouseGroup extends Group {
       cuts: managers.cuts ?? new CutsManager(this),
       openings: managers.openings ?? new OpeningsManager(this),
     };
-
     this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
     this.hooks = hooks ?? {};
 
@@ -82,11 +78,6 @@ export class HouseGroup extends Group {
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
 
     this.updateBBs();
-
-    this.rotateHandlesGroup = new RotateHandlesGroup(this);
-    this.hideRotateHandles();
-    this.add(this.rotateHandlesGroup);
-    this.rotateHandlesGroup.updateHandles();
   }
 
   get friendlyName(): string {
@@ -181,19 +172,6 @@ export class HouseGroup extends Group {
     if (this.scene.contextManager) {
       this.scene.contextManager.buildingHouseGroup = O.some(this);
     }
-  }
-
-  showRotateHandles() {
-    console.log("showRotateHandles");
-    showObject(this.rotateHandlesGroup);
-  }
-
-  hideRotateHandles() {
-    hideObject(this.rotateHandlesGroup);
-  }
-
-  updateRotateHandles() {
-    this.rotateHandlesGroup.updateHandles();
   }
 }
 
