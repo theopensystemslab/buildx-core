@@ -78,16 +78,17 @@ type BuildXSceneConfig = {
 };
 
 class BuildXScene extends Scene {
-  gestureManager?: GestureManager;
-  contextManager?: ContextManager;
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
-  selectedElement: ScopeElement | null;
-  hoveredElement: ScopeElement | null;
+
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
   onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
+
+  gestureManager?: GestureManager;
+  contextManager?: ContextManager;
+
   siteBoundary: SiteBoundary | null;
 
   constructor(config: BuildXSceneConfig = {}) {
@@ -169,9 +170,6 @@ class BuildXScene extends Scene {
     if (enableGroundObjects) {
       this.enableGroundObjects();
     }
-
-    this.selectedElement = null;
-    this.hoveredElement = null;
 
     let dragProgress: ((dragDetail: DragDetail) => void) | undefined =
         undefined,
@@ -443,6 +441,12 @@ class BuildXScene extends Scene {
   }
 
   addHouseType() {}
+
+  get houses(): HouseGroup[] {
+    return this.children.filter(
+      (x): x is HouseGroup => x instanceof HouseGroup
+    );
+  }
 }
 
 export default BuildXScene;

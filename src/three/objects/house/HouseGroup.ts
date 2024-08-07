@@ -9,10 +9,11 @@ import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Vector3 } from "three";
+import { Box3, Group, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import CollisionsManager from "@/three/managers/CollisionsManager";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -28,6 +29,7 @@ type Managers = {
   zStretch?: ZStretchManager;
   cuts?: CutsManager;
   openings?: OpeningsManager;
+  collisions?: CollisionsManager;
 };
 
 export type HouseGroupUserData = {
@@ -70,6 +72,7 @@ export class HouseGroup extends Group {
       zStretch: managers.zStretch ?? new ZStretchManager(this),
       cuts: managers.cuts ?? new CutsManager(this),
       openings: managers.openings ?? new OpeningsManager(this),
+      collisions: managers.collisions ?? new CollisionsManager(this),
     };
     this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
     this.hooks = hooks ?? {};
@@ -101,6 +104,15 @@ export class HouseGroup extends Group {
     const activeLayoutGroup = this.activeLayoutGroup;
     if (activeLayoutGroup._tag === "Some") {
       return activeLayoutGroup.value.obb;
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
+  get unsafeAABB(): Box3 {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      return activeLayoutGroup.value.aabb;
     } else {
       throw new Error(`no activeLayoutGroup in houseGroup`);
     }
