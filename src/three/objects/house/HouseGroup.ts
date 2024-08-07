@@ -1,7 +1,9 @@
 import { House } from "@/data/user/houses";
+import CollisionsManager from "@/three/managers/CollisionsManager";
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
+import MoveManager from "@/three/managers/MoveManager";
 import OpeningsManager from "@/three/managers/OpeningsManager";
 import RotateManager from "@/three/managers/RotateManager";
 import XStretchManager from "@/three/managers/XStretchManager";
@@ -9,7 +11,7 @@ import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { O, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { Group, Vector3 } from "three";
+import { Box3, Group, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
@@ -22,12 +24,14 @@ type Hooks = {
 
 type Managers = {
   layouts: LayoutsManager;
+  move?: MoveManager;
   rotate?: RotateManager;
   elements?: ElementsManager;
   xStretch?: XStretchManager;
   zStretch?: ZStretchManager;
   cuts?: CutsManager;
   openings?: OpeningsManager;
+  collisions?: CollisionsManager;
 };
 
 export type HouseGroupUserData = {
@@ -64,12 +68,14 @@ export class HouseGroup extends Group {
 
     this.managers = {
       elements: managers.elements ?? new ElementsManager(this),
+      move: managers.move ?? new MoveManager(this),
       rotate: managers.rotate ?? new RotateManager(this),
       layouts: managers.layouts ?? new LayoutsManager(this),
       xStretch: managers.xStretch ?? new XStretchManager(this),
       zStretch: managers.zStretch ?? new ZStretchManager(this),
       cuts: managers.cuts ?? new CutsManager(this),
       openings: managers.openings ?? new OpeningsManager(this),
+      collisions: managers.collisions ?? new CollisionsManager(this),
     };
     this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
     this.hooks = hooks ?? {};
@@ -106,6 +112,15 @@ export class HouseGroup extends Group {
     }
   }
 
+  get unsafeAABB(): Box3 {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      return activeLayoutGroup.value.aabb;
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
   updateBBs() {
     pipe(
       this.activeLayoutGroup,
@@ -115,17 +130,21 @@ export class HouseGroup extends Group {
     );
   }
 
+  renderOBB() {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      activeLayoutGroup.value.renderOBB();
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
   get scene(): BuildXScene {
     return pipe(
       this,
       findFirstGuardUp((o): o is BuildXScene => o instanceof BuildXScene),
       someOrError(`scene not found above HouseGroup`)
     );
-  }
-
-  move(v: Vector3) {
-    this.position.add(v);
-    // this.cutsManager.syncObjectCuts(this.activeLayoutGroup);
   }
 
   delete() {
