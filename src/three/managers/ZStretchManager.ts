@@ -25,6 +25,7 @@ class ZStretchManager implements StretchManager {
     midColumns: ColumnGroup[];
     vanillaColumns: ColumnGroup[];
     maxDepth: number;
+    lengthWiseNeighbours: HouseGroup[];
   };
 
   startData?: {
@@ -85,12 +86,17 @@ class ZStretchManager implements StretchManager {
               activeLayoutGroup.add(...vanillaColumns);
             }
 
+            const lengthWiseNeighbours =
+              this.houseGroup.managers.collisions?.computeLengthWiseNeighbours() ??
+              [];
+
             this.initData = {
               startColumn: startColumnGroup,
               midColumns: midColumnGroups,
               endColumn: endColumnGroup,
               vanillaColumns,
               maxDepth,
+              lengthWiseNeighbours,
             };
           })
         )();
