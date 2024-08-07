@@ -65,7 +65,7 @@ class OpeningsManager {
                     TE.map((layoutGroup) => {
                       this.houseGroup.add(layoutGroup);
 
-                      layoutGroup.updateOBB();
+                      layoutGroup.updateBBs();
 
                       this.houseGroup.managers.cuts?.createObjectCuts(
                         layoutGroup

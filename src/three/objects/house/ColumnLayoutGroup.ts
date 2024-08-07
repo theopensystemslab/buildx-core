@@ -26,7 +26,7 @@ import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
 
-export const AABB_OFFSET = 10;
+export const AABB_OFFSET = 2;
 
 const obbMaterial = new MeshBasicMaterial({
   color: "blue",
@@ -39,6 +39,7 @@ const aabbMaterial = new MeshBasicMaterial({
   wireframe: true,
   // transparent: true
 });
+
 export type ColumnLayoutGroupUserData = {
   dnas: string[];
   layout: ColumnLayout;
@@ -72,11 +73,6 @@ export class ColumnLayoutGroup extends Group {
 
   get scene(): Scene {
     return this.houseGroup.scene;
-  }
-
-  updateOBB() {
-    const { width, height, depth } = this.userData;
-    this.obb.halfSize.set(width / 2, height / 2, depth / 2);
   }
 
   get otherLayoutGroups(): ColumnLayoutGroup[] {
@@ -200,7 +196,7 @@ export class ColumnLayoutGroup extends Group {
     let min = new Vector3(Infinity, Infinity, Infinity);
     let max = new Vector3(-Infinity, -Infinity, -Infinity);
 
-    // AABB corners, DELTA to make it bigger so we can pre-empt
+    // AABB corners, AABB_OFFSET to make it bigger so we can pre-empt
     // which houses to OBB-intersect-check
     [
       new Vector3(
@@ -386,8 +382,6 @@ export const createColumnLayoutGroup = ({
           columnLayoutGroup.add(...columnGroups);
 
           columnLayoutGroup.position.setZ(-depth / 2);
-
-          columnLayoutGroup.updateOBB();
 
           return columnLayoutGroup;
         })
