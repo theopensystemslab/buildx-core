@@ -1,7 +1,9 @@
 import { House } from "@/data/user/houses";
+import CollisionsManager from "@/three/managers/CollisionsManager";
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
+import MoveManager from "@/three/managers/MoveManager";
 import OpeningsManager from "@/three/managers/OpeningsManager";
 import RotateManager from "@/three/managers/RotateManager";
 import XStretchManager from "@/three/managers/XStretchManager";
@@ -13,7 +15,6 @@ import { Box3, Group, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import CollisionsManager from "@/three/managers/CollisionsManager";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -23,6 +24,7 @@ type Hooks = {
 
 type Managers = {
   layouts: LayoutsManager;
+  move?: MoveManager;
   rotate?: RotateManager;
   elements?: ElementsManager;
   xStretch?: XStretchManager;
@@ -66,6 +68,7 @@ export class HouseGroup extends Group {
 
     this.managers = {
       elements: managers.elements ?? new ElementsManager(this),
+      move: managers.move ?? new MoveManager(this),
       rotate: managers.rotate ?? new RotateManager(this),
       layouts: managers.layouts ?? new LayoutsManager(this),
       xStretch: managers.xStretch ?? new XStretchManager(this),
@@ -133,11 +136,6 @@ export class HouseGroup extends Group {
       findFirstGuardUp((o): o is BuildXScene => o instanceof BuildXScene),
       someOrError(`scene not found above HouseGroup`)
     );
-  }
-
-  move(v: Vector3) {
-    this.position.add(v);
-    // this.cutsManager.syncObjectCuts(this.activeLayoutGroup);
   }
 
   delete() {

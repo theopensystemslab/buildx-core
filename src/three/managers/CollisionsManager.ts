@@ -4,39 +4,28 @@ import { HouseGroup } from "../objects/house/HouseGroup";
 
 class CollisionManager {
   private houseGroup: HouseGroup;
+  private nearNeighbours: HouseGroup[] = [];
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
   }
 
-  updateTransforms(): void {
-    const {
-      position,
-      rotation: { y: rotation },
-    } = this.houseGroup;
-    this.houseGroup.hooks?.onHouseUpdate?.(this.houseGroup.userData.houseId, {
-      position,
-      rotation,
-    });
-    this.houseGroup.updateBBs();
-  }
-
-  computeNearNeighbours(): HouseGroup[] {
+  updateNearNeighbours(): void {
     const scene = this.houseGroup.scene;
     const thisAABB = this.houseGroup.unsafeAABB;
 
-    return pipe(
+    this.nearNeighbours = pipe(
       scene.houses,
-      A.filter((x) => {
-        return x.unsafeAABB.intersectsBox(thisAABB);
-      })
+      A.filter(
+        (x) => x !== this.houseGroup && x.unsafeAABB.intersectsBox(thisAABB)
+      )
     );
   }
 
-  checkCollisions(neighbours: HouseGroup[]): boolean {
+  checkCollisions(): boolean {
     const thisOBB = this.houseGroup.unsafeOBB;
 
-    for (const neighbour of neighbours) {
+    for (const neighbour of this.nearNeighbours) {
       if (neighbour.unsafeOBB.intersectsOBB(thisOBB)) {
         return true;
       }
@@ -46,21 +35,15 @@ class CollisionManager {
   }
 
   computeLengthWiseNeighbours(): HouseGroup[] {
-    const scene = this.houseGroup.scene;
-
     const thisOBB = this.houseGroup.unsafeOBB;
 
     return pipe(
-      scene.houses,
+      this.nearNeighbours,
       A.filter((houseGroup) => {
         const obb = houseGroup.unsafeOBB.clone();
         obb.halfSize.setZ(999);
 
-        if (obb.intersectsOBB(thisOBB)) {
-          return true;
-        }
-
-        return false;
+        return obb.intersectsOBB(thisOBB);
       })
     );
   }

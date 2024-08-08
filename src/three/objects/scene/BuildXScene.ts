@@ -240,8 +240,10 @@ class BuildXScene extends Scene {
 
                 this.contextManager.setSelectedHouse(houseGroup);
 
+                houseGroup.managers.move?.gestureStart();
+
                 dragProgress = ({ delta }: DragDetail) => {
-                  houseGroup.move(delta);
+                  houseGroup.managers.move?.gestureProgress(delta);
                 };
 
                 dragEnd = () => {
