@@ -4,7 +4,7 @@ import { HouseGroup } from "../objects/house/HouseGroup";
 
 class CollisionManager {
   private houseGroup: HouseGroup;
-  private nearNeighbours: HouseGroup[] = [];
+  nearNeighbours: HouseGroup[] = [];
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;

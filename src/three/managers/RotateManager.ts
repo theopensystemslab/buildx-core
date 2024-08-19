@@ -48,8 +48,11 @@ class RotateManager {
     if (this.debug) {
       this.createDebugObjects();
     }
+
     this.startAngle = this.calculateAngle(currentPoint);
     this.initialRotation = this.houseGroup.rotation.y;
+
+    this.houseGroup.managers.collisions?.updateNearNeighbours();
   }
 
   gestureProgress(currentPoint: Vector3) {
@@ -58,12 +61,32 @@ class RotateManager {
     }
 
     const angle = this.calculateAngle(currentPoint);
+    const newRotation = this.calculateNewRotation(angle);
 
-    this.applyRotation(angle);
+    // Store the original rotation
+    const originalRotation = this.houseGroup.rotation.y;
+
+    // Apply the new rotation
+    this.houseGroup.rotation.y = newRotation;
+    this.houseGroup.updateBBs();
+
+    // Check for collisions
+    const collision = this.houseGroup.managers.collisions?.checkCollisions();
+
+    if (collision) {
+      // Revert rotation if collision detected
+      this.houseGroup.rotation.y = originalRotation;
+      this.houseGroup.updateBBs();
+    }
 
     if (this.debug) {
       this.updateDebugInfo(angle);
     }
+
+    this.houseGroup.renderOBB();
+    this.houseGroup.managers.collisions?.nearNeighbours.forEach((neighbour) => {
+      neighbour.renderOBB();
+    });
   }
 
   gestureEnd() {
@@ -126,10 +149,11 @@ class RotateManager {
     return Math.atan2(currentPoint.z - center.z, currentPoint.x - center.x);
   }
 
-  private applyRotation(currentAngle: number) {
-    if (this.startAngle === null || this.initialRotation === null) return;
+  private calculateNewRotation(currentAngle: number): number {
+    if (this.startAngle === null || this.initialRotation === null)
+      return this.houseGroup.rotation.y;
     const deltaAngle = currentAngle - this.startAngle;
-    this.houseGroup.rotation.y = this.initialRotation - deltaAngle;
+    return this.initialRotation - deltaAngle;
   }
 
   showHandles() {

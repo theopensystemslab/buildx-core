@@ -130,6 +130,15 @@ export class HouseGroup extends Group {
     );
   }
 
+  renderOBB() {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      activeLayoutGroup.value.renderOBB();
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
   get scene(): BuildXScene {
     return pipe(
       this,
