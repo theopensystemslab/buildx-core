@@ -22,10 +22,10 @@ class CollisionManager {
     );
   }
 
-  checkCollisions(): boolean {
+  checkCollisions(neighbours: HouseGroup[] = this.nearNeighbours): boolean {
     const thisOBB = this.houseGroup.unsafeOBB;
 
-    for (const neighbour of this.nearNeighbours) {
+    for (const neighbour of neighbours) {
       if (neighbour.unsafeOBB.intersectsOBB(thisOBB)) {
         return true;
       }

@@ -82,11 +82,6 @@ class RotateManager {
     if (this.debug) {
       this.updateDebugInfo(angle);
     }
-
-    this.houseGroup.renderOBB();
-    this.houseGroup.managers.collisions?.nearNeighbours.forEach((neighbour) => {
-      neighbour.renderOBB();
-    });
   }
 
   gestureEnd() {
