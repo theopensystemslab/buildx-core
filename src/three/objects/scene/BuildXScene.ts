@@ -440,6 +440,28 @@ class BuildXScene extends Scene {
     houseGroup.hooks.onHouseCreate?.(houseGroup.house);
 
     this.add(houseGroup);
+
+    if (houseGroup.managers.collisions) {
+      const MAX_T = 99;
+      let t = 0; // parameter for the spiral
+      let a = 1; // tightness of the spiral, might need adjustment
+
+      do {
+        houseGroup.managers.collisions.updateNearNeighbours();
+
+        // Calculate the new position on the spiral
+        const x = a * t * Math.cos(t);
+        const z = a * t * Math.sin(t);
+
+        // Move the houseTransformsGroup to new position
+        houseGroup.position.set(x, 0, z);
+        houseGroup.updateBBs();
+
+        t += 1; // Increment t by an amount to ensure the loop can exit
+      } while (t < MAX_T && houseGroup.managers.collisions.checkCollisions());
+
+      if (t >= MAX_T) throw new Error(`Infinite collision!`);
+    }
   }
 
   addHouseType() {}
