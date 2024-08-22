@@ -34,6 +34,10 @@ pipe(
     window.addEventListener("keydown", ({ key }) => {
       const numbers = NEA.range(0, houseTypes.length - 1);
 
+      if (key === "m") {
+        scene.contextManager?.contextUp();
+      }
+
       if (numbers.includes(Number(key))) {
         pipe(
           houseTypes,
