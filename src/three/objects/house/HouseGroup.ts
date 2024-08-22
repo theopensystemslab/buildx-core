@@ -103,6 +103,15 @@ export class HouseGroup extends Group {
     );
   }
 
+  get unsafeActiveLayoutGroup(): ColumnLayoutGroup {
+    const activeLayoutGroup = this.activeLayoutGroup;
+    if (activeLayoutGroup._tag === "Some") {
+      return activeLayoutGroup.value;
+    } else {
+      throw new Error(`no activeLayoutGroup in houseGroup`);
+    }
+  }
+
   get unsafeOBB(): OBB {
     const activeLayoutGroup = this.activeLayoutGroup;
     if (activeLayoutGroup._tag === "Some") {

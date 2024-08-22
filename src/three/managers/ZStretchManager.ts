@@ -8,11 +8,15 @@ import {
 } from "@/three/objects/house/ColumnGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
-import { floor } from "@/utils/math";
+import { floor, max, min } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { Vector3 } from "three";
+import { Matrix3, Matrix4, Vector3 } from "three";
+import { OBB } from "three-stdlib";
+import OBBMesh from "../objects/OBBMesh";
 
-const DEFAULT_MAX_DEPTH = 15;
+const DEFAULT_MAX_DEPTH = 8;
+
+const GRACE = 0.001;
 
 class ZStretchManager implements StretchManager {
   houseGroup: HouseGroup;
@@ -90,6 +94,8 @@ class ZStretchManager implements StretchManager {
               this.houseGroup.managers.collisions?.computeLengthWiseNeighbours() ??
               [];
 
+            console.log({ lengthWiseNeighbours });
+
             this.initData = {
               startColumn: startColumnGroup,
               midColumns: midColumnGroups,
@@ -104,52 +110,126 @@ class ZStretchManager implements StretchManager {
     );
   }
 
+  // @ts-ignore
+  private renderColumnOBB(column: ColumnGroup) {
+    const scene = this.houseGroup.scene;
+
+    const { width, height, depth } = column.userData;
+
+    const halfSize = new Vector3(width / 2, height / 2, depth / 2);
+
+    const rotation = new Matrix3().setFromMatrix4(
+      new Matrix4().makeRotationY(this.houseGroup.rotation.y)
+    );
+
+    const columnOBB = new OBB(
+      column.getWorldPosition(new Vector3()),
+      halfSize,
+      rotation
+    );
+
+    const columnOBBMesh = new OBBMesh(columnOBB);
+
+    scene.add(columnOBBMesh);
+  }
+
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
-    const { startColumn, endColumn, vanillaColumns, midColumns } =
-      this.initData;
+    const {
+      startColumn,
+      endColumn,
+      vanillaColumns,
+      midColumns,
+      lengthWiseNeighbours,
+    } = this.initData;
 
     let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
-    // place the vanilla columns
-    if (side === -1) {
-      vanillaColumns.forEach((columnGroup, index) => {
-        const reversedIndex = vanillaColumns.length - 1 - index;
+    // place the vanilla columns if there are any
+    if (vanillaColumns.length > 0) {
+      const firstVanillaColumn = vanillaColumns[0];
 
-        const startDepth = midColumns[0].position.z;
+      const halfSize = new Vector3(
+        firstVanillaColumn.userData.width / 2,
+        firstVanillaColumn.userData.height / 2,
+        firstVanillaColumn.userData.depth / 2
+      ).multiplyScalar(1.5);
 
-        columnGroup.position.set(
-          0,
-          0,
-          startDepth -
-            reversedIndex * columnGroup.userData.depth -
-            columnGroup.userData.depth
-        );
+      const rotation = new Matrix3().setFromMatrix4(
+        new Matrix4().makeRotationY(this.houseGroup.rotation.y)
+      );
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
-        // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
-      });
+      if (side === -1) {
+        for (let i = 0; i < vanillaColumns.length; i++) {
+          const column = vanillaColumns[i];
+          const startDepth = midColumns[0].position.z;
 
-      orderedColumns = [...vanillaColumns, ...midColumns];
-      lastVisibleIndex = vanillaColumns.length;
-    } else if (side === 1) {
-      vanillaColumns.forEach((columnGroup, index) => {
+          const depth =
+            startDepth - i * column.userData.depth - column.userData.depth;
+
+          column.position.set(0, 0, depth);
+
+          const vanillaColumnOBB = new OBB(
+            column
+              .getWorldPosition(new Vector3())
+              .add(new Vector3(0, 0, column.userData.depth)),
+            halfSize,
+            rotation
+          );
+
+          const collision = lengthWiseNeighbours.some((neighbour) => {
+            const neighbourOBB = neighbour.unsafeOBB;
+            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
+          });
+
+          if (collision) {
+            break;
+          }
+
+          this.houseGroup.managers.cuts?.createObjectCuts(column);
+          orderedColumns.push(column);
+        }
+
+        orderedColumns.reverse();
+
+        lastVisibleIndex = orderedColumns.length;
+        orderedColumns.push(...midColumns);
+      } else if (side === 1) {
+        orderedColumns = [...midColumns];
+        lastVisibleIndex = midColumns.length - 1;
+
         const startDepth = endColumn.position.z;
 
-        columnGroup.position.set(
-          0,
-          0,
-          startDepth + index * columnGroup.userData.depth
-        );
+        for (let i = 0; i < vanillaColumns.length; i++) {
+          const column = vanillaColumns[i];
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
-        // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
-      });
+          column.position.set(0, 0, startDepth + i * column.userData.depth);
 
-      orderedColumns = [...midColumns, ...vanillaColumns];
-      lastVisibleIndex = midColumns.length - 1;
+          const vanillaColumnOBB = new OBB(
+            column
+              .getWorldPosition(new Vector3())
+              .add(new Vector3(0, 0, column.userData.depth)),
+            halfSize,
+            rotation
+          );
+
+          const collision = lengthWiseNeighbours.some((neighbour) => {
+            const neighbourOBB = neighbour.unsafeOBB;
+            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
+          });
+
+          if (collision) {
+            break;
+          }
+
+          this.houseGroup.managers.cuts?.createObjectCuts(column);
+          orderedColumns.push(column);
+        }
+      }
+    } else {
+      orderedColumns = [...midColumns];
     }
 
     this.startData = {
@@ -162,89 +242,98 @@ class ZStretchManager implements StretchManager {
 
   gestureProgress(delta: number) {
     if (!this.startData) return;
+
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData!;
 
     if (side === 1) {
-      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
       const firstInvisibleColumn = orderedColumns[lastVisibleIndex + 1]; // +1 because side 1
 
       if (delta > 0) {
-        if (!firstInvisibleColumn) {
-          return;
-        }
-        const targetZ = firstInvisibleColumn.position.z;
-        const bookendZ = bookendColumn.position.z; // + bookendColumn.userData.depth;
+        // bookend column movement logic
+        const lastColumn = orderedColumns[orderedColumns.length - 1];
+        const maxZ = lastColumn.position.z + lastColumn.userData.depth;
+        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
 
-        if (bookendZ > targetZ) {
-          this.showVanillaColumn(firstInvisibleColumn);
-          this.startData.lastVisibleIndex++;
-        } else {
+        // middle column show/hide logic
+        if (firstInvisibleColumn) {
+          const targetZ = firstInvisibleColumn.position.z;
+          const bookendZ = bookendColumn.position.z; // + bookendColumn.userData.depth;
+
+          if (bookendZ > targetZ) {
+            this.showVanillaColumn(firstInvisibleColumn);
+            this.startData.lastVisibleIndex++;
+          }
         }
       }
 
+      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+
       if (delta < 0) {
-        if (lastVisibleIndex === 1) return;
-        if (!lastVisibleColumn) return;
+        // bookend column movement logic
+        const minZ =
+          orderedColumns[0].position.z + orderedColumns[0].userData.depth;
+        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
 
-        const targetZ = lastVisibleColumn.position.z;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        // middle column show/hide logic
+        if (lastVisibleColumn) {
+          const targetZ =
+            lastVisibleColumn.position.z + lastVisibleColumn.userData.depth;
+          const bookendZ =
+            bookendColumn.position.z + bookendColumn.userData.depth;
 
-        if (bookendZ < targetZ) {
-          // todo
-          hideObject(lastVisibleColumn);
-          this.startData.lastVisibleIndex--;
+          if (bookendZ <= targetZ) {
+            hideObject(lastVisibleColumn);
+            this.startData.lastVisibleIndex--;
+          }
         }
       }
     }
 
     if (side === -1) {
-      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
       const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1]; // -1 because side -1
 
       if (delta < 0) {
-        if (!firstInvisibleColumn) {
-          return;
-        }
+        // bookend column movement logic
+        const minZ =
+          orderedColumns[0].position.z - bookendColumn.userData.depth;
 
-        const targetZ = firstInvisibleColumn.position.z;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
 
-        // clamp at the top
-        if (lastVisibleIndex === 1 && targetZ - bookendZ < 0) {
-          return;
-        }
+        // middle column show/hide logic
+        if (firstInvisibleColumn) {
+          const targetZ = firstInvisibleColumn.position.z;
+          const bookendZ =
+            bookendColumn.position.z + bookendColumn.userData.depth;
 
-        if (bookendZ < targetZ) {
-          // todo
-          this.showVanillaColumn(firstInvisibleColumn);
-          this.startData.lastVisibleIndex--;
+          if (bookendZ <= targetZ + GRACE) {
+            this.showVanillaColumn(firstInvisibleColumn);
+            this.startData.lastVisibleIndex--;
+          }
         }
       }
 
+      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+
       if (delta > 0) {
-        const targetZ = lastVisibleColumn.position.z;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        // bookend column movement logic
+        const lastColumn = orderedColumns[orderedColumns.length - 1];
+        const maxZ = lastColumn.position.z - bookendColumn.userData.depth;
+        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
 
-        // clamp at the bottom
-        if (
-          lastVisibleIndex === orderedColumns.length - 2 &&
-          targetZ - bookendZ < 0.01
-        ) {
-          return;
-        }
+        // middle column show/hide logic
+        if (lastVisibleColumn) {
+          const targetZ = lastVisibleColumn.position.z;
+          const bookendZ =
+            bookendColumn.position.z + bookendColumn.userData.depth;
 
-        if (bookendZ > targetZ) {
-          hideObject(lastVisibleColumn);
-          this.startData.lastVisibleIndex++;
+          if (bookendZ > targetZ) {
+            hideObject(lastVisibleColumn);
+            this.startData.lastVisibleIndex++;
+          }
         }
       }
     }
-
-    bookendColumn.position.z += delta;
   }
 
   gestureEnd() {
@@ -289,6 +378,15 @@ class ZStretchManager implements StretchManager {
       O.map((layoutGroup) => {
         layoutGroup.updateDepth();
         layoutGroup.updateLayout();
+
+        const { dnas } = layoutGroup.userData;
+
+        this.houseGroup.hooks?.onHouseUpdate?.(
+          this.houseGroup.userData.houseId,
+          {
+            dnas,
+          }
+        );
       })
     );
 
