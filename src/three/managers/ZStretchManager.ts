@@ -300,6 +300,15 @@ class ZStretchManager implements StretchManager {
       O.map((layoutGroup) => {
         layoutGroup.updateDepth();
         layoutGroup.updateLayout();
+
+        const { dnas } = layoutGroup.userData;
+
+        this.houseGroup.hooks?.onHouseUpdate?.(
+          this.houseGroup.userData.houseId,
+          {
+            dnas,
+          }
+        );
       })
     );
 
