@@ -14,6 +14,8 @@ import { Vector3 } from "three";
 
 const DEFAULT_MAX_DEPTH = 8;
 
+const GRACE = 0.001;
+
 class ZStretchManager implements StretchManager {
   houseGroup: HouseGroup;
 
@@ -190,9 +192,6 @@ class ZStretchManager implements StretchManager {
       const lastVisibleColumn = orderedColumns[lastVisibleIndex];
 
       if (delta < 0) {
-        // if (lastVisibleIndex === 1) return;
-        // if (!lastVisibleColumn) return;
-
         // bookend column movement logic
         const minZ =
           orderedColumns[0].position.z + orderedColumns[0].userData.depth;
@@ -205,8 +204,6 @@ class ZStretchManager implements StretchManager {
           const bookendZ =
             bookendColumn.position.z + bookendColumn.userData.depth;
 
-          console.log([bookendZ, targetZ, performance.now()]);
-
           if (bookendZ <= targetZ) {
             hideObject(lastVisibleColumn);
             this.startData.lastVisibleIndex--;
@@ -216,55 +213,49 @@ class ZStretchManager implements StretchManager {
     }
 
     if (side === -1) {
-      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
       const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1]; // -1 because side -1
 
       if (delta < 0) {
-        if (!firstInvisibleColumn) {
-          return;
-        }
+        // bookend column movement logic
+        const minZ =
+          orderedColumns[0].position.z - bookendColumn.userData.depth;
 
-        const targetZ = firstInvisibleColumn.position.z;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
 
-        // clamp at the top
-        if (lastVisibleIndex === 1 && targetZ - bookendZ < 0) {
-          return;
-        }
+        // middle column show/hide logic
+        if (firstInvisibleColumn) {
+          const targetZ = firstInvisibleColumn.position.z;
+          const bookendZ =
+            bookendColumn.position.z + bookendColumn.userData.depth;
 
-        if (bookendZ < targetZ) {
-          // todo
-          this.showVanillaColumn(firstInvisibleColumn);
-          this.startData.lastVisibleIndex--;
+          if (bookendZ <= targetZ + GRACE) {
+            this.showVanillaColumn(firstInvisibleColumn);
+            this.startData.lastVisibleIndex--;
+          }
         }
       }
 
+      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+
       if (delta > 0) {
-        if (!lastVisibleColumn) {
-          return;
-        }
+        // bookend column movement logic
+        const lastColumn = orderedColumns[orderedColumns.length - 1];
+        const maxZ = lastColumn.position.z - bookendColumn.userData.depth;
+        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
 
-        const targetZ = lastVisibleColumn.position.z;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        // middle column show/hide logic
+        if (lastVisibleColumn) {
+          const targetZ = lastVisibleColumn.position.z;
+          const bookendZ =
+            bookendColumn.position.z + bookendColumn.userData.depth;
 
-        // clamp at the bottom
-        if (
-          lastVisibleIndex === orderedColumns.length - 2 &&
-          targetZ - bookendZ < 0.01
-        ) {
-          return;
-        }
-
-        if (bookendZ > targetZ) {
-          hideObject(lastVisibleColumn);
-          this.startData.lastVisibleIndex++;
+          if (bookendZ > targetZ) {
+            hideObject(lastVisibleColumn);
+            this.startData.lastVisibleIndex++;
+          }
         }
       }
     }
-
-    // bookendColumn.position.z += delta;
   }
 
   gestureEnd() {
