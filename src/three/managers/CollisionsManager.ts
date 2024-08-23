@@ -38,8 +38,10 @@ class CollisionManager {
     const thisOBB = this.houseGroup.unsafeOBB;
 
     return pipe(
-      this.nearNeighbours,
+      this.houseGroup.scene.houses,
       A.filter((houseGroup) => {
+        if (houseGroup.uuid === this.houseGroup.uuid) return false;
+
         const obb = houseGroup.unsafeOBB.clone();
         obb.halfSize.setZ(999);
 

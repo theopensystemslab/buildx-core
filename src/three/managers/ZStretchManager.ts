@@ -10,7 +10,9 @@ import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor, max, min } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { Vector3 } from "three";
+import { Matrix3, Matrix4, Vector3 } from "three";
+import { OBB } from "three-stdlib";
+import OBBMesh from "../objects/OBBMesh";
 
 const DEFAULT_MAX_DEPTH = 8;
 
@@ -92,6 +94,8 @@ class ZStretchManager implements StretchManager {
               this.houseGroup.managers.collisions?.computeLengthWiseNeighbours() ??
               [];
 
+            console.log({ lengthWiseNeighbours });
+
             this.initData = {
               startColumn: startColumnGroup,
               midColumns: midColumnGroups,
@@ -106,36 +110,95 @@ class ZStretchManager implements StretchManager {
     );
   }
 
+  renderColumnOBB(column: ColumnGroup) {
+    const scene = this.houseGroup.scene;
+
+    const { width, height, depth } = column.userData;
+
+    const halfSize = new Vector3(width / 2, height / 2, depth / 2);
+
+    const rotation = new Matrix3().setFromMatrix4(
+      new Matrix4().makeRotationY(this.houseGroup.rotation.y)
+    );
+
+    const columnOBB = new OBB(
+      column.getWorldPosition(new Vector3()),
+      halfSize,
+      rotation
+    );
+
+    const columnOBBMesh = new OBBMesh(columnOBB);
+
+    scene.add(columnOBBMesh);
+  }
+
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
-    const { startColumn, endColumn, vanillaColumns, midColumns } =
-      this.initData;
+    const {
+      startColumn,
+      endColumn,
+      vanillaColumns,
+      midColumns,
+      lengthWiseNeighbours,
+    } = this.initData;
 
     let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
     // place the vanilla columns
     if (side === -1) {
-      vanillaColumns.forEach((columnGroup, index) => {
-        const reversedIndex = vanillaColumns.length - 1 - index;
-
+      for (let i = 0; i < vanillaColumns.length; i++) {
+        // const reversedIndex = vanillaColumns.length - 1 - i;
+        const vanillaColumn = vanillaColumns[i];
         const startDepth = midColumns[0].position.z;
 
-        columnGroup.position.set(
-          0,
-          0,
+        const depth =
           startDepth -
-            reversedIndex * columnGroup.userData.depth -
-            columnGroup.userData.depth
+          i * vanillaColumn.userData.depth -
+          vanillaColumn.userData.depth;
+
+        console.log({ depth });
+
+        vanillaColumn.position.set(0, 0, depth);
+
+        const halfSize = new Vector3(
+          vanillaColumn.userData.width / 2,
+          vanillaColumn.userData.height / 2,
+          vanillaColumn.userData.depth / 2
         );
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
-        // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
-      });
+        const rotation = new Matrix3().setFromMatrix4(
+          new Matrix4().makeRotationY(this.houseGroup.rotation.y)
+        );
 
-      orderedColumns = [...vanillaColumns, ...midColumns];
-      lastVisibleIndex = vanillaColumns.length;
+        const vanillaColumnOBB = new OBB(
+          vanillaColumn.getWorldPosition(new Vector3()),
+          halfSize,
+          rotation
+        );
+
+        const collision = lengthWiseNeighbours.some((neighbour) => {
+          const neighbourOBB = neighbour.unsafeOBB;
+          neighbour.renderOBB();
+          return vanillaColumnOBB.intersectsOBB(neighbourOBB);
+        });
+
+        if (collision) {
+          console.log("collision");
+          break;
+        }
+
+        this.houseGroup.managers.cuts?.createObjectCuts(vanillaColumn);
+        orderedColumns.push(vanillaColumn);
+
+        this.renderColumnOBB(vanillaColumn);
+      }
+
+      orderedColumns.reverse();
+
+      lastVisibleIndex = orderedColumns.length;
+      orderedColumns.push(...midColumns);
     } else if (side === 1) {
       vanillaColumns.forEach((columnGroup, index) => {
         const startDepth = endColumn.position.z;
