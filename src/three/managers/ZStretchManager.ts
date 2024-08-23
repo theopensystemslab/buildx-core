@@ -110,7 +110,8 @@ class ZStretchManager implements StretchManager {
     );
   }
 
-  renderColumnOBB(column: ColumnGroup) {
+  // @ts-ignore
+  private renderColumnOBB(column: ColumnGroup) {
     const scene = this.houseGroup.scene;
 
     const { width, height, depth } = column.userData;
@@ -146,75 +147,89 @@ class ZStretchManager implements StretchManager {
     let orderedColumns: ColumnGroup[] = [],
       lastVisibleIndex: number = -1;
 
-    // place the vanilla columns
-    if (side === -1) {
-      for (let i = 0; i < vanillaColumns.length; i++) {
-        // const reversedIndex = vanillaColumns.length - 1 - i;
-        const vanillaColumn = vanillaColumns[i];
-        const startDepth = midColumns[0].position.z;
+    // place the vanilla columns if there are any
+    if (vanillaColumns.length > 0) {
+      const firstVanillaColumn = vanillaColumns[0];
 
-        const depth =
-          startDepth -
-          i * vanillaColumn.userData.depth -
-          vanillaColumn.userData.depth;
+      const halfSize = new Vector3(
+        firstVanillaColumn.userData.width / 2,
+        firstVanillaColumn.userData.height / 2,
+        firstVanillaColumn.userData.depth / 2
+      ).multiplyScalar(1.5);
 
-        console.log({ depth });
+      const rotation = new Matrix3().setFromMatrix4(
+        new Matrix4().makeRotationY(this.houseGroup.rotation.y)
+      );
 
-        vanillaColumn.position.set(0, 0, depth);
+      if (side === -1) {
+        for (let i = 0; i < vanillaColumns.length; i++) {
+          const column = vanillaColumns[i];
+          const startDepth = midColumns[0].position.z;
 
-        const halfSize = new Vector3(
-          vanillaColumn.userData.width / 2,
-          vanillaColumn.userData.height / 2,
-          vanillaColumn.userData.depth / 2
-        );
+          const depth =
+            startDepth - i * column.userData.depth - column.userData.depth;
 
-        const rotation = new Matrix3().setFromMatrix4(
-          new Matrix4().makeRotationY(this.houseGroup.rotation.y)
-        );
+          column.position.set(0, 0, depth);
 
-        const vanillaColumnOBB = new OBB(
-          vanillaColumn.getWorldPosition(new Vector3()),
-          halfSize,
-          rotation
-        );
+          const vanillaColumnOBB = new OBB(
+            column
+              .getWorldPosition(new Vector3())
+              .add(new Vector3(0, 0, column.userData.depth)),
+            halfSize,
+            rotation
+          );
 
-        const collision = lengthWiseNeighbours.some((neighbour) => {
-          const neighbourOBB = neighbour.unsafeOBB;
-          neighbour.renderOBB();
-          return vanillaColumnOBB.intersectsOBB(neighbourOBB);
-        });
+          const collision = lengthWiseNeighbours.some((neighbour) => {
+            const neighbourOBB = neighbour.unsafeOBB;
+            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
+          });
 
-        if (collision) {
-          console.log("collision");
-          break;
+          if (collision) {
+            break;
+          }
+
+          this.houseGroup.managers.cuts?.createObjectCuts(column);
+          orderedColumns.push(column);
         }
 
-        this.houseGroup.managers.cuts?.createObjectCuts(vanillaColumn);
-        orderedColumns.push(vanillaColumn);
+        orderedColumns.reverse();
 
-        this.renderColumnOBB(vanillaColumn);
-      }
+        lastVisibleIndex = orderedColumns.length;
+        orderedColumns.push(...midColumns);
+      } else if (side === 1) {
+        orderedColumns = [...midColumns];
+        lastVisibleIndex = midColumns.length - 1;
 
-      orderedColumns.reverse();
-
-      lastVisibleIndex = orderedColumns.length;
-      orderedColumns.push(...midColumns);
-    } else if (side === 1) {
-      vanillaColumns.forEach((columnGroup, index) => {
         const startDepth = endColumn.position.z;
 
-        columnGroup.position.set(
-          0,
-          0,
-          startDepth + index * columnGroup.userData.depth
-        );
+        for (let i = 0; i < vanillaColumns.length; i++) {
+          const column = vanillaColumns[i];
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
-        // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
-      });
+          column.position.set(0, 0, startDepth + i * column.userData.depth);
 
-      orderedColumns = [...midColumns, ...vanillaColumns];
-      lastVisibleIndex = midColumns.length - 1;
+          const vanillaColumnOBB = new OBB(
+            column
+              .getWorldPosition(new Vector3())
+              .add(new Vector3(0, 0, column.userData.depth)),
+            halfSize,
+            rotation
+          );
+
+          const collision = lengthWiseNeighbours.some((neighbour) => {
+            const neighbourOBB = neighbour.unsafeOBB;
+            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
+          });
+
+          if (collision) {
+            break;
+          }
+
+          this.houseGroup.managers.cuts?.createObjectCuts(column);
+          orderedColumns.push(column);
+        }
+      }
+    } else {
+      orderedColumns = [...midColumns];
     }
 
     this.startData = {
