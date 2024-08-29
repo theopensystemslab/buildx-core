@@ -23,6 +23,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   Quaternion,
@@ -142,7 +143,7 @@ class BuildXScene extends Scene {
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    // renderer.setClearColor("white");
+    this.renderer.setClearAlpha(0);
 
     this.cameraControls = new CameraControls(camera, this.renderer.domElement);
 
@@ -299,34 +300,34 @@ class BuildXScene extends Scene {
   }
 
   enableLighting() {
-    const intensityScale = 0.76;
+    const intensityScale = 1.0;
 
-    const ambientLight = new AmbientLight(0xffffff, 0.5 * intensityScale);
+    const ambientLight = new AmbientLight(0xffffff, 0.7 * intensityScale);
     this.add(ambientLight);
 
     const directionalLight1 = new DirectionalLight(
       "#b5d7fc",
-      0.8 * intensityScale
+      1 * intensityScale
     );
     directionalLight1.position.set(0, 20, 20);
     this.add(directionalLight1);
 
     const directionalLight2 = new DirectionalLight(
       "#ffffff",
-      0.3 * intensityScale
+      0.4 * intensityScale
     );
     directionalLight2.position.set(-20, 20, 0);
     this.add(directionalLight2);
 
     const directionalLight3 = new DirectionalLight(
       "#9bb9c6",
-      0.3 * intensityScale
+      0.4 * intensityScale
     );
     directionalLight3.position.set(20, 20, 0);
     this.add(directionalLight3);
 
     const shadowLight = new DirectionalLight("#fffcdb", 0.8 * intensityScale);
-    shadowLight.position.set(0, 150, -150);
+    shadowLight.position.set(0, 100, -100);
     shadowLight.castShadow = true;
     shadowLight.shadow.mapSize.width = 2048;
     shadowLight.shadow.mapSize.height = 2048;
@@ -335,39 +336,48 @@ class BuildXScene extends Scene {
     shadowLight.shadow.camera.right = 30.5;
     shadowLight.shadow.camera.top = 21.5;
     shadowLight.shadow.camera.bottom = -21.5;
+    shadowLight.shadow.radius = 8;
     this.add(shadowLight);
+
+    // Ensure these are set in your renderer and scene setup
+    this.renderer.shadowMap.type = PCFSoftShadowMap;
+    // this.scene.background = new THREE.Color(0xf0f0f0);
   }
 
   enableGroundObjects() {
-    // GroundCircle
+    // Ground Circle (optional, adjust or remove if not needed)
     const groundCircleGeometry = new CircleGeometry(500, 32);
     const groundCircleMaterial = new MeshStandardMaterial({
       side: DoubleSide,
-      color: 0xd1d1c7,
+      color: 0xf0f0f0, // Adjusted to match background
+      opacity: 0.5, // Added some transparency
+      transparent: true,
     });
     const groundCircle = new Mesh(groundCircleGeometry, groundCircleMaterial);
     groundCircle.position.set(0, -0.04, 0);
     groundCircle.rotation.set(-Math.PI / 2, 0, 0);
     this.add(groundCircle);
 
-    // ShadowPlane
+    // Shadow Plane
     const shadowPlaneGeometry = new PlaneGeometry(100, 100);
     const shadowPlaneMaterial = new ShadowMaterial({
-      color: 0x898989,
+      color: 0x000000,
+      opacity: 0.3,
       side: DoubleSide,
     });
+    shadowPlaneMaterial.transparent = true;
     const shadowPlane = new Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
     shadowPlane.position.set(0, -0.02, 0);
     shadowPlane.rotation.set(-Math.PI / 2, 0, 0);
     shadowPlane.receiveShadow = true;
     this.add(shadowPlane);
 
-    // RectangularGrid
+    // Rectangular Grid
     const xAxis = { cells: 61, size: 1 };
     const zAxis = { cells: 61, size: 1 };
     const color = 0x888888;
     const dashed = false;
-    const opacity = 1;
+    const opacity = 0.3; // Changed to match old implementation
 
     const gridGeometry = new BufferGeometry();
     const vertices: number[][] = [];
