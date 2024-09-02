@@ -3,6 +3,7 @@ import {
   A,
   E,
   runUntilFirstSuccess,
+  someOrError,
   TE,
   unwrapTaskEither,
 } from "@/utils/functions";
@@ -129,15 +130,26 @@ export class ElementNotFoundError extends Error {
   }
 }
 
+let memElements: BuildElement[] = [];
+
 export const localElementsTE: TE.TaskEither<Error, BuildElement[]> =
   TE.tryCatch(
-    () =>
-      buildSystemsCache.elements.toArray().then((elements) => {
-        if (A.isEmpty(elements)) {
-          throw new Error("No elements found");
-        }
-        return elements;
-      }),
+    () => {
+      if (memElements.length > 0) {
+        // Return elements from in-memory cache
+        return Promise.resolve(memElements);
+      } else {
+        // Fallback to Dexie.js cache
+        return buildSystemsCache.elements.toArray().then((elements) => {
+          if (A.isEmpty(elements)) {
+            throw new Error("No elements found");
+          }
+          // Update in-memory cache
+          memElements = elements;
+          return elements;
+        });
+      }
+    },
     (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
   );
 
@@ -147,6 +159,8 @@ export const cachedElementsTE = runUntilFirstSuccess([
     remoteElementsTE,
     TE.map((elements) => {
       buildSystemsCache.elements.bulkPut(elements);
+      // Update in-memory cache
+      memElements = elements;
       return elements;
     })
   ),
@@ -169,3 +183,12 @@ export const elementGetterTE = pipe(
         )
   )
 );
+
+// Add a utility function to get a single element by IFC tag
+export const unsafeGetElementByIfcTag = (ifcTag: string): BuildElement => {
+  return pipe(
+    memElements,
+    A.findFirst((x) => x.ifcTag === ifcTag),
+    someOrError(`no ${ifcTag} element found`)
+  );
+};

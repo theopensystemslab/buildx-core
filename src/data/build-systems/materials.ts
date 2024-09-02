@@ -1,5 +1,5 @@
 import airtable, { tryCatchImageBlob } from "@/utils/airtable";
-import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
+import { A, runUntilFirstSuccess, someOrError, TE } from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { useLiveQuery } from "dexie-react-hooks";
 import { pipe } from "fp-ts/lib/function";
@@ -134,15 +134,25 @@ export class MaterialNotFoundError extends Error {
   }
 }
 
+let memMaterials: CachedBuildMaterial[] = [];
+
 export const localMaterialsTE: TE.TaskEither<Error, CachedBuildMaterial[]> =
   TE.tryCatch(
-    () =>
-      buildSystemsCache.materials.toArray().then((materials) => {
-        if (A.isEmpty(materials)) {
-          throw new Error("No materials found in cache");
-        }
-        return materials;
-      }),
+    () => {
+      if (memMaterials.length > 0) {
+        // Return materials from in-memory cache
+        return Promise.resolve(memMaterials);
+      } else {
+        // Fallback to Dexie.js cache
+        return buildSystemsCache.materials.toArray().then((materials) => {
+          if (A.isEmpty(materials)) {
+            throw new Error("No materials found in cache");
+          }
+          memMaterials = materials;
+          return materials;
+        });
+      }
+    },
     (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
   );
 
@@ -170,3 +180,10 @@ export const cachedMaterialsTE = runUntilFirstSuccess([
 
 export const useBuildMaterials = (): CachedBuildMaterial[] =>
   useLiveQuery(() => buildSystemsCache.materials.toArray(), [], []);
+
+export const unsafeGetMaterialBySpec = (spec: string) =>
+  pipe(
+    memMaterials,
+    A.findFirst((x) => x.specification === spec),
+    someOrError(`Material not found for spec: ${spec}`)
+  );
