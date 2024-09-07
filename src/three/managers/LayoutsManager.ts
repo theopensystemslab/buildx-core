@@ -74,6 +74,20 @@ class LayoutsManager {
       })
     );
   }
+
+  getResetLayoutGroup() {
+    // check dnas against active layout group
+    //
+    // or preview layout group
+    //
+    // otherwise create a new column layout group for this
+    //
+    // call reset materials
+    //
+    // don't bother resetting position/rotation
+    //
+    // hmm, I wonder if we could preview the reset?
+  }
 }
 
 export default LayoutsManager;

@@ -201,6 +201,8 @@ export class HouseGroup extends Group {
       this.scene.contextManager.buildingHouseGroup = O.some(this);
     }
   }
+
+  reset() {}
 }
 
 export type { Hooks as HouseGroupHooks, Managers as HouseGroupManagers };

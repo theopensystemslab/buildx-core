@@ -12,6 +12,7 @@ import {
 } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { clippingMaterial } from "./CutsManager";
+import { updateCachedHouse } from "@/data/user/houses";
 
 class ElementsManager {
   houseGroup: HouseGroup;
@@ -41,6 +42,21 @@ class ElementsManager {
     });
 
     this.overrides[ifcTag] = materialSpec;
+
+    updateCachedHouse(this.houseGroup.userData.houseId, {
+      activeElementMaterials: this.overrides,
+    });
+  }
+
+  resetElementMaterials() {
+    Object.keys(this.overrides).forEach((ifcTag) => {
+      const element = unsafeGetElementByIfcTag(ifcTag);
+      this.setElementMaterial(ifcTag, element.defaultMaterial);
+    });
+
+    updateCachedHouse(this.houseGroup.userData.houseId, {
+      activeElementMaterials: {},
+    });
   }
 
   getCurrentElementMaterial(ifcTag: string) {
@@ -94,6 +110,10 @@ class ElementsManager {
         node.visible = visible;
       }
     });
+  }
+
+  updateDB() {
+    // update our user database with the current overrides
   }
 }
 
