@@ -159,7 +159,6 @@ export const cachedElementsTE = runUntilFirstSuccess([
     remoteElementsTE,
     TE.map((elements) => {
       buildSystemsCache.elements.bulkPut(elements);
-      // Update in-memory cache
       memElements = elements;
       return elements;
     })

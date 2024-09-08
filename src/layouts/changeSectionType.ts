@@ -185,12 +185,11 @@ export const getAltSectionTypeLayouts = ({
             { systemId, layout, sectionType },
             changeLayoutSectionType,
             TE.map((layout) => ({ layout, sectionType }))
-            // TO.fromTaskEither
           )
         ),
         successSeqTE,
         TE.fromTask,
-        TE.mapError(() => new Error(`fail`))
+        TE.mapError(() => new Error(`failed changeSectionType`))
       )
     )
   );

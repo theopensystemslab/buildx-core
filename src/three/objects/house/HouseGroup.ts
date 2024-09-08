@@ -15,6 +15,7 @@ import { Box3, Group, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
+import LevelTypesManager from "@/three/managers/LevelTypesManager";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -32,6 +33,7 @@ type Managers = {
   cuts?: CutsManager;
   openings?: OpeningsManager;
   collisions?: CollisionsManager;
+  levelTypes?: LevelTypesManager;
 };
 
 export type HouseGroupUserData = {
@@ -76,6 +78,7 @@ export class HouseGroup extends Group {
       cuts: managers.cuts ?? new CutsManager(this),
       openings: managers.openings ?? new OpeningsManager(this),
       collisions: managers.collisions ?? new CollisionsManager(this),
+      levelTypes: managers.levelTypes ?? new LevelTypesManager(this),
     };
     this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
     this.hooks = hooks ?? {};
