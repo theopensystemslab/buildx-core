@@ -25,7 +25,9 @@ class OpeningsManager {
     this.houseGroup = houseGroup;
   }
 
-  createAlts(target: ScopeElement): TE.TaskEither<Error, OpeningsChangeInfo> {
+  getOpeningsChangeInfo(
+    target: ScopeElement
+  ): TE.TaskEither<Error, OpeningsChangeInfo> {
     const side = getSide(
       this.houseGroup,
       this.houseGroup.scene.cameraControls.camera

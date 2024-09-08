@@ -1,16 +1,37 @@
+import {
+  BuildModule,
+  LevelType,
+  cachedLevelTypesTE,
+  cachedModulesTE,
+} from "@/data/build-systems";
 import { getVanillaModule } from "@/tasks/vanilla";
-import { A, O, TE, reduceToOption, someOrError } from "@/utils/functions";
+import { ColumnLayoutGroup } from "@/three/objects/house/ColumnLayoutGroup";
+import {
+  A,
+  O,
+  TE,
+  reduceToOption,
+  someOrError,
+  successSeqTE,
+} from "@/utils/functions";
 import { roundp, sign } from "@/utils/math";
 import { flow, pipe } from "fp-ts/lib/function";
 import { columnLayoutToDnas } from "./init";
 import { ColumnLayout, PositionedBuildModule, PositionedRow } from "./types";
 import { filterCompatibleModules, topCandidateByHamming } from "./utils";
-import {
-  cachedLevelTypesTE,
-  LevelType,
-  cachedModulesTE,
-  BuildModule,
-} from "@/data/build-systems";
+
+type AltLevelTypeLayoutOption = {
+  layout: ColumnLayout;
+  levelType: LevelType;
+  dnas: string[];
+};
+
+export type AltLevelTypeLayoutGroupOption = Omit<
+  AltLevelTypeLayoutOption,
+  "layout" | "dnas"
+> & {
+  layoutGroup: ColumnLayoutGroup;
+};
 
 export const getAltLevelTypeLayouts = ({
   systemId,
@@ -22,7 +43,7 @@ export const getAltLevelTypeLayouts = ({
   currentLayout: ColumnLayout;
   currentLevelTypeCode: string;
   rowIndex: number;
-}) =>
+}): TE.TaskEither<Error, AltLevelTypeLayoutOption[]> =>
   pipe(
     cachedLevelTypesTE,
     TE.map(
@@ -42,7 +63,7 @@ export const getAltLevelTypeLayouts = ({
           )
       )
     ),
-    TE.map(({ otherLevelTypes, currentLevelType }) =>
+    TE.chain(({ otherLevelTypes, currentLevelType }) =>
       pipe(
         otherLevelTypes,
         A.map(
@@ -64,12 +85,9 @@ export const getAltLevelTypeLayouts = ({
                 prevLevelType: currentLevelType,
                 rowIndex,
               }),
-
               TE.map((layout) => {
-                // postVanillaColumn(layout[0])();
                 const dnas = columnLayoutToDnas(layout);
-                // layoutsDB.houseLayouts.put({ systemId, dnas, layout });
-                // map;
+
                 return {
                   layout,
                   levelType,
@@ -78,7 +96,9 @@ export const getAltLevelTypeLayouts = ({
               })
             )
         ),
-        A.sequence(TE.ApplicativeSeq)
+        successSeqTE,
+        TE.fromTask,
+        TE.mapError(() => new Error(`failed changeLevelType`))
       )
     )
   );

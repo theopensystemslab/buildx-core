@@ -10,6 +10,7 @@ import createHouseGroupTE from "./tasks/createHouseGroupTE";
 import type { SceneContextMode } from "./three/managers/ContextManager";
 import { SceneContextModeLabel } from "./three/managers/ContextManager";
 import type { OpeningsChangeInfo } from "./three/managers/OpeningsManager";
+import type { LevelTypesChangeInfo } from "./three/managers/LevelTypesManager";
 import { HouseGroup } from "./three/objects/house/HouseGroup";
 import BuildXScene from "./three/objects/scene/BuildXScene";
 import type { ScopeElement } from "./three/objects/types";
@@ -27,6 +28,7 @@ export {
   HouseGroup,
   MaterialsListRow,
   OpeningsChangeInfo,
+  LevelTypesChangeInfo,
   OrderListRow,
   SceneContextMode,
   SceneContextModeLabel,
