@@ -42,6 +42,8 @@ import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
 import SiteBoundary from "./SiteBoundary";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import { getOutlinePass } from "../../effects/outline";
 
 const subsetOfTHREE = {
   Vector2,
@@ -81,6 +83,8 @@ class BuildXScene extends Scene {
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
+  composer: EffectComposer;
+  outlinePass: OutlinePass;
 
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
@@ -179,6 +183,7 @@ class BuildXScene extends Scene {
       this.gestureManager = new GestureManager({
         domElement: this.renderer.domElement,
         camera,
+        scene: this,
         onGestureStart: () => {
           this.cameraControls.enabled = false;
         },
@@ -283,6 +288,16 @@ class BuildXScene extends Scene {
         onDragEnd: () => dragEnd?.(),
         onTapMissed,
       });
+
+    this.composer = new EffectComposer(this.renderer);
+    const renderPass = new RenderPass(this, camera);
+    this.composer.addPass(renderPass);
+
+    this.outlinePass = getOutlinePass(this, camera);
+    this.composer.addPass(this.outlinePass);
+
+    this.handleResize();
+    window.addEventListener("resize", () => this.handleResize());
 
     this.animate();
   }
@@ -391,8 +406,19 @@ class BuildXScene extends Scene {
   animate() {
     const delta = this.clock.getDelta();
     this.cameraControls.update(delta);
-    this.renderer.render(this, this.cameraControls.camera);
+    this.composer.render();
     requestAnimationFrame(() => this.animate());
+  }
+
+  handleResize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    if (this.cameraControls.camera instanceof PerspectiveCamera) {
+      this.cameraControls.camera.aspect = width / height;
+    }
+    this.cameraControls.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+    this.composer.setSize(width, height);
   }
 
   addObject(object: Object3D, options?: { gestures: boolean }) {
@@ -449,6 +475,14 @@ class BuildXScene extends Scene {
     return this.children.filter(
       (x): x is HouseGroup => x instanceof HouseGroup
     );
+  }
+
+  setOutline(objects: Object3D[] | null) {
+    if (objects) {
+      this.outlinePass.selectedObjects = objects;
+    } else {
+      this.outlinePass.selectedObjects = [];
+    }
   }
 }
 
