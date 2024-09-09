@@ -11,6 +11,7 @@ import { RowGroup } from "./RowGroup";
 import { evaluator } from "@/three/managers/CutsManager";
 import BuildXScene from "../scene/BuildXScene";
 import { BuildElement } from "@/data/build-systems";
+import { O } from "@/utils/functions";
 
 export class ElementGroup extends Group {
   userData: {
@@ -88,6 +89,16 @@ export class ElementGroup extends Group {
 
   get scene(): BuildXScene {
     return this.houseGroup.scene;
+  }
+
+  getVisibleBrush(): O.Option<ElementBrush> {
+    if (this.clippedBrush && this.clippedBrush.visible) {
+      return O.some(this.clippedBrush);
+    } else if (this.fullBrush && this.fullBrush.visible) {
+      return O.some(this.fullBrush);
+    } else {
+      return O.none;
+    }
   }
 }
 

@@ -3,6 +3,7 @@ import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";
 import GestureManager, { DragDetail } from "@/three/managers/GestureManager";
+import OutlineManager from "@/three/managers/OutlineManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
 import { Polygon } from "geojson";
@@ -36,6 +37,10 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+// @ts-ignore
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import { getOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
@@ -81,6 +86,8 @@ class BuildXScene extends Scene {
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
   clock: Clock;
+  composer: EffectComposer;
+  outlinePass: OutlinePass;
 
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
@@ -88,6 +95,7 @@ class BuildXScene extends Scene {
 
   gestureManager?: GestureManager;
   contextManager?: ContextManager;
+  outlineManager?: OutlineManager;
 
   siteBoundary: SiteBoundary | null;
 
@@ -179,6 +187,7 @@ class BuildXScene extends Scene {
       this.gestureManager = new GestureManager({
         domElement: this.renderer.domElement,
         camera,
+        scene: this,
         onGestureStart: () => {
           this.cameraControls.enabled = false;
         },
@@ -283,6 +292,23 @@ class BuildXScene extends Scene {
         onDragEnd: () => dragEnd?.(),
         onTapMissed,
       });
+
+    this.composer = new EffectComposer(this.renderer);
+
+    const renderPass = new RenderPass(this, camera);
+    this.composer.addPass(renderPass);
+
+    this.outlinePass = getOutlinePass(this, camera);
+
+    const outputPass = new OutputPass();
+    this.composer.addPass(outputPass);
+
+    this.composer.addPass(this.outlinePass);
+
+    this.outlineManager = new OutlineManager(this, this.outlinePass);
+
+    this.handleResize();
+    window.addEventListener("resize", () => this.handleResize());
 
     this.animate();
   }
@@ -391,8 +417,19 @@ class BuildXScene extends Scene {
   animate() {
     const delta = this.clock.getDelta();
     this.cameraControls.update(delta);
-    this.renderer.render(this, this.cameraControls.camera);
+    this.composer.render();
     requestAnimationFrame(() => this.animate());
+  }
+
+  handleResize() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    if (this.cameraControls.camera instanceof PerspectiveCamera) {
+      this.cameraControls.camera.aspect = width / height;
+    }
+    this.cameraControls.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+    this.composer.setSize(width, height);
   }
 
   addObject(object: Object3D, options?: { gestures: boolean }) {
