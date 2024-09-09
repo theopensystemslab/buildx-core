@@ -9,11 +9,15 @@ import {
   Vector2,
   Vector3,
 } from "three";
+import { getMeshes, outlineObject } from "../effects/outline";
+import { ElementBrush } from "../objects/house/ElementGroup";
+import BuildXScene from "../objects/scene/BuildXScene";
 import {
   CAMERA_ONLY_LAYER,
   HIDDEN_LAYER,
   RAYCAST_ONLY_LAYER,
 } from "../utils/layers";
+import { SceneContextModeLabel } from "./ContextManager";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
@@ -31,6 +35,7 @@ export type DragDetail = {
 class GestureManager {
   raycaster = new Raycaster();
   camera: Camera;
+  scene: BuildXScene;
   private pointer = new Vector2();
   private gestureEnabledObjects: Object3D[];
   private pointerDownTime = 0;
@@ -65,9 +70,14 @@ class GestureManager {
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
   private originalPosition = new Vector3(); // Original position of the object being dragged
 
+  private hoveredObject: Object3D | null = null;
+  private selectedObject: Object3D | null = null;
+  private enableOutlining: boolean = true;
+
   constructor(params: {
     domElement: HTMLElement;
     camera: Camera;
+    scene: BuildXScene;
     gestureEnabledObjects?: Object3D[];
     onGestureStart?: () => void;
     onGestureEnd?: () => void;
@@ -84,6 +94,7 @@ class GestureManager {
     this.camera = params.camera;
     this.gestureEnabledObjects = params.gestureEnabledObjects ?? [];
     this.domRect = this.domElement.getBoundingClientRect();
+    this.scene = params.scene;
 
     this.onGestureStart = params.onGestureStart;
     this.onGestureEnd = params.onGestureEnd;
@@ -139,6 +150,29 @@ class GestureManager {
     }
   }
 
+  get contextManager() {
+    return this.scene.contextManager;
+  }
+
+  private getOutlineableObject(object: Object3D): Object3D | null {
+    if (!this.scene.contextManager) return null;
+
+    const mode = this.scene.contextManager.mode.label;
+
+    if (!(object instanceof ElementBrush)) return null;
+
+    switch (mode) {
+      case SceneContextModeLabel.Enum.SITE:
+        return object.houseGroup;
+      case SceneContextModeLabel.Enum.BUILDING:
+        return object.houseGroup;
+      case SceneContextModeLabel.Enum.ROW:
+        return object.moduleGroup;
+      default:
+        return null;
+    }
+  }
+
   private onPointerDown(event: PointerEvent) {
     this.pointerIsDown = true;
     this.pointerMoved = false;
@@ -188,6 +222,28 @@ class GestureManager {
           );
       }
     }, this.longTapThreshold);
+
+    if (this.enableOutlining) {
+      const intersects = this.raycaster.intersectObjects(
+        this.gestureEnabledObjects,
+        true
+      );
+      const intersectedObject =
+        intersects.length > 0 ? intersects[0].object : null;
+      const outlineableObject = intersectedObject
+        ? this.getOutlineableObject(intersectedObject)
+        : null;
+
+      if (outlineableObject !== this.selectedObject) {
+        if (this.selectedObject) {
+          outlineObject(new Object3D()); // Clear outline
+        }
+        if (outlineableObject) {
+          outlineObject(outlineableObject);
+        }
+        this.selectedObject = outlineableObject;
+      }
+    }
   }
 
   private cleanup() {
@@ -259,6 +315,15 @@ class GestureManager {
   }
 
   private onPointerMove(event: PointerEvent) {
+    // Update pointer position
+    this.pointer.x =
+      ((event.clientX - this.domRect.left) / this.domRect.width) * 2 - 1;
+    this.pointer.y =
+      -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
+
+    // Update raycaster
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+
     if (this.pointerIsDown) {
       const moveDistance = this.initialPointerPosition.distanceTo(
         new Vector2(event.clientX, event.clientY)
@@ -281,29 +346,14 @@ class GestureManager {
           this.longTapTimeoutId = null;
         }
 
-        this.pointer.x =
-          ((event.clientX - this.domRect.left) / this.domRect.width) * 2 - 1;
-        this.pointer.y =
-          -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
-
-        this.raycaster.setFromCamera(this.pointer, this.camera);
-
         const intersectionPointXZ = new Vector3();
-        // const intersectionPointY = new Vector3();
 
         const intersectXZ = this.raycaster.ray.intersectPlane(
           this.movementPlaneXZ,
           intersectionPointXZ
         );
-        // const intersectY = this.raycaster.ray.intersectPlane(
-        //   this.movementPlaneY,
-        //   intersectionPointY
-        // );
 
-        if (
-          intersectXZ
-          // && intersectY
-        ) {
+        if (intersectXZ) {
           const currentPoint = new Vector3(
             intersectionPointXZ.x,
             this.initialPoint.y,
@@ -321,8 +371,34 @@ class GestureManager {
           });
 
           this.lastPoint.copy(currentPoint);
-        } else {
         }
+      }
+    }
+
+    if (this.enableOutlining) {
+      const intersects = this.raycaster.intersectObjects(
+        this.gestureEnabledObjects,
+        true
+      );
+      const intersectedObject =
+        intersects.length > 0 ? intersects[0].object : null;
+
+      const outlineableObject = intersectedObject
+        ? this.getOutlineableObject(intersectedObject)
+        : null;
+
+      if (outlineableObject) {
+        this.scene.setOutline(getMeshes(outlineableObject));
+      }
+
+      if (outlineableObject !== this.hoveredObject) {
+        if (this.hoveredObject) {
+          outlineObject(new Object3D()); // Clear outline
+        }
+        if (outlineableObject) {
+          outlineObject(outlineableObject);
+        }
+        this.hoveredObject = outlineableObject;
       }
     }
   }
