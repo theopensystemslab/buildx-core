@@ -8,7 +8,7 @@ import {
 } from "@/data/build-systems";
 import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
 import { ThreeMaterial } from "@/three/materials/types";
-import { A, E, TE } from "@/utils/functions";
+import { A, E, O, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { flow, pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
@@ -16,6 +16,8 @@ import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { defaultElementGroupCreator } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
+import { ElementBrush, ElementGroup } from "./ElementGroup";
+import { Brush } from "three-bvh-csg";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -29,6 +31,7 @@ export type ModuleGroupUserData = {
 
 export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
+  private visibleBrushes: ElementBrush[] = [];
 
   constructor(userData: ModuleGroupUserData) {
     super();
@@ -49,6 +52,48 @@ export class ModuleGroup extends Group {
 
   get columnLayoutGroup(): ColumnLayoutGroup {
     return this.rowGroup.columnLayoutGroup;
+  }
+
+  createClippedBrush(brush: Brush) {
+    this.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.createClippedBrush(brush);
+      }
+    });
+  }
+
+  showClippedBrushes() {
+    this.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.showClippedBrush();
+      }
+    });
+  }
+
+  showFullBrushes() {
+    this.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.showFullBrush();
+      }
+    });
+  }
+
+  updateElementBrushes() {
+    this.visibleBrushes = [];
+    this.traverse((object) => {
+      if (object instanceof ElementGroup) {
+        pipe(
+          object.getVisibleBrush(),
+          O.map((brush) => {
+            this.visibleBrushes.push(brush);
+          })
+        );
+      }
+    });
+  }
+
+  getAllVisibleBrushes(): ElementBrush[] {
+    return this.visibleBrushes;
   }
 }
 
@@ -177,6 +222,7 @@ export const defaultModuleGroupCreator = ({
     elementGroupsTE,
     TE.map((elementGroups) => {
       moduleGroup.add(...elementGroups);
+      moduleGroup.updateElementBrushes();
       return moduleGroup;
     })
   );

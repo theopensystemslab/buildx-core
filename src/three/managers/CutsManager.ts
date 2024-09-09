@@ -2,8 +2,8 @@ import { A, O, compareProps, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, DoubleSide, MeshBasicMaterial, Object3D } from "three";
 import { ADDITION, Brush, Evaluator } from "three-bvh-csg";
-import { ElementGroup } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
+import { ModuleGroup } from "../objects/house/ModuleGroup";
 
 export const evaluator = new Evaluator();
 
@@ -178,7 +178,7 @@ class CutsManager {
       this.brush,
       O.map((brush) => {
         object.traverse((node) => {
-          if (node instanceof ElementGroup) {
+          if (node instanceof ModuleGroup) {
             node.createClippedBrush(brush);
           }
         });
@@ -188,16 +188,18 @@ class CutsManager {
 
   showClippedBrushes(object: Object3D) {
     object.traverse((node) => {
-      if (node instanceof ElementGroup) {
-        node.showClippedBrush();
+      if (node instanceof ModuleGroup) {
+        node.showClippedBrushes();
+        node.updateElementBrushes();
       }
     });
   }
 
-  showElementBrushes(object: Object3D) {
+  showFullBrushes(object: Object3D) {
     object.traverse((node) => {
-      if (node instanceof ElementGroup) {
-        node.showFullBrush();
+      if (node instanceof ModuleGroup) {
+        node.showFullBrushes();
+        node.updateElementBrushes();
       }
     });
   }
@@ -208,7 +210,7 @@ class CutsManager {
     if (rowIndex !== null || x || z) {
       this.showClippedBrushes(object);
     } else {
-      this.showElementBrushes(object);
+      this.showFullBrushes(object);
     }
   }
 

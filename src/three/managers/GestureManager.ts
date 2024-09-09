@@ -9,6 +9,7 @@ import {
   Vector2,
   Vector3,
 } from "three";
+import BuildXScene from "../objects/scene/BuildXScene";
 import {
   CAMERA_ONLY_LAYER,
   HIDDEN_LAYER,
@@ -31,6 +32,7 @@ export type DragDetail = {
 class GestureManager {
   raycaster = new Raycaster();
   camera: Camera;
+  scene: BuildXScene;
   private pointer = new Vector2();
   private gestureEnabledObjects: Object3D[];
   private pointerDownTime = 0;
@@ -65,9 +67,12 @@ class GestureManager {
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
   private originalPosition = new Vector3(); // Original position of the object being dragged
 
+  private enableOutlining: boolean = true;
+
   constructor(params: {
     domElement: HTMLElement;
     camera: Camera;
+    scene: BuildXScene;
     gestureEnabledObjects?: Object3D[];
     onGestureStart?: () => void;
     onGestureEnd?: () => void;
@@ -84,6 +89,7 @@ class GestureManager {
     this.camera = params.camera;
     this.gestureEnabledObjects = params.gestureEnabledObjects ?? [];
     this.domRect = this.domElement.getBoundingClientRect();
+    this.scene = params.scene;
 
     this.onGestureStart = params.onGestureStart;
     this.onGestureEnd = params.onGestureEnd;
@@ -139,6 +145,10 @@ class GestureManager {
     }
   }
 
+  get contextManager() {
+    return this.scene.contextManager;
+  }
+
   private onPointerDown(event: PointerEvent) {
     this.pointerIsDown = true;
     this.pointerMoved = false;
@@ -188,6 +198,18 @@ class GestureManager {
           );
       }
     }, this.longTapThreshold);
+
+    if (this.enableOutlining) {
+      const intersects = this.raycaster.intersectObjects(
+        this.gestureEnabledObjects,
+        true
+      );
+
+      // could check if modifier also
+      this.scene.outlineManager?.setSelectedObject(
+        intersects.length > 0 ? intersects[0].object : null
+      );
+    }
   }
 
   private cleanup() {
@@ -259,6 +281,15 @@ class GestureManager {
   }
 
   private onPointerMove(event: PointerEvent) {
+    // Update pointer position
+    this.pointer.x =
+      ((event.clientX - this.domRect.left) / this.domRect.width) * 2 - 1;
+    this.pointer.y =
+      -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
+
+    // Update raycaster
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+
     if (this.pointerIsDown) {
       const moveDistance = this.initialPointerPosition.distanceTo(
         new Vector2(event.clientX, event.clientY)
@@ -281,29 +312,14 @@ class GestureManager {
           this.longTapTimeoutId = null;
         }
 
-        this.pointer.x =
-          ((event.clientX - this.domRect.left) / this.domRect.width) * 2 - 1;
-        this.pointer.y =
-          -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
-
-        this.raycaster.setFromCamera(this.pointer, this.camera);
-
         const intersectionPointXZ = new Vector3();
-        // const intersectionPointY = new Vector3();
 
         const intersectXZ = this.raycaster.ray.intersectPlane(
           this.movementPlaneXZ,
           intersectionPointXZ
         );
-        // const intersectY = this.raycaster.ray.intersectPlane(
-        //   this.movementPlaneY,
-        //   intersectionPointY
-        // );
 
-        if (
-          intersectXZ
-          // && intersectY
-        ) {
+        if (intersectXZ) {
           const currentPoint = new Vector3(
             intersectionPointXZ.x,
             this.initialPoint.y,
@@ -321,9 +337,19 @@ class GestureManager {
           });
 
           this.lastPoint.copy(currentPoint);
-        } else {
         }
       }
+    }
+
+    if (this.enableOutlining) {
+      const intersects = this.raycaster.intersectObjects(
+        this.gestureEnabledObjects,
+        true
+      );
+
+      this.scene.outlineManager?.setHoveredObject(
+        intersects.length > 0 ? intersects[0].object : null
+      );
     }
   }
 

@@ -16,6 +16,7 @@ import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import LevelTypesManager from "@/three/managers/LevelTypesManager";
+import { ElementBrush, ElementGroup } from "./ElementGroup";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -47,6 +48,7 @@ export class HouseGroup extends Group {
   userData: HouseGroupUserData;
   hooks: Partial<Hooks>;
   managers: Managers;
+  private elementBrushes: Map<string, ElementBrush[]> = new Map();
 
   constructor({
     userData,
@@ -87,6 +89,7 @@ export class HouseGroup extends Group {
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
 
     this.updateBBs();
+    this.updateElementMeshes();
   }
 
   get friendlyName(): string {
@@ -203,6 +206,35 @@ export class HouseGroup extends Group {
     if (this.scene.contextManager) {
       this.scene.contextManager.buildingHouseGroup = O.some(this);
     }
+  }
+
+  updateElementMeshes() {
+    this.elementBrushes.clear();
+    this.traverse((object) => {
+      if (object instanceof ElementGroup) {
+        const {
+          element: { ifcTag },
+        } = object.userData;
+        pipe(
+          object.getVisibleBrush(),
+          O.map((brush) => {
+            if (!this.elementBrushes.has(ifcTag)) {
+              this.elementBrushes.set(ifcTag, []);
+            } else {
+              this.elementBrushes.get(ifcTag)!.push(brush);
+            }
+          })
+        );
+      }
+    });
+  }
+
+  getElementBrushes(ifcTag: string): ElementBrush[] {
+    return this.elementBrushes.get(ifcTag) ?? [];
+  }
+
+  getAllVisibleBrushes(): ElementBrush[] {
+    return Array.from(this.elementBrushes.values()).flat();
   }
 }
 
