@@ -21,7 +21,7 @@ import {
   LineSegments,
   Matrix4,
   Mesh,
-  MeshStandardMaterial,
+  MeshBasicMaterial,
   Object3D,
   PerspectiveCamera,
   PlaneGeometry,
@@ -142,7 +142,7 @@ class BuildXScene extends Scene {
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    // renderer.setClearColor("white");
+    this.renderer.setClearColor("white");
 
     this.cameraControls = new CameraControls(camera, this.renderer.domElement);
 
@@ -299,33 +299,12 @@ class BuildXScene extends Scene {
   }
 
   enableLighting() {
-    const intensityScale = 0.76;
+    const intensityScale = 2;
 
     const ambientLight = new AmbientLight(0xffffff, 0.5 * intensityScale);
     this.add(ambientLight);
 
-    const directionalLight1 = new DirectionalLight(
-      "#b5d7fc",
-      0.8 * intensityScale
-    );
-    directionalLight1.position.set(0, 20, 20);
-    this.add(directionalLight1);
-
-    const directionalLight2 = new DirectionalLight(
-      "#ffffff",
-      0.3 * intensityScale
-    );
-    directionalLight2.position.set(-20, 20, 0);
-    this.add(directionalLight2);
-
-    const directionalLight3 = new DirectionalLight(
-      "#9bb9c6",
-      0.3 * intensityScale
-    );
-    directionalLight3.position.set(20, 20, 0);
-    this.add(directionalLight3);
-
-    const shadowLight = new DirectionalLight("#fffcdb", 0.8 * intensityScale);
+    const shadowLight = new DirectionalLight(0xffffff, 0.5 * intensityScale);
     shadowLight.position.set(0, 150, -150);
     shadowLight.castShadow = true;
     shadowLight.shadow.mapSize.width = 2048;
@@ -341,7 +320,7 @@ class BuildXScene extends Scene {
   enableGroundObjects() {
     // GroundCircle
     const groundCircleGeometry = new CircleGeometry(500, 32);
-    const groundCircleMaterial = new MeshStandardMaterial({
+    const groundCircleMaterial = new MeshBasicMaterial({
       side: DoubleSide,
       color: 0xd1d1c7,
     });
@@ -353,11 +332,11 @@ class BuildXScene extends Scene {
     // ShadowPlane
     const shadowPlaneGeometry = new PlaneGeometry(100, 100);
     const shadowPlaneMaterial = new ShadowMaterial({
-      color: 0x898989,
+      color: 0x555555,
       side: DoubleSide,
     });
     const shadowPlane = new Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
-    shadowPlane.position.set(0, -0.02, 0);
+    shadowPlane.position.set(0, 0, 0);
     shadowPlane.rotation.set(-Math.PI / 2, 0, 0);
     shadowPlane.receiveShadow = true;
     this.add(shadowPlane);
