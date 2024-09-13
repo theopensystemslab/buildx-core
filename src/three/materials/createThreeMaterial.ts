@@ -1,5 +1,5 @@
 import { CachedBuildMaterial } from "@/data/build-systems";
-import { DoubleSide, MeshPhysicalMaterial, MeshStandardMaterial } from "three";
+import { DoubleSide, MeshLambertMaterial, MeshPhysicalMaterial } from "three";
 
 const createThreeMaterial = (material: CachedBuildMaterial) => {
   if (material.specification === "Glass") {
@@ -26,21 +26,21 @@ const createThreeMaterial = (material: CachedBuildMaterial) => {
       depthWrite: false,
       opacity: 1, // set material.opacity to 1 when material.transmission is non-zero
       transparent: true,
-      clipShadows: true,
+      // clipShadows: true,
     });
   }
 
   if (material.defaultColor) {
-    return new MeshStandardMaterial({
+    return new MeshLambertMaterial({
       color: material.defaultColor,
       // transparent: true,
-      emissive: "#000",
+      // emissive: "#000",
       side: DoubleSide,
       // shadowSide: DoubleSide,
       // wireframe: true,
       // opacity: 0.6,
       // depthTest: false,
-      clipShadows: true,
+      // clipShadows: true,
     });
   }
 
@@ -54,7 +54,7 @@ const createThreeMaterial = (material: CachedBuildMaterial) => {
   // const extractOrNullTextureMap = (url: string | undefined | null) =>
   //   url ? textureLoader.load(url, setRepeat) : null
 
-  return new MeshStandardMaterial({
+  return new MeshLambertMaterial({
     color: 0xeeeeee,
     // map: extractOrNullTextureMap(config.textureUrl),
     // displacementMap: extractOrNullTextureMap(config.displacementUrl),
@@ -65,15 +65,15 @@ const createThreeMaterial = (material: CachedBuildMaterial) => {
     displacementScale: 0, // this can be used to 'explode' the components
     aoMapIntensity: 3.0,
     envMap: null,
-    envMapIntensity: 1.5,
+    // envMapIntensity: 1.5,
     lightMap: null,
     lightMapIntensity: 1,
     emissiveMap: null,
     emissive: 1,
     emissiveIntensity: 1,
     displacementBias: 1,
-    roughness: 0.5,
-    metalness: 0,
+    // roughness: 0.5,
+    // metalness: 0,
     alphaMap: null,
     bumpScale: 1,
     side: DoubleSide,
