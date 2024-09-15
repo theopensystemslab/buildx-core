@@ -16,6 +16,7 @@ import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import LevelTypesManager from "@/three/managers/LevelTypesManager";
+import { ElementBrush } from "./ElementGroup";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -47,6 +48,7 @@ export class HouseGroup extends Group {
   userData: HouseGroupUserData;
   hooks: Partial<Hooks>;
   managers: Managers;
+  private elementMeshes: Map<string, ElementBrush[]> = new Map();
 
   constructor({
     userData,
@@ -203,6 +205,25 @@ export class HouseGroup extends Group {
     if (this.scene.contextManager) {
       this.scene.contextManager.buildingHouseGroup = O.some(this);
     }
+  }
+
+  updateElementMeshes() {
+    this.elementMeshes.clear();
+    this.traverse((object) => {
+      if (object instanceof ElementBrush) {
+        const {
+          element: { ifcTag },
+        } = object.elementGroup.userData;
+        if (!this.elementMeshes.has(ifcTag)) {
+          this.elementMeshes.set(ifcTag, []);
+        }
+        this.elementMeshes.get(ifcTag)!.push(object);
+      }
+    });
+  }
+
+  getElementMeshesByKind(ifcTag: string): ElementBrush[] {
+    return this.elementMeshes.get(ifcTag) ?? [];
   }
 }
 
