@@ -17,6 +17,7 @@ import { defaultElementGroupCreator } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
 import { ElementBrush, ElementGroup } from "./ElementGroup";
+import { Brush } from "three-bvh-csg";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -51,6 +52,30 @@ export class ModuleGroup extends Group {
 
   get columnLayoutGroup(): ColumnLayoutGroup {
     return this.rowGroup.columnLayoutGroup;
+  }
+
+  createClippedBrush(brush: Brush) {
+    this.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.createClippedBrush(brush);
+      }
+    });
+  }
+
+  showClippedBrushes() {
+    this.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.showClippedBrush();
+      }
+    });
+  }
+
+  showFullBrushes() {
+    this.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        node.showFullBrush();
+      }
+    });
   }
 
   updateElementBrushes() {
