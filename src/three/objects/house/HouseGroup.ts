@@ -89,6 +89,7 @@ export class HouseGroup extends Group {
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
 
     this.updateBBs();
+    this.updateElementMeshes();
   }
 
   get friendlyName(): string {
@@ -228,7 +229,7 @@ export class HouseGroup extends Group {
     });
   }
 
-  getElementMeshesByIfcTag(ifcTag: string): ElementBrush[] {
+  getElementBrushes(ifcTag: string): ElementBrush[] {
     return this.elementBrushes.get(ifcTag) ?? [];
   }
 

@@ -9,15 +9,12 @@ import {
   Vector2,
   Vector3,
 } from "three";
-import { getMeshes, outlineObject } from "../effects/outline";
-import { ElementBrush } from "../objects/house/ElementGroup";
 import BuildXScene from "../objects/scene/BuildXScene";
 import {
   CAMERA_ONLY_LAYER,
   HIDDEN_LAYER,
   RAYCAST_ONLY_LAYER,
 } from "../utils/layers";
-import { SceneContextModeLabel } from "./ContextManager";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
@@ -70,8 +67,6 @@ class GestureManager {
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
   private originalPosition = new Vector3(); // Original position of the object being dragged
 
-  private hoveredObject: Object3D | null = null;
-  private selectedObject: Object3D | null = null;
   private enableOutlining: boolean = true;
 
   constructor(params: {
@@ -154,25 +149,6 @@ class GestureManager {
     return this.scene.contextManager;
   }
 
-  private getOutlineableObject(object: Object3D): Object3D | null {
-    if (!this.scene.contextManager) return null;
-
-    const mode = this.scene.contextManager.mode.label;
-
-    if (!(object instanceof ElementBrush)) return null;
-
-    switch (mode) {
-      case SceneContextModeLabel.Enum.SITE:
-        return object.houseGroup;
-      case SceneContextModeLabel.Enum.BUILDING:
-        return object.houseGroup;
-      case SceneContextModeLabel.Enum.ROW:
-        return object.moduleGroup;
-      default:
-        return null;
-    }
-  }
-
   private onPointerDown(event: PointerEvent) {
     this.pointerIsDown = true;
     this.pointerMoved = false;
@@ -228,21 +204,11 @@ class GestureManager {
         this.gestureEnabledObjects,
         true
       );
-      const intersectedObject =
-        intersects.length > 0 ? intersects[0].object : null;
-      const outlineableObject = intersectedObject
-        ? this.getOutlineableObject(intersectedObject)
-        : null;
 
-      if (outlineableObject !== this.selectedObject) {
-        if (this.selectedObject) {
-          outlineObject(new Object3D()); // Clear outline
-        }
-        if (outlineableObject) {
-          outlineObject(outlineableObject);
-        }
-        this.selectedObject = outlineableObject;
-      }
+      // could check if modifier also
+      this.scene.outlineManager?.setSelectedObject(
+        intersects.length > 0 ? intersects[0].object : null
+      );
     }
   }
 
@@ -380,26 +346,10 @@ class GestureManager {
         this.gestureEnabledObjects,
         true
       );
-      const intersectedObject =
-        intersects.length > 0 ? intersects[0].object : null;
 
-      const outlineableObject = intersectedObject
-        ? this.getOutlineableObject(intersectedObject)
-        : null;
-
-      if (outlineableObject) {
-        this.scene.setOutline(getMeshes(outlineableObject));
-      }
-
-      if (outlineableObject !== this.hoveredObject) {
-        if (this.hoveredObject) {
-          outlineObject(new Object3D()); // Clear outline
-        }
-        if (outlineableObject) {
-          outlineObject(outlineableObject);
-        }
-        this.hoveredObject = outlineableObject;
-      }
+      this.scene.outlineManager?.setHoveredObject(
+        intersects.length > 0 ? intersects[0].object : null
+      );
     }
   }
 

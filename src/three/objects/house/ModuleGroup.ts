@@ -30,7 +30,7 @@ export type ModuleGroupUserData = {
 
 export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
-  private elementBrushes: ElementBrush[] = [];
+  private visibleBrushes: ElementBrush[] = [];
 
   constructor(userData: ModuleGroupUserData) {
     super();
@@ -54,21 +54,21 @@ export class ModuleGroup extends Group {
   }
 
   updateElementBrushes() {
-    this.elementBrushes = [];
+    this.visibleBrushes = [];
     this.traverse((object) => {
       if (object instanceof ElementGroup) {
         pipe(
           object.getVisibleBrush(),
           O.map((brush) => {
-            this.elementBrushes.push(brush);
+            this.visibleBrushes.push(brush);
           })
         );
       }
     });
   }
 
-  getElementBrushes(): ElementBrush[] {
-    return this.elementBrushes;
+  getAllVisibleBrushes(): ElementBrush[] {
+    return this.visibleBrushes;
   }
 }
 
@@ -197,6 +197,7 @@ export const defaultModuleGroupCreator = ({
     elementGroupsTE,
     TE.map((elementGroups) => {
       moduleGroup.add(...elementGroups);
+      moduleGroup.updateElementBrushes();
       return moduleGroup;
     })
   );

@@ -178,6 +178,7 @@ class CutsManager {
       this.brush,
       O.map((brush) => {
         object.traverse((node) => {
+          // think about changing this to module group
           if (node instanceof ElementGroup) {
             node.createClippedBrush(brush);
           }

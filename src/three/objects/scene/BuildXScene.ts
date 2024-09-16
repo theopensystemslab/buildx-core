@@ -44,6 +44,7 @@ import { ScopeElement } from "../types";
 import SiteBoundary from "./SiteBoundary";
 import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 import { getOutlinePass } from "../../effects/outline";
+import OutlineManager from "@/three/managers/OutlineManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -92,6 +93,7 @@ class BuildXScene extends Scene {
 
   gestureManager?: GestureManager;
   contextManager?: ContextManager;
+  outlineManager?: OutlineManager;
 
   siteBoundary: SiteBoundary | null;
 
@@ -295,6 +297,8 @@ class BuildXScene extends Scene {
 
     this.outlinePass = getOutlinePass(this, camera);
     this.composer.addPass(this.outlinePass);
+
+    this.outlineManager = new OutlineManager(this, this.outlinePass);
 
     this.handleResize();
     window.addEventListener("resize", () => this.handleResize());
