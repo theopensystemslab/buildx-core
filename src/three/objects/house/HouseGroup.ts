@@ -83,6 +83,7 @@ export class HouseGroup extends Group {
       levelTypes: managers.levelTypes ?? new LevelTypesManager(this),
     };
     this.managers.layouts.activeLayoutGroup = initialColumnLayoutGroup;
+    this.managers.layouts.prepareHouseTypeLayoutGroup();
     this.hooks = hooks ?? {};
 
     this.position.set(position.x, position.y, position.z);

@@ -1,5 +1,5 @@
 import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
-import { cachedHouseTypesTE } from "@/index";
+import { cachedHouseTypesTE, HouseGroup } from "@/index";
 import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
 import { A, NEA, TE } from "@/utils/functions";
@@ -36,6 +36,14 @@ pipe(
 
       if (key === "m") {
         scene.contextManager?.contextUp();
+      }
+
+      if (key === "r") {
+        scene.traverse((node) => {
+          if (node instanceof HouseGroup) {
+            node.managers.layouts.resetToHouseTypeLayoutGroup();
+          }
+        });
       }
 
       if (numbers.includes(Number(key))) {
