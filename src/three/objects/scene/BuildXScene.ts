@@ -3,6 +3,7 @@ import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";
 import GestureManager, { DragDetail } from "@/three/managers/GestureManager";
+import OutlineManager from "@/three/managers/OutlineManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
 import { Polygon } from "geojson";
@@ -36,15 +37,16 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+// @ts-ignore
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import { getOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
 import SiteBoundary from "./SiteBoundary";
-import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
-import { getOutlinePass } from "../../effects/outline";
-import OutlineManager from "@/three/managers/OutlineManager";
 
 const subsetOfTHREE = {
   Vector2,
@@ -292,10 +294,15 @@ class BuildXScene extends Scene {
       });
 
     this.composer = new EffectComposer(this.renderer);
+
     const renderPass = new RenderPass(this, camera);
     this.composer.addPass(renderPass);
 
     this.outlinePass = getOutlinePass(this, camera);
+
+    const outputPass = new OutputPass();
+    this.composer.addPass(outputPass);
+
     this.composer.addPass(this.outlinePass);
 
     this.outlineManager = new OutlineManager(this, this.outlinePass);
@@ -479,14 +486,6 @@ class BuildXScene extends Scene {
     return this.children.filter(
       (x): x is HouseGroup => x instanceof HouseGroup
     );
-  }
-
-  setOutline(objects: Object3D[] | null) {
-    if (objects) {
-      this.outlinePass.selectedObjects = objects;
-    } else {
-      this.outlinePass.selectedObjects = [];
-    }
   }
 }
 
