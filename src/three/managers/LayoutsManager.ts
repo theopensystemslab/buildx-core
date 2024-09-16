@@ -1,19 +1,56 @@
-import { O } from "@/utils/functions";
+import { cachedHouseTypesTE } from "@/data/build-systems";
+import columnLayoutGroupTE from "@/tasks/columnLayoutGroupTE";
+import { A, O, TE } from "@/utils/functions";
+import { pipe } from "fp-ts/lib/function";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
-import { pipe } from "fp-ts/lib/function";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
 
   private _activeLayoutGroup: O.Option<ColumnLayoutGroup>;
   private _previewLayoutGroup: O.Option<ColumnLayoutGroup>;
+  private _houseTypeLayoutGroup: O.Option<ColumnLayoutGroup>;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
     this._activeLayoutGroup = O.none;
     this._previewLayoutGroup = O.none;
+    this._houseTypeLayoutGroup = O.none;
+  }
+
+  prepareHouseTypeLayoutGroup() {
+    const { houseTypeId } = this.houseGroup.userData;
+    pipe(
+      cachedHouseTypesTE,
+      TE.chain((houseTypes) =>
+        pipe(
+          houseTypes,
+          A.findFirst((x) => x.id === houseTypeId),
+          TE.fromOption(() => new Error(`no house type`)),
+          TE.chain(({ systemId, dnas }) =>
+            columnLayoutGroupTE({ systemId, dnas })
+          )
+        )
+      ),
+      TE.map((columnLayoutGroup) => {
+        hideObject(columnLayoutGroup);
+        this.houseGroup.add(columnLayoutGroup);
+        this._houseTypeLayoutGroup = O.some(columnLayoutGroup);
+      })
+    )();
+  }
+
+  get houseTypeLayoutGroup() {
+    return this._houseTypeLayoutGroup;
+  }
+
+  resetToHouseTypeLayoutGroup() {
+    if (this.houseTypeLayoutGroup._tag === "Some") {
+      this.activeLayoutGroup = this.houseTypeLayoutGroup.value;
+      this.prepareHouseTypeLayoutGroup();
+    }
   }
 
   get activeLayoutGroup(): O.Option<ColumnLayoutGroup> {
