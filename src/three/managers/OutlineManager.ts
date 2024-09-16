@@ -33,9 +33,7 @@ class OutlineManager {
           brush.elementGroup.userData.element.ifcTag
         );
       case SceneContextModeLabel.Enum.ROW:
-        const foo = brush.moduleGroup.getAllVisibleBrushes();
-        console.log(foo);
-        return foo;
+        return brush.moduleGroup.getAllVisibleBrushes();
       default:
         return [];
     }
