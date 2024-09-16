@@ -16,7 +16,7 @@ import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import LevelTypesManager from "@/three/managers/LevelTypesManager";
-import { ElementBrush } from "./ElementGroup";
+import { ElementBrush, ElementGroup } from "./ElementGroup";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -48,7 +48,7 @@ export class HouseGroup extends Group {
   userData: HouseGroupUserData;
   hooks: Partial<Hooks>;
   managers: Managers;
-  private elementMeshes: Map<string, ElementBrush[]> = new Map();
+  private elementBrushes: Map<string, ElementBrush[]> = new Map();
 
   constructor({
     userData,
@@ -208,22 +208,32 @@ export class HouseGroup extends Group {
   }
 
   updateElementMeshes() {
-    this.elementMeshes.clear();
+    this.elementBrushes.clear();
     this.traverse((object) => {
-      if (object instanceof ElementBrush) {
+      if (object instanceof ElementGroup) {
         const {
           element: { ifcTag },
-        } = object.elementGroup.userData;
-        if (!this.elementMeshes.has(ifcTag)) {
-          this.elementMeshes.set(ifcTag, []);
-        }
-        this.elementMeshes.get(ifcTag)!.push(object);
+        } = object.userData;
+        pipe(
+          object.getVisibleBrush(),
+          O.map((brush) => {
+            if (!this.elementBrushes.has(ifcTag)) {
+              this.elementBrushes.set(ifcTag, []);
+            } else {
+              this.elementBrushes.get(ifcTag)!.push(brush);
+            }
+          })
+        );
       }
     });
   }
 
-  getElementMeshesByKind(ifcTag: string): ElementBrush[] {
-    return this.elementMeshes.get(ifcTag) ?? [];
+  getElementMeshesByIfcTag(ifcTag: string): ElementBrush[] {
+    return this.elementBrushes.get(ifcTag) ?? [];
+  }
+
+  getAllVisibleBrushes(): ElementBrush[] {
+    return Array.from(this.elementBrushes.values()).flat();
   }
 }
 

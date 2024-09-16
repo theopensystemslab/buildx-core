@@ -8,7 +8,7 @@ import {
 } from "@/data/build-systems";
 import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
 import { ThreeMaterial } from "@/three/materials/types";
-import { A, E, TE } from "@/utils/functions";
+import { A, E, O, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
 import { flow, pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
@@ -16,6 +16,7 @@ import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { defaultElementGroupCreator } from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
+import { ElementBrush, ElementGroup } from "./ElementGroup";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -29,6 +30,7 @@ export type ModuleGroupUserData = {
 
 export class ModuleGroup extends Group {
   userData: ModuleGroupUserData;
+  private elementBrushes: ElementBrush[] = [];
 
   constructor(userData: ModuleGroupUserData) {
     super();
@@ -49,6 +51,24 @@ export class ModuleGroup extends Group {
 
   get columnLayoutGroup(): ColumnLayoutGroup {
     return this.rowGroup.columnLayoutGroup;
+  }
+
+  updateElementBrushes() {
+    this.elementBrushes = [];
+    this.traverse((object) => {
+      if (object instanceof ElementGroup) {
+        pipe(
+          object.getVisibleBrush(),
+          O.map((brush) => {
+            this.elementBrushes.push(brush);
+          })
+        );
+      }
+    });
+  }
+
+  getElementBrushes(): ElementBrush[] {
+    return this.elementBrushes;
   }
 }
 
