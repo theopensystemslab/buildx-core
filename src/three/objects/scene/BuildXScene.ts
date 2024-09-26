@@ -37,9 +37,9 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 // @ts-ignore
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
-import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 import { getOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
@@ -325,12 +325,10 @@ class BuildXScene extends Scene {
   }
 
   enableLighting() {
-    const intensityScale = 2;
-
-    const ambientLight = new AmbientLight(0xffffff, 0.5 * intensityScale);
+    const ambientLight = new AmbientLight(0xffffff, 1.25);
     this.add(ambientLight);
 
-    const shadowLight = new DirectionalLight(0xffffff, 0.5 * intensityScale);
+    const shadowLight = new DirectionalLight(0xffffff, 2.25);
     shadowLight.position.set(0, 150, -150);
     shadowLight.castShadow = true;
     shadowLight.shadow.mapSize.width = 2048;
@@ -341,6 +339,10 @@ class BuildXScene extends Scene {
     shadowLight.shadow.camera.top = 21.5;
     shadowLight.shadow.camera.bottom = -21.5;
     this.add(shadowLight);
+
+    // // Add DirectionalLightHelper
+    // const lightHelper = new DirectionalLightHelper(shadowLight, 10);
+    // this.add(lightHelper);
   }
 
   enableGroundObjects() {

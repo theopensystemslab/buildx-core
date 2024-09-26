@@ -185,6 +185,7 @@ export const defaultElementGroupCreator = ({
   threeMaterial: ThreeMaterial;
   element: BuildElement;
 }): ElementGroup => {
+  geometry.computeVertexNormals();
   const fullElementBrush = new FullElementBrush(geometry, threeMaterial);
   fullElementBrush.castShadow = true;
   const elementGroup = new ElementGroup(element, fullElementBrush);
