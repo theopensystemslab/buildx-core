@@ -26,15 +26,19 @@ const getSpeckleObject = async (speckleBranchUrl: string) => {
   const streamId = extractStreamId(speckleBranchUrl);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const data: any = await request("https://speckle.xyz/graphql", document, {
-    streamId,
-  });
+  const data: any = await request(
+    "https://app.speckle.systems/graphql",
+    document,
+    {
+      streamId,
+    }
+  );
 
   const objectId =
     data.stream.branch.commits.itelementsTaskems[0].referencedObject;
 
   const loader = new ObjectLoader({
-    serverUrl: "https://speckle.xyz",
+    serverUrl: "https://app.speckle.systems",
     streamId,
     objectId,
     options: {

@@ -56,7 +56,8 @@ export const speckleObjectTE = (
 
   return pipe(
     TE.tryCatch(
-      () => request("https://speckle.xyz/graphql", document, { streamId }),
+      () =>
+        request("https://app.speckle.systems/graphql", document, { streamId }),
       (error) =>
         new Error(
           `Failed to fetch stream data: ${
@@ -68,7 +69,7 @@ export const speckleObjectTE = (
       const objectId = data.stream.branch.commits.items[0].referencedObject;
 
       const loader = new ObjectLoader({
-        serverUrl: "https://speckle.xyz",
+        serverUrl: "https://app.speckle.systems",
         streamId,
         objectId,
         options: {
