@@ -152,118 +152,105 @@ class XStretchManager implements StretchManager {
   }
 
   gestureProgress(delta: number) {
-    const {
-      initialLayoutWidth: currentWidth,
-      alts,
-      // maxWidth,
-      // minWidth,
-    } = this.initData!;
-    const { side } = this.startData!;
-
-    this.progressData!.cumulativeDx += delta;
-
-    const { cumulativeDx, currentLayoutIndex } = this.progressData!;
-
-    // up the axis
-    if (side === 1) {
-      const v = currentWidth + cumulativeDx;
-
-      // additive up the axis
-      if (delta > 0) {
-        pipe(
-          alts,
-          A.lookup(currentLayoutIndex + 1),
-          O.map((nextWiderLayout) => {
-            const targetWidth = nextWiderLayout.sectionType.width;
-
-            // TODO make nicer?
-            if (v >= targetWidth && this.houseGroup.managers.layouts) {
-              this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                nextWiderLayout.layoutGroup
-              );
-              this.houseGroup.managers.layouts.activeLayoutGroup =
-                nextWiderLayout.layoutGroup;
-              this.progressData!.currentLayoutIndex++;
-            }
-          })
-        );
-      }
-
-      // subtractive down the axis
-      if (delta < 0) {
-        pipe(
-          alts,
-          A.lookup(currentLayoutIndex - 1),
-          O.map((nextShorterLayout) => {
-            const targetWidth = nextShorterLayout.sectionType.width;
-
-            // TODO make nicer? DRY?
-            if (v <= targetWidth && this.houseGroup.managers.layouts) {
-              this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                nextShorterLayout.layoutGroup
-              );
-              this.houseGroup.managers.layouts.activeLayoutGroup =
-                nextShorterLayout.layoutGroup;
-              this.progressData!.currentLayoutIndex--;
-            }
-          })
-        );
-      }
+    if (!this.initData || !this.startData || !this.progressData) {
+      console.error("Gesture progress called before initialization");
+      return;
     }
 
-    // down the axis
-    if (side === -1) {
-      const v = currentWidth - cumulativeDx;
+    const { initialLayoutWidth, minWidth, maxWidth } = this.initData;
+    const { side } = this.startData;
 
-      // additive down the axis
-      if (delta < 0) {
-        pipe(
-          alts,
-          A.lookup(currentLayoutIndex + 1),
-          O.map((nextWiderLayout) => {
-            const targetWidth = nextWiderLayout.sectionType.width;
+    console.log("Gesture progress:", {
+      delta,
+      side,
+      initialLayoutWidth,
+      minWidth,
+      maxWidth,
+    });
 
-            // TODO make nicer?
-            if (v >= targetWidth && this.houseGroup.managers.layouts) {
-              this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                nextWiderLayout.layoutGroup
-              );
-              this.houseGroup.managers.layouts.activeLayoutGroup =
-                nextWiderLayout.layoutGroup;
-              this.progressData!.currentLayoutIndex++;
-            }
-          })
-        );
-      }
+    // Calculate new width directly
+    let newWidth =
+      initialLayoutWidth + this.progressData.cumulativeDx + side * delta;
 
-      // subtractive up the axis
-      if (delta > 0) {
-        pipe(
-          alts,
-          A.lookup(currentLayoutIndex - 1),
-          O.map((nextShorterLayout) => {
-            const targetWidth = nextShorterLayout.sectionType.width;
+    // Clamp new width
+    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
-            // TODO make nicer? DRY?
-            if (v <= targetWidth && this.houseGroup.managers.layouts) {
-              this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                nextShorterLayout.layoutGroup
-              );
-              this.houseGroup.managers.layouts.activeLayoutGroup =
-                nextShorterLayout.layoutGroup;
-              this.progressData!.currentLayoutIndex--;
-            }
-          })
-        );
-      }
-    }
+    // Calculate actual delta
+    const actualDelta =
+      newWidth - (initialLayoutWidth + this.progressData.cumulativeDx);
 
-    // this.progressData!.currentWidth = ;
+    // Update cumulative delta
+    this.progressData.cumulativeDx += actualDelta;
 
+    console.log("Calculated values:", {
+      newWidth,
+      actualDelta,
+      cumulativeDx: this.progressData.cumulativeDx,
+    });
+
+    // Update handle positions
+    this.updateHandlePositions(actualDelta);
+
+    // Check for layout transitions
+    this.checkAndPerformLayoutTransition(newWidth);
+  }
+
+  private updateHandlePositions(delta: number) {
     const [handleDown, handleUp] = this.handles;
 
-    handleDown.position.x -= side * delta;
-    handleUp.position.x += side * delta;
+    // Move both handles symmetrically
+    const halfDelta = delta / 2;
+    handleDown.position.x -= halfDelta;
+    handleUp.position.x += halfDelta;
+
+    console.log("Handle positions updated:", {
+      delta,
+      handleDown: handleDown.position.x,
+      handleUp: handleUp.position.x,
+    });
+  }
+
+  private checkAndPerformLayoutTransition(currentWidth: number) {
+    const { alts } = this.initData!;
+    let { currentLayoutIndex } = this.progressData!;
+    const previousIndex = currentLayoutIndex;
+
+    if (currentWidth > this.initData!.initialLayoutWidth) {
+      // Stretching outwards
+      while (
+        currentLayoutIndex < alts.length - 1 &&
+        currentWidth >= alts[currentLayoutIndex + 1].sectionType.width
+      ) {
+        currentLayoutIndex++;
+      }
+    } else {
+      // Stretching inwards
+      while (
+        currentLayoutIndex > 0 &&
+        currentWidth <= alts[currentLayoutIndex - 1].sectionType.width
+      ) {
+        currentLayoutIndex--;
+      }
+    }
+
+    if (currentLayoutIndex !== previousIndex) {
+      console.log("Transitioning to layout:", currentLayoutIndex);
+      this.transitionToLayout(alts[currentLayoutIndex], currentLayoutIndex);
+    }
+  }
+
+  private transitionToLayout(
+    nextLayout: AltSectionTypeLayout,
+    nextIndex: number
+  ) {
+    if (this.houseGroup.managers.layouts && this.houseGroup.managers.cuts) {
+      this.houseGroup.managers.cuts.showAppropriateBrushes(
+        nextLayout.layoutGroup
+      );
+      this.houseGroup.managers.layouts.activeLayoutGroup =
+        nextLayout.layoutGroup;
+      this.progressData!.currentLayoutIndex = nextIndex;
+    }
   }
 
   gestureEnd() {
