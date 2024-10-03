@@ -10,6 +10,7 @@ import { deflate, inflate } from "pako";
 import { z } from "zod";
 import userCache, {
   defaultProjectData,
+  getDefaultProjectData,
   PROJECT_DATA_KEY,
   ProjectData,
 } from "./cache";
@@ -53,7 +54,7 @@ export const polygonTE: TE.TaskEither<Error, Polygon> = pipe(
 export const updateLocatePolygon = (polygon: Polygon | null) => {
   userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
     if (typeof x === "undefined") {
-      userCache.projectData.put({ ...defaultProjectData, polygon });
+      userCache.projectData.put({ ...getDefaultProjectData(), polygon });
     } else {
       userCache.projectData.update(PROJECT_DATA_KEY, { polygon });
     }

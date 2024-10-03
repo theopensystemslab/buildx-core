@@ -17,6 +17,7 @@ import type { ScopeElement } from "./three/objects/types";
 import { format, formatWithUnit } from "./utils/format";
 import { useMaterialsListRows } from "./data/outputs/materialsList";
 import { cachedHouseTypesTE } from "./data/build-systems";
+import { updateProjectData } from "./data/user/cache";
 
 export * from "./data/user/houses";
 export * from "./data/build-systems";
@@ -43,4 +44,5 @@ export {
   useOutputsFiles,
   useMaterialsListRows,
   cachedHouseTypesTE,
+  updateProjectData,
 };

@@ -10,14 +10,33 @@ export type ProjectData = {
   region: "UK" | "EU";
   polygon: Polygon | null;
   shareUrlPayload: string | null;
+  lastSaved: number;
 };
 
-export const defaultProjectData: ProjectData = {
+export const defaultProjectData: Omit<ProjectData, "lastSaved"> = {
   key: PROJECT_DATA_KEY,
   projectName: "My BuildX Project",
   region: "UK",
   polygon: null,
   shareUrlPayload: null,
+};
+
+export const getDefaultProjectData = (): ProjectData => {
+  return {
+    ...defaultProjectData,
+    lastSaved: Date.now(),
+  };
+};
+
+export const updateProjectData = (
+  changes: Partial<Omit<ProjectData, "lastSaved">> = {}
+) => {
+  const now = Date.now();
+
+  userCache.projectData.update(PROJECT_DATA_KEY, {
+    ...changes,
+    lastSaved: now,
+  });
 };
 
 class UserCache extends Dexie {
@@ -39,7 +58,7 @@ const userCache = new UserCache();
 
 userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
   if (typeof x === "undefined") {
-    userCache.projectData.put(defaultProjectData);
+    userCache.projectData.put(getDefaultProjectData());
   }
 });
 

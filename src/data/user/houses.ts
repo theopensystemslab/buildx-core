@@ -1,7 +1,7 @@
 import { A, E, R, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { z } from "zod";
-import userCache from "./cache";
+import userCache, { updateProjectData } from "./cache";
 import { useLiveQuery } from "dexie-react-hooks";
 
 export const houseParser = z.object({
@@ -69,14 +69,18 @@ export const localHousesTE: TE.TaskEither<Error, Array<House>> = () =>
   userCache.houses.toArray().then(E.right).catch(E.left);
 
 export const defaultCachedHousesOps = {
-  onHouseCreate: (house: House) => {
-    createCachedHouse(house)();
+  onHouseCreate: async (house: House) => {
+    await createCachedHouse(house)();
+    updateProjectData();
   },
-  onHouseUpdate: (houseId: string, changes: Partial<House>) => {
-    updateCachedHouse(houseId, changes)();
+  onHouseUpdate: async (houseId: string, changes: Partial<House>) => {
+    console.log("onHouseUpdate", houseId, changes);
+    await updateCachedHouse(houseId, changes)();
+    updateProjectData();
   },
-  onHouseDelete: (houseId: string) => {
-    deleteCachedHouse(houseId)();
+  onHouseDelete: async (houseId: string) => {
+    await deleteCachedHouse(houseId)();
+    updateProjectData();
   },
 };
 
