@@ -29,8 +29,8 @@ const createHouseGroupTE = ({
   position,
   rotation,
   managers = {},
-}: HouseGroupParams): TE.TaskEither<Error, HouseGroup> =>
-  pipe(
+}: HouseGroupParams): TE.TaskEither<Error, HouseGroup> => {
+  return pipe(
     friendlyName,
     O.fromNullable,
     O.match(getFriendlyNameTE, TE.of),
@@ -57,5 +57,6 @@ const createHouseGroupTE = ({
       )
     )
   );
+};
 
 export default createHouseGroupTE;
