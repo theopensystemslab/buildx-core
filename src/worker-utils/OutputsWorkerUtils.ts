@@ -7,6 +7,7 @@ import {
   CachedWindowType,
   ElementNotFoundError,
   MaterialNotFoundError,
+  CachedBlock,
 } from "@/data/build-systems";
 import buildSystemsCache from "@/data/build-systems/cache";
 import outputsCache, { FILES_DOCUMENT_KEY } from "@/data/outputs/cache";
@@ -221,9 +222,15 @@ const materialsProc = ({
             O.getOrElse(() => 0)
           );
 
-          const cost = costPerUnit * quantity;
+          const cost = {
+            min: costPerUnit.min * quantity,
+            max: costPerUnit.max * quantity,
+          };
 
-          const embodiedCarbonCost = embodiedCarbonPerUnit * quantity;
+          const embodiedCarbonCost = {
+            min: embodiedCarbonPerUnit.min * quantity,
+            max: embodiedCarbonPerUnit.max * quantity,
+          };
 
           return O.some<MaterialsListRow>({
             houseId,
@@ -262,10 +269,10 @@ const materialsProc = ({
         unit: null,
         quantity: blockCountsByHouse[houseId],
         specification: "Insulated WikiHouse blocks",
-        costPerUnit: 0,
-        cost: orderListRowsTotal,
-        embodiedCarbonPerUnit: 0,
-        embodiedCarbonCost: 0,
+        costPerUnit: { min: 0, max: 0 },
+        cost: { min: orderListRowsTotal, max: orderListRowsTotal },
+        embodiedCarbonPerUnit: { min: 0, max: 0 },
+        embodiedCarbonCost: { min: 0, max: 0 },
         linkUrl: "",
       },
     ];
@@ -290,7 +297,7 @@ const orderListProc = ({
 }: {
   houses: House[];
   modules: BuildModule[];
-  blocks: Block[];
+  blocks: CachedBlock[];
   blockModulesEntries: BlockModulesEntry[];
 }) => {
   outputsCache.orderListRows.clear();
@@ -393,6 +400,7 @@ const orderListProc = ({
               manufacturingCost: block.manufacturingCost * count,
               cuttingFileUrl: block.cuttingFileUrl,
               totalCost: block.totalCost * count,
+              thumbnailBlob: block.imageBlob ?? null,
             })
           : O.none
     )
@@ -411,7 +419,7 @@ const orderListToCSV = (orderListRows: OrderListRow[]) => {
 
   // Map each object to an array of its values
   const rows = orderListRows.map((row) =>
-    headers.map((header) => row[header].toString())
+    headers.map((header) => row[header]?.toString() ?? "")
   );
 
   // Combine header and rows

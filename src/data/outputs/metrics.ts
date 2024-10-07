@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import outputsCache from "./cache";
 import { pipe } from "fp-ts/lib/function";
 import { useProjectCurrency } from "../user/utils";
+import { Range } from "@/utils/types";
 
 export type OrderListRow = {
   houseId: string;
@@ -15,6 +16,7 @@ export type OrderListRow = {
   costPerBlock: number;
   cuttingFileUrl: string;
   totalCost: number;
+  thumbnailBlob: Blob | null;
 };
 
 export type MaterialsListRow = {
@@ -25,10 +27,10 @@ export type MaterialsListRow = {
   unit: string | null;
   quantity: number;
   specification: string;
-  costPerUnit: number;
-  cost: number;
-  embodiedCarbonPerUnit: number;
-  embodiedCarbonCost: number;
+  costPerUnit: Range;
+  cost: Range;
+  embodiedCarbonPerUnit: Range;
+  embodiedCarbonCost: Range;
   linkUrl?: string;
 };
 
