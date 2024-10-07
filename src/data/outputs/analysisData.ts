@@ -15,6 +15,7 @@ import {
   useBuildElements,
   useEnergyInfos,
 } from "../build-systems";
+import { Range } from "@/utils/types";
 
 export interface DashboardData {
   byHouse: Record<string, HouseInfo>;
@@ -86,10 +87,10 @@ export interface Costs {
   foundation: number;
   roofStructure: number;
   superstructure: number;
-  roofing: number;
-  internalLining: number;
-  cladding: number;
-  total: number;
+  roofing: Range;
+  internalLining: Range;
+  cladding: Range;
+  total: Range;
   comparative: number;
 }
 
@@ -97,10 +98,10 @@ const emptyCosts = (): Costs => ({
   foundation: 0,
   roofStructure: 0,
   superstructure: 0,
-  roofing: 0,
-  internalLining: 0,
-  cladding: 0,
-  total: 0,
+  roofing: { min: 0, max: 0 },
+  internalLining: { min: 0, max: 0 },
+  cladding: { min: 0, max: 0 },
+  total: { min: 0, max: 0 },
   comparative: 0,
 });
 
@@ -110,10 +111,22 @@ const accumulateCosts = (areas: Costs[]): Costs =>
       foundation: accumulator.foundation + current.foundation,
       roofStructure: accumulator.roofStructure + current.roofStructure,
       superstructure: accumulator.superstructure + current.superstructure,
-      roofing: accumulator.roofing + current.roofing,
-      internalLining: accumulator.internalLining + current.internalLining,
-      cladding: accumulator.cladding + current.cladding,
-      total: accumulator.total + current.total,
+      roofing: {
+        min: accumulator.roofing.min + current.roofing.min,
+        max: accumulator.roofing.max + current.roofing.max,
+      },
+      internalLining: {
+        min: accumulator.internalLining.min + current.internalLining.min,
+        max: accumulator.internalLining.max + current.internalLining.max,
+      },
+      cladding: {
+        min: accumulator.cladding.min + current.cladding.min,
+        max: accumulator.cladding.max + current.cladding.max,
+      },
+      total: {
+        min: accumulator.total.min + current.total.min,
+        max: accumulator.total.max + current.total.max,
+      },
       comparative: accumulator.comparative + current.comparative,
     };
   }, emptyCosts());
@@ -439,19 +452,40 @@ const calculateHouseInfo = (
     }),
   };
 
-  const roofingCost = accumulateModuleData(
-    (module) => module.roofingArea * (specialMaterial.roofing?.costPerUnit || 0)
-  );
+  const roofingCost: Range = {
+    min: accumulateModuleData(
+      (module) =>
+        module.roofingArea * (specialMaterial.roofing?.costPerUnit.min || 0)
+    ),
+    max: accumulateModuleData(
+      (module) =>
+        module.roofingArea * (specialMaterial.roofing?.costPerUnit.max || 0)
+    ),
+  };
 
-  const internalLiningCost = accumulateModuleData(
-    (module) =>
-      module.liningArea * (specialMaterial.internalLining?.costPerUnit || 0)
-  );
+  const internalLiningCost: Range = {
+    min: accumulateModuleData(
+      (module) =>
+        module.liningArea *
+        (specialMaterial.internalLining?.costPerUnit.min || 0)
+    ),
+    max: accumulateModuleData(
+      (module) =>
+        module.liningArea *
+        (specialMaterial.internalLining?.costPerUnit.max || 0)
+    ),
+  };
 
-  const claddingCost = accumulateModuleData(
-    (module) =>
-      module.claddingArea * (specialMaterial.cladding?.costPerUnit || 0)
-  );
+  const claddingCost: Range = {
+    min: accumulateModuleData(
+      (module) =>
+        module.claddingArea * (specialMaterial.cladding?.costPerUnit.min || 0)
+    ),
+    max: accumulateModuleData(
+      (module) =>
+        module.claddingArea * (specialMaterial.cladding?.costPerUnit.max || 0)
+    ),
+  };
 
   const costs: Costs = {
     foundation: accumulateModuleDataIf(
@@ -471,11 +505,18 @@ const calculateHouseInfo = (
     roofing: roofingCost,
     internalLining: internalLiningCost,
     cladding: claddingCost,
-    total:
-      accumulateModuleData((module) => module.cost) +
-      roofingCost +
-      internalLiningCost +
-      claddingCost,
+    total: {
+      min:
+        accumulateModuleData((module) => module.cost) +
+        roofingCost.min +
+        internalLiningCost.min +
+        claddingCost.min,
+      max:
+        accumulateModuleData((module) => module.cost) +
+        roofingCost.max +
+        internalLiningCost.max +
+        claddingCost.max,
+    },
     comparative: totalFloorArea * comparative.cost,
   };
 
