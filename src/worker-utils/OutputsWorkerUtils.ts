@@ -221,7 +221,10 @@ const materialsProc = ({
             O.getOrElse(() => 0)
           );
 
-          const cost = costPerUnit * quantity;
+          const cost = {
+            min: costPerUnit.min * quantity,
+            max: costPerUnit.max * quantity,
+          };
 
           const embodiedCarbonCost = embodiedCarbonPerUnit * quantity;
 
@@ -262,8 +265,8 @@ const materialsProc = ({
         unit: null,
         quantity: blockCountsByHouse[houseId],
         specification: "Insulated WikiHouse blocks",
-        costPerUnit: 0,
-        cost: orderListRowsTotal,
+        costPerUnit: { min: 0, max: 0 },
+        cost: { min: orderListRowsTotal, max: orderListRowsTotal },
         embodiedCarbonPerUnit: 0,
         embodiedCarbonCost: 0,
         linkUrl: "",

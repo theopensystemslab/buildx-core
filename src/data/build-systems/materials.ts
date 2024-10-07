@@ -6,6 +6,7 @@ import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import buildSystemsCache, { BlobbedImage } from "./cache";
 import { allSystemIds, systemFromId } from "./systems";
+import { Range } from "@/utils/types";
 
 export interface BuildMaterial {
   id: string;
@@ -16,7 +17,7 @@ export interface BuildMaterial {
   imageUrl: string;
   linkUrl?: string;
   defaultColor: string;
-  costPerUnit: number;
+  costPerUnit: Range;
   embodiedCarbonPerUnit: number; // kg
   unit: string | null;
   lastModified: number;
@@ -44,7 +45,8 @@ export const materialParser = z
           })
         )
         .default([]),
-      material_cost_per_unit: z.number().default(0),
+      min_material_cost_per_unit: z.number().default(0),
+      max_material_cost_per_unit: z.number().default(0),
       embodied_carbon_per_unit: z.number().default(0),
       link_url: z.string().optional(),
       unit: z.string().nullable().default(null),
@@ -73,7 +75,8 @@ export const materialParser = z
         optional_material_for,
         material_image,
         default_colour,
-        material_cost_per_unit,
+        min_material_cost_per_unit,
+        max_material_cost_per_unit,
         embodied_carbon_per_unit,
         link_url,
         unit,
@@ -86,7 +89,10 @@ export const materialParser = z
       optionalFor: optional_material_for ?? [],
       imageUrl: material_image?.[0]?.url,
       defaultColor: default_colour,
-      costPerUnit: material_cost_per_unit,
+      costPerUnit: {
+        min: min_material_cost_per_unit,
+        max: max_material_cost_per_unit,
+      },
       embodiedCarbonPerUnit: embodied_carbon_per_unit,
       linkUrl: link_url,
       unit,
