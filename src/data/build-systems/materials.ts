@@ -18,7 +18,7 @@ export interface BuildMaterial {
   linkUrl?: string;
   defaultColor: string;
   costPerUnit: Range;
-  embodiedCarbonPerUnit: number; // kg
+  embodiedCarbonPerUnit: Range; // kg
   unit: string | null;
   lastModified: number;
 }
@@ -47,7 +47,8 @@ export const materialParser = z
         .default([]),
       min_material_cost_per_unit: z.number().default(0),
       max_material_cost_per_unit: z.number().default(0),
-      embodied_carbon_per_unit: z.number().default(0),
+      min_embodied_carbon_per_unit: z.number().default(0),
+      max_embodied_carbon_per_unit: z.number().default(0),
       link_url: z.string().optional(),
       unit: z.string().nullable().default(null),
       last_modified: z
@@ -77,7 +78,8 @@ export const materialParser = z
         default_colour,
         min_material_cost_per_unit,
         max_material_cost_per_unit,
-        embodied_carbon_per_unit,
+        min_embodied_carbon_per_unit,
+        max_embodied_carbon_per_unit,
         link_url,
         unit,
         last_modified,
@@ -93,7 +95,10 @@ export const materialParser = z
         min: min_material_cost_per_unit,
         max: max_material_cost_per_unit,
       },
-      embodiedCarbonPerUnit: embodied_carbon_per_unit,
+      embodiedCarbonPerUnit: {
+        min: min_embodied_carbon_per_unit,
+        max: max_embodied_carbon_per_unit,
+      },
       linkUrl: link_url,
       unit,
       lastModified: last_modified,
