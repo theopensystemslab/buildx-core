@@ -1,6 +1,6 @@
 import Dexie from "dexie";
 import { BlockModulesEntry } from "./blockModulesEntries";
-import { Block } from "./blocks";
+import { CachedBlock } from "./blocks";
 import { BuildElement } from "./elements";
 import { EnergyInfo } from "./energyInfos";
 import { CachedHouseType } from "./houseTypes";
@@ -27,7 +27,7 @@ class BuildSystemsCache extends Dexie {
   sectionTypes: Dexie.Table<SectionType, string>;
   levelTypes: Dexie.Table<LevelType, string>;
   windowTypes: Dexie.Table<CachedWindowType, string>;
-  blocks: Dexie.Table<Block, string>;
+  blocks: Dexie.Table<CachedBlock, string>;
   blockModuleEntries: Dexie.Table<BlockModulesEntry, string>;
   spaceTypes: Dexie.Table<SpaceType, string>;
   stairTypes: Dexie.Table<StairType, string>;

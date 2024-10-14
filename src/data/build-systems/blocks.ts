@@ -1,10 +1,10 @@
-import airtable from "@/utils/airtable";
+import airtable, { tryCatchImageBlob } from "@/utils/airtable";
 import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
 import { allSystemIds, systemFromId } from "./systems";
 import { useLiveQuery } from "dexie-react-hooks";
-import buildSystemsCache from "./cache";
+import buildSystemsCache, { BlobbedImage } from "./cache";
 
 export type Block = {
   id: string;
@@ -16,13 +16,14 @@ export type Block = {
   totalCost: number;
   cuttingFileUrl: string;
   lastModified: number;
+  imageUrl?: string;
 };
 
 export const blockTypeParser = z.object({
   id: z.string().min(1),
   fields: z.object({
     Name: z.string().min(1),
-    "Sheet Quantity": z.number().default(1), // sheets per block right?
+    "Sheet Quantity": z.number().default(1),
     Materials_cost: z.number().default(0),
     Manufacturing_cost: z.number().default(0),
     Total_cost: z.number().default(0),
@@ -31,16 +32,18 @@ export const blockTypeParser = z.object({
       .string()
       .refine(
         (value) => {
-          // Attempt to parse the value as a date and check that it's valid
           const date = new Date(value);
           return !isNaN(date.getTime());
         },
         {
-          // Custom error message
           message: "Invalid date string",
         }
       )
       .transform((x) => new Date(x).getTime()),
+    "Main image": z
+      .array(z.object({ url: z.string().min(1) }))
+      .optional()
+      .default([]),
   }),
 });
 
@@ -69,6 +72,7 @@ export const blocksQuery = async (input?: { systemIds: string[] }) => {
                     Total_cost: totalCost,
                     Github_cutting_file,
                     "Last Modified": lastModified,
+                    "Main image": image,
                   },
                 }): Block => ({
                   id,
@@ -80,6 +84,7 @@ export const blocksQuery = async (input?: { systemIds: string[] }) => {
                   totalCost,
                   cuttingFileUrl: Github_cutting_file,
                   lastModified,
+                  imageUrl: image[0]?.url, // Use optional chaining here
                 })
               )
             ).parse
@@ -100,7 +105,7 @@ export const remoteBlocksTE: TE.TaskEither<Error, Block[]> = TE.tryCatch(
     )
 );
 
-export const localBlocksTE: TE.TaskEither<Error, Block[]> = TE.tryCatch(
+export const localBlocksTE: TE.TaskEither<Error, CachedBlock[]> = TE.tryCatch(
   () =>
     buildSystemsCache.blocks.toArray().then((blocks) => {
       if (A.isEmpty(blocks)) {
@@ -111,16 +116,30 @@ export const localBlocksTE: TE.TaskEither<Error, Block[]> = TE.tryCatch(
   (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
 );
 
-export const cachedBlocksTE = runUntilFirstSuccess([
-  localBlocksTE,
-  pipe(
-    remoteBlocksTE,
-    TE.map((blocks) => {
-      buildSystemsCache.blocks.bulkPut(blocks);
-      return blocks;
-    })
-  ),
-]);
+export const cachedBlocksTE: TE.TaskEither<Error, CachedBlock[]> =
+  runUntilFirstSuccess([
+    localBlocksTE,
+    pipe(
+      remoteBlocksTE,
+      TE.chain((remoteBlocks) =>
+        pipe(
+          remoteBlocks,
+          A.traverse(TE.ApplicativePar)(({ imageUrl, ...block }) =>
+            pipe(
+              tryCatchImageBlob(imageUrl),
+              TE.map((imageBlob) => ({ ...block, imageBlob }))
+            )
+          ),
+          TE.map((blocks) => {
+            buildSystemsCache.blocks.bulkPut(blocks);
+            return blocks;
+          })
+        )
+      )
+    ),
+  ]);
 
-export const useBlocks = (): Block[] =>
+export const useBlocks = (): CachedBlock[] =>
   useLiveQuery(() => buildSystemsCache.blocks.toArray(), [], []);
+
+export type CachedBlock = BlobbedImage<Block>;
