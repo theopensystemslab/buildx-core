@@ -16,6 +16,7 @@ export type OrderListRow = {
   costPerBlock: number;
   cuttingFileUrl: string;
   totalCost: number;
+  thumbnailBlob: Blob | null;
 };
 
 export type MaterialsListRow = {
