@@ -160,20 +160,20 @@ const accumulateOperationalCo2 = (values: OperationalCo2[]): OperationalCo2 =>
 export interface EmbodiedCo2 {
   foundations: number;
   modules: number;
-  roofing: number;
-  internalLining: number;
-  cladding: number;
-  total: number;
+  roofing: Range;
+  internalLining: Range;
+  cladding: Range;
+  total: Range;
   comparative: number;
 }
 
 const emptyEmbodiedCo2 = (): EmbodiedCo2 => ({
   foundations: 0,
   modules: 0,
-  roofing: 0,
-  internalLining: 0,
-  cladding: 0,
-  total: 0,
+  roofing: { min: 0, max: 0 },
+  internalLining: { min: 0, max: 0 },
+  cladding: { min: 0, max: 0 },
+  total: { min: 0, max: 0 },
   comparative: 0,
 });
 
@@ -182,10 +182,22 @@ const accumulateEmbodiedCo2 = (values: EmbodiedCo2[]): EmbodiedCo2 =>
     return {
       foundations: accumulator.foundations + current.foundations,
       modules: accumulator.modules + current.modules,
-      cladding: accumulator.cladding + current.cladding,
-      roofing: accumulator.roofing + current.roofing,
-      internalLining: accumulator.internalLining + current.internalLining,
-      total: accumulator.total + current.total,
+      cladding: {
+        min: accumulator.cladding.min + current.cladding.min,
+        max: accumulator.cladding.max + current.cladding.max,
+      },
+      roofing: {
+        min: accumulator.roofing.min + current.roofing.min,
+        max: accumulator.roofing.max + current.roofing.max,
+      },
+      internalLining: {
+        min: accumulator.internalLining.min + current.internalLining.min,
+        max: accumulator.internalLining.max + current.internalLining.max,
+      },
+      total: {
+        min: accumulator.total.min + current.total.min,
+        max: accumulator.total.max + current.total.max,
+      },
       comparative: accumulator.comparative + current.comparative,
     };
   }, emptyEmbodiedCo2());
@@ -528,22 +540,44 @@ const calculateHouseInfo = (
     lifetime: annualTotalOperationalCo2 * 100,
   };
 
-  const claddingEmbodiedCo2 = accumulateModuleData(
-    (module) =>
-      module.claddingArea *
-      (specialMaterial.cladding?.embodiedCarbonPerUnit || 0)
-  );
+  const claddingEmbodiedCo2 = {
+    min: accumulateModuleData(
+      (module) =>
+        module.claddingArea *
+        (specialMaterial.cladding?.embodiedCarbonPerUnit.min || 0)
+    ),
+    max: accumulateModuleData(
+      (module) =>
+        module.claddingArea *
+        (specialMaterial.cladding?.embodiedCarbonPerUnit.max || 0)
+    ),
+  };
 
-  const roofingEmbodiedCo2 = accumulateModuleData(
-    (module) =>
-      module.roofingArea * (specialMaterial.roofing?.embodiedCarbonPerUnit || 0)
-  );
+  const roofingEmbodiedCo2 = {
+    min: accumulateModuleData(
+      (module) =>
+        module.roofingArea *
+        (specialMaterial.roofing?.embodiedCarbonPerUnit.min || 0)
+    ),
+    max: accumulateModuleData(
+      (module) =>
+        module.roofingArea *
+        (specialMaterial.roofing?.embodiedCarbonPerUnit.max || 0)
+    ),
+  };
 
-  const internalLiningEmbodiedCo2 = accumulateModuleData(
-    (module) =>
-      module.liningArea *
-      (specialMaterial.internalLining?.embodiedCarbonPerUnit || 0)
-  );
+  const internalLiningEmbodiedCo2 = {
+    min: accumulateModuleData(
+      (module) =>
+        module.liningArea *
+        (specialMaterial.internalLining?.embodiedCarbonPerUnit.min || 0)
+    ),
+    max: accumulateModuleData(
+      (module) =>
+        module.liningArea *
+        (specialMaterial.internalLining?.embodiedCarbonPerUnit.max || 0)
+    ),
+  };
 
   const foundationsEmbodiedCo2 = accumulateModuleDataIf(
     (module) => module.structuredDna.levelType[0] === "F",
@@ -562,12 +596,20 @@ const calculateHouseInfo = (
     roofing: roofingEmbodiedCo2,
     internalLining: internalLiningEmbodiedCo2,
     comparative: totalFloorArea * comparative.embodiedCo2,
-    total:
-      foundationsEmbodiedCo2 +
-      modulesEmbodiedCo2 +
-      claddingEmbodiedCo2 +
-      roofingEmbodiedCo2 +
-      internalLiningEmbodiedCo2,
+    total: {
+      min:
+        foundationsEmbodiedCo2 +
+        modulesEmbodiedCo2 +
+        claddingEmbodiedCo2.min +
+        roofingEmbodiedCo2.min +
+        internalLiningEmbodiedCo2.min,
+      max:
+        foundationsEmbodiedCo2 +
+        modulesEmbodiedCo2 +
+        claddingEmbodiedCo2.max +
+        roofingEmbodiedCo2.max +
+        internalLiningEmbodiedCo2.max,
+    },
   };
 
   const energyUse: EnergyUse = {

@@ -28,8 +28,8 @@ export type MaterialsListRow = {
   specification: string;
   costPerUnit: Range;
   cost: Range;
-  embodiedCarbonPerUnit: number;
-  embodiedCarbonCost: number;
+  embodiedCarbonPerUnit: Range;
+  embodiedCarbonCost: Range;
   linkUrl?: string;
 };
 
