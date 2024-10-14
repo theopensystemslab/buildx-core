@@ -7,6 +7,7 @@ import {
   CachedWindowType,
   ElementNotFoundError,
   MaterialNotFoundError,
+  CachedBlock,
 } from "@/data/build-systems";
 import buildSystemsCache from "@/data/build-systems/cache";
 import outputsCache, { FILES_DOCUMENT_KEY } from "@/data/outputs/cache";
@@ -296,7 +297,7 @@ const orderListProc = ({
 }: {
   houses: House[];
   modules: BuildModule[];
-  blocks: Block[];
+  blocks: CachedBlock[];
   blockModulesEntries: BlockModulesEntry[];
 }) => {
   outputsCache.orderListRows.clear();
@@ -399,6 +400,7 @@ const orderListProc = ({
               manufacturingCost: block.manufacturingCost * count,
               cuttingFileUrl: block.cuttingFileUrl,
               totalCost: block.totalCost * count,
+              thumbnailBlob: block.imageBlob ?? null,
             })
           : O.none
     )
@@ -417,7 +419,7 @@ const orderListToCSV = (orderListRows: OrderListRow[]) => {
 
   // Map each object to an array of its values
   const rows = orderListRows.map((row) =>
-    headers.map((header) => row[header].toString())
+    headers.map((header) => row[header]?.toString() ?? "")
   );
 
   // Combine header and rows
