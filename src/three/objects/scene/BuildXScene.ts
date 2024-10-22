@@ -62,6 +62,8 @@ const subsetOfTHREE = {
 
 CameraControls.install({ THREE: subsetOfTHREE });
 
+const CAMERA_DISTANCE = 15;
+
 type BuildXSceneConfig = {
   canvas?: HTMLCanvasElement;
   enableGestures?: boolean;
@@ -69,8 +71,11 @@ type BuildXSceneConfig = {
   enableAxesHelper?: boolean;
   enableGroundObjects?: boolean;
   enableShadows?: boolean;
-  cameraDistance?: number;
   antialias?: boolean;
+  cameraOpts?: {
+    dollyToCursor?: boolean;
+    invertDolly?: boolean;
+  };
   onLongTapBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
   onRightClickBuildElement?: (scopeElement: ScopeElement, xy: Vector2) => void;
   onTapMissed?: () => void;
@@ -111,7 +116,6 @@ class BuildXScene extends Scene {
       enableAxesHelper = true,
       enableGroundObjects = true,
       enableShadows = true,
-      cameraDistance = 15,
       antialias = true,
       onLongTapBuildElement,
       onRightClickBuildElement,
@@ -122,6 +126,7 @@ class BuildXScene extends Scene {
       onHouseUpdate,
       onHouseDelete,
       onModeChange,
+      cameraOpts = {},
     } = config;
 
     this.onHouseCreate = onHouseCreate;
@@ -154,17 +159,12 @@ class BuildXScene extends Scene {
 
     this.cameraControls = new CameraControls(camera, this.renderer.domElement);
 
-    this.cameraControls.setLookAt(
-      cameraDistance,
-      cameraDistance,
-      cameraDistance,
-      0,
-      0,
-      0
-    );
-    const d = 15;
+    this.resetCamera();
 
-    this.cameraControls.setLookAt(d, d, d, 0, 0, 0);
+    const { dollyToCursor = true, invertDolly = false } = cameraOpts;
+
+    this.cameraControls.dollyToCursor = dollyToCursor;
+    this.cameraControls.dollySpeed = invertDolly ? -1.0 : 1.0;
 
     if (enableLighting) {
       this.enableLighting();
@@ -343,6 +343,17 @@ class BuildXScene extends Scene {
     // // Add DirectionalLightHelper
     // const lightHelper = new DirectionalLightHelper(shadowLight, 10);
     // this.add(lightHelper);
+  }
+
+  resetCamera() {
+    this.cameraControls.setLookAt(
+      CAMERA_DISTANCE,
+      CAMERA_DISTANCE,
+      CAMERA_DISTANCE,
+      0,
+      0,
+      0
+    );
   }
 
   enableGroundObjects() {
