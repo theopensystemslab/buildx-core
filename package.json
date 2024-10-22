@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.6.0-canary.6",
+  "version": "0.6.0-canary.7",
   "type": "module",
   "exports": {
     ".": {
