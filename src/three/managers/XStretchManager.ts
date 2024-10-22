@@ -160,14 +160,6 @@ class XStretchManager implements StretchManager {
     const { initialLayoutWidth, minWidth, maxWidth } = this.initData;
     const { side } = this.startData;
 
-    console.log("Gesture progress:", {
-      delta,
-      side,
-      initialLayoutWidth,
-      minWidth,
-      maxWidth,
-    });
-
     // Calculate new width directly
     let newWidth =
       initialLayoutWidth + this.progressData.cumulativeDx + side * delta;
@@ -181,12 +173,6 @@ class XStretchManager implements StretchManager {
 
     // Update cumulative delta
     this.progressData.cumulativeDx += actualDelta;
-
-    console.log("Calculated values:", {
-      newWidth,
-      actualDelta,
-      cumulativeDx: this.progressData.cumulativeDx,
-    });
 
     // Update handle positions
     this.updateHandlePositions(actualDelta);
@@ -202,12 +188,6 @@ class XStretchManager implements StretchManager {
     const halfDelta = delta / 2;
     handleDown.position.x -= halfDelta;
     handleUp.position.x += halfDelta;
-
-    console.log("Handle positions updated:", {
-      delta,
-      handleDown: handleDown.position.x,
-      handleUp: handleUp.position.x,
-    });
   }
 
   private checkAndPerformLayoutTransition(currentWidth: number) {
@@ -234,7 +214,6 @@ class XStretchManager implements StretchManager {
     }
 
     if (currentLayoutIndex !== previousIndex) {
-      console.log("Transitioning to layout:", currentLayoutIndex);
       this.transitionToLayout(alts[currentLayoutIndex], currentLayoutIndex);
     }
   }
