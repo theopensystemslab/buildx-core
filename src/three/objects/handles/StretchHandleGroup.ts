@@ -6,6 +6,7 @@ import { ColumnLayoutGroup } from "../house/ColumnLayoutGroup";
 import HandleGroup from "./HandleGroup";
 import StretchHandleMesh from "./StretchHandleMesh";
 import handleMaterial from "./handleMaterial";
+import { DEFAULT_LAYER, HIDDEN_LAYER } from "@/three/utils/layers";
 
 export type StretchAxis = "x" | "z";
 export type StretchSide = 1 | -1;
@@ -100,6 +101,14 @@ class StretchHandleGroup extends HandleGroup {
 
     this.position.setY(0.01);
     this.scale.set(scale, 1, scale);
+  }
+
+  show() {
+    this.traverse((x) => x.layers.set(DEFAULT_LAYER));
+  }
+
+  hide() {
+    this.traverse((x) => x.layers.set(HIDDEN_LAYER));
   }
 }
 

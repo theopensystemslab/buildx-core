@@ -4,7 +4,6 @@ import { A, O, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { hideObject, showObject } from "../utils/layers";
 
 class LayoutsManager {
   houseGroup: HouseGroup;
@@ -35,7 +34,7 @@ class LayoutsManager {
         )
       ),
       TE.map((columnLayoutGroup) => {
-        hideObject(columnLayoutGroup);
+        columnLayoutGroup.hide();
         this.houseGroup.add(columnLayoutGroup);
         this._houseTypeLayoutGroup = O.some(columnLayoutGroup);
       })
@@ -50,6 +49,7 @@ class LayoutsManager {
     if (this.houseTypeLayoutGroup._tag === "Some") {
       this.activeLayoutGroup = this.houseTypeLayoutGroup.value;
       this.prepareHouseTypeLayoutGroup();
+      this.houseGroup.updateDB();
     }
   }
 
@@ -59,8 +59,11 @@ class LayoutsManager {
 
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
     const previewNone = () => {
-      pipe(this.activeLayoutGroup, O.map(hideObject));
-      showObject(layoutGroup);
+      pipe(
+        this.activeLayoutGroup,
+        O.map((x) => x.hide())
+      );
+      layoutGroup.show();
       this._activeLayoutGroup = O.some(layoutGroup);
     };
 
@@ -88,21 +91,30 @@ class LayoutsManager {
           pipe(
             incoming,
             O.map((previewLayoutGroup) => {
-              hideObject(activeLayoutGroup);
-              showObject(previewLayoutGroup);
+              activeLayoutGroup.hide();
+              previewLayoutGroup.show();
               this._previewLayoutGroup = O.some(previewLayoutGroup);
             })
           );
         } else {
           const incomingNone = () => {
-            pipe(this._activeLayoutGroup, O.map(showObject));
-            pipe(this._previewLayoutGroup, O.map(hideObject));
+            pipe(
+              this._activeLayoutGroup,
+              O.map((x) => x.show())
+            );
+            pipe(
+              this._previewLayoutGroup,
+              O.map((x) => x.hide())
+            );
             this._previewLayoutGroup = O.none;
           };
 
           const incomingSome = (incoming: ColumnLayoutGroup) => {
-            showObject(incoming);
-            pipe(this._previewLayoutGroup, O.map(hideObject));
+            incoming.show();
+            pipe(
+              this._previewLayoutGroup,
+              O.map((x) => x.hide())
+            );
             this._previewLayoutGroup = O.some(incoming);
           };
 

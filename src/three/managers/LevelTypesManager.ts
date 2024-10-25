@@ -8,7 +8,6 @@ import { pipe } from "fp-ts/lib/function";
 import { createColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ScopeElement } from "../objects/types";
-import { hideObject } from "../utils/layers";
 
 export type LevelTypesChangeInfo = {
   target: ScopeElement;
@@ -68,7 +67,7 @@ class LevelTypesManager {
                   layoutGroup
                 );
 
-                hideObject(layoutGroup);
+                layoutGroup.hide();
 
                 return {
                   levelType,

@@ -8,7 +8,6 @@ import {
   createColumnLayoutGroup,
 } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { hideObject, showObject } from "../utils/layers";
 import StretchManager from "./StretchManager";
 import { SectionType } from "@/data/build-systems";
 
@@ -79,7 +78,7 @@ class XStretchManager implements StretchManager {
                     this.houseGroup.managers.cuts?.showAppropriateBrushes(
                       layoutGroup
                     );
-                    hideObject(layoutGroup);
+                    layoutGroup.hide();
                     return { layoutGroup, sectionType };
                   })
                 )
@@ -229,6 +228,7 @@ class XStretchManager implements StretchManager {
       this.houseGroup.managers.layouts.activeLayoutGroup =
         nextLayout.layoutGroup;
       this.progressData!.currentLayoutIndex = nextIndex;
+      this.houseGroup.updateDB();
     }
   }
 
@@ -238,11 +238,11 @@ class XStretchManager implements StretchManager {
   }
 
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles.forEach((x) => x.show());
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles.forEach((x) => x.hide());
   }
 }
 

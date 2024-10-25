@@ -1,8 +1,8 @@
 import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
-import { cachedBlocksTE, cachedHouseTypesTE, HouseGroup } from "@/index";
+import { cachedHouseTypesTE, HouseGroup } from "@/index";
 import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { A, NEA, pipeLogWith, TE } from "@/utils/functions";
+import { A, NEA, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 import OutputsWorker from "./outputs.worker?worker";
@@ -73,28 +73,3 @@ pipe(
 )();
 
 new OutputsWorker();
-
-console.log("yo");
-
-pipe(
-  cachedBlocksTE,
-  TE.map((blocks) => {
-    console.log("Blocks received:", blocks);
-    return blocks;
-  }),
-  pipeLogWith(() => "hello?"),
-  TE.map(
-    A.map((block) => {
-      console.log("Processing block:", block);
-      const image = new Image();
-      if (block.imageBlob) {
-        image.src = URL.createObjectURL(block.imageBlob);
-      }
-      console.log("Image created:", image);
-    })
-  ),
-  TE.mapLeft((error) => {
-    console.error("Error in cachedBlocksTE pipeline:", error);
-    return error;
-  })
-)().catch((e) => console.error("Caught error:", e));

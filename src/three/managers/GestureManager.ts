@@ -69,6 +69,8 @@ class GestureManager {
 
   private enableOutlining: boolean = true;
 
+  private debug = true; // Add this line to enable/disable debug logs
+
   constructor(params: {
     domElement: HTMLElement;
     camera: Camera;
@@ -150,6 +152,8 @@ class GestureManager {
   }
 
   private onPointerDown(event: PointerEvent) {
+    if (this.debug) console.log("Pointer down:", event.clientX, event.clientY);
+
     this.pointerIsDown = true;
     this.pointerMoved = false;
     this.isDraggingGestureEnabledObject = false;
@@ -164,6 +168,8 @@ class GestureManager {
     const intersects = this.raycaster
       .intersectObjects(this.gestureEnabledObjects)
       .filter((x) => x.object.visible);
+
+    if (this.debug) console.log("Intersects:", intersects.length);
 
     if (intersects.length > 0) {
       this.isDraggingGestureEnabledObject = true;
@@ -183,10 +189,19 @@ class GestureManager {
       this.lastPoint.copy(intersectionPoint);
       this.originalPosition.copy(this.currentGestureObject.position);
 
+      if (this.debug) {
+        console.log("Gesture started on object:", {
+          object: this.currentGestureObject,
+          visible: this.currentGestureObject.visible,
+          mask: this.currentGestureObject.layers.mask,
+        });
+      }
+
       this.onGestureStart?.();
     } else {
       this.currentGestureObject = null;
       this.gestureStarted = false; // Reset the gesture started flag
+      if (this.debug) console.log("No object intersected");
     }
     this.longTapTimeoutId = setTimeout(() => {
       if (!this.pointerMoved && this.isLongTapOnGestureObject) {
@@ -223,6 +238,8 @@ class GestureManager {
   }
 
   private onPointerUp(_event: PointerEvent) {
+    if (this.debug) console.log("Pointer up");
+
     const pointerUpTime = performance.now();
     const duration = pointerUpTime - this.pointerDownTime;
     if (this.longTapTimeoutId) {
@@ -235,8 +252,10 @@ class GestureManager {
       this.isDraggingGestureEnabledObject &&
       this.currentGestureObject
     ) {
+      if (this.debug) console.log("Drag ended");
       this.onDragEnd?.();
     } else if (!this.pointerMoved) {
+      if (this.debug) console.log("Tap detected");
       if (duration < this.longTapThreshold) {
         this.tapCount++;
         if (this.tapCount === 1) {
@@ -302,6 +321,7 @@ class GestureManager {
             A.head,
             O.map((ix) => {
               this.pointerMoved = true;
+              if (this.debug) console.log("Drag started");
               this.onDragStart?.(ix, this.pointer);
             })
           );
@@ -337,6 +357,8 @@ class GestureManager {
           });
 
           this.lastPoint.copy(currentPoint);
+        } else {
+          if (this.debug) console.log("No intersection with XZ plane");
         }
       }
     }

@@ -1,5 +1,4 @@
 import { ThreeMaterial } from "@/three/materials/types";
-import { hideObject, showObject } from "@/three/utils/layers";
 import { BufferGeometry, Group, NormalBufferAttributes } from "three";
 import { Brush, SUBTRACTION } from "three-bvh-csg";
 import { ScopeElement } from "../types";
@@ -12,6 +11,7 @@ import { evaluator } from "@/three/managers/CutsManager";
 import BuildXScene from "../scene/BuildXScene";
 import { BuildElement } from "@/data/build-systems";
 import { O } from "@/utils/functions";
+import { DEFAULT_LAYER, HIDDEN_LAYER } from "@/three/utils/layers";
 
 export class ElementGroup extends Group {
   userData: {
@@ -19,6 +19,7 @@ export class ElementGroup extends Group {
   };
   fullBrush: FullElementBrush;
   clippedBrush?: ClippedElementBrush;
+  clipped: boolean;
 
   constructor(element: BuildElement, fullBrush: FullElementBrush) {
     super();
@@ -26,6 +27,7 @@ export class ElementGroup extends Group {
       element,
     };
     this.fullBrush = fullBrush;
+    this.clipped = false;
   }
 
   createClippedBrush(clippingBrush: Brush) {
@@ -36,7 +38,7 @@ export class ElementGroup extends Group {
     }
 
     this.clippedBrush = new ClippedElementBrush();
-    hideObject(this.clippedBrush);
+    this.clippedBrush.visible = false;
     this.add(this.clippedBrush);
 
     this.fullBrush.updateMatrixWorld();
@@ -52,18 +54,38 @@ export class ElementGroup extends Group {
     this.clippedBrush.updateMatrixWorld();
   }
 
-  showClippedBrush() {
-    if (this.clippedBrush) {
-      showObject(this.clippedBrush);
-      hideObject(this.fullBrush);
-    }
+  // setRaycasting(b: boolean) {
+  //   this.traverse((x) => {
+  //     if (x instanceof ElementBrush) {
+  //       x.layers.set(b ? DEFAULT_LAYER : CAMERA_ONLY_LAYER);
+  //     }
+  //   });
+  // }
+
+  show() {
+    this.visible = true;
+    this.traverse((x) => {
+      if (x instanceof ElementBrush) {
+        x.layers.set(DEFAULT_LAYER);
+      }
+    });
   }
 
-  showFullBrush() {
-    showObject(this.fullBrush);
-    if (this.clippedBrush) {
-      hideObject(this.clippedBrush);
-    }
+  hide() {
+    this.visible = false;
+    this.traverse((x) => {
+      if (x instanceof ElementBrush) {
+        x.layers.set(HIDDEN_LAYER);
+      }
+    });
+  }
+
+  setClipped(b: boolean) {
+    if (!this.clippedBrush) return;
+
+    this.clippedBrush.visible = b;
+    this.fullBrush.visible = !b;
+    this.clipped = b;
   }
 
   get moduleGroup(): ModuleGroup {

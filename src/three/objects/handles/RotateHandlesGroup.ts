@@ -6,6 +6,7 @@ import { HouseGroup } from "../house/HouseGroup";
 import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import RotateHandleMesh from "./RotateHandleMesh";
+import { DEFAULT_LAYER, HIDDEN_LAYER } from "@/three/utils/layers";
 
 const HANDLE_THICKNESS = 0.3;
 const ROTATE_HANDLE_OFFSET = 2;
@@ -75,6 +76,14 @@ class RotateHandlesGroup extends Group {
         this.depthHandle.setSize(activeLayoutGroup.obb);
       })
     );
+  }
+
+  show() {
+    this.traverse((x) => x.layers.set(DEFAULT_LAYER));
+  }
+
+  hide() {
+    this.traverse((x) => x.layers.set(HIDDEN_LAYER));
   }
 }
 

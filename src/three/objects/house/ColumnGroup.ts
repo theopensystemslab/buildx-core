@@ -2,9 +2,10 @@ import { PositionedRow } from "@/layouts/types";
 import { A, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Group } from "three";
-import { defaultRowGroupCreator } from "./RowGroup";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { HouseGroup } from "./HouseGroup";
+import { ModuleGroup } from "./ModuleGroup";
+import { defaultRowGroupCreator } from "./RowGroup";
 
 export type ColumnGroupUserData = {
   columnIndex: number;
@@ -31,6 +32,24 @@ export class ColumnGroup extends Group {
 
   get houseGroup(): HouseGroup {
     return this.columnLayoutGroup.houseGroup;
+  }
+
+  show() {
+    this.visible = true;
+    this.traverse((x) => {
+      if (x instanceof ModuleGroup) {
+        x.show();
+      }
+    });
+  }
+
+  hide() {
+    this.visible = false;
+    this.traverse((x) => {
+      if (x instanceof ModuleGroup) {
+        x.hide();
+      }
+    });
   }
 }
 

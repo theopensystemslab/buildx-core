@@ -6,7 +6,6 @@ import {
   ColumnGroup,
   defaultColumnGroupCreator,
 } from "@/three/objects/house/ColumnGroup";
-import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor, max, min } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
@@ -85,7 +84,7 @@ class ZStretchManager implements StretchManager {
           TE.map((vanillaColumns) => {
             if (vanillaColumns.length > 0) {
               vanillaColumns.forEach((x) => {
-                hideObject(x);
+                x.hide();
               });
               activeLayoutGroup.add(...vanillaColumns);
             }
@@ -93,8 +92,6 @@ class ZStretchManager implements StretchManager {
             const lengthWiseNeighbours =
               this.houseGroup.managers.collisions?.computeLengthWiseNeighbours() ??
               [];
-
-            console.log({ lengthWiseNeighbours });
 
             this.initData = {
               startColumn: startColumnGroup,
@@ -283,7 +280,7 @@ class ZStretchManager implements StretchManager {
             bookendColumn.position.z + bookendColumn.userData.depth;
 
           if (bookendZ <= targetZ) {
-            hideObject(lastVisibleColumn);
+            lastVisibleColumn.hide();
             this.startData.lastVisibleIndex--;
           }
         }
@@ -328,7 +325,7 @@ class ZStretchManager implements StretchManager {
             bookendColumn.position.z + bookendColumn.userData.depth;
 
           if (bookendZ > targetZ) {
-            hideObject(lastVisibleColumn);
+            lastVisibleColumn.hide();
             this.startData.lastVisibleIndex++;
           }
         }
@@ -379,14 +376,7 @@ class ZStretchManager implements StretchManager {
         layoutGroup.updateDepth();
         layoutGroup.updateLayout();
 
-        const { dnas } = layoutGroup.userData;
-
-        this.houseGroup.hooks?.onHouseUpdate?.(
-          this.houseGroup.userData.houseId,
-          {
-            dnas,
-          }
-        );
+        this.houseGroup.updateDB();
       })
     );
 
@@ -399,7 +389,7 @@ class ZStretchManager implements StretchManager {
 
   showVanillaColumn(column: ColumnGroup) {
     this.houseGroup.managers.cuts?.showAppropriateBrushes(column);
-    showObject(column);
+    column.show();
   }
 
   reindexColumns() {
@@ -432,11 +422,11 @@ class ZStretchManager implements StretchManager {
   }
 
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles.forEach((x) => x.show());
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles.forEach((x) => x.hide());
   }
 }
 

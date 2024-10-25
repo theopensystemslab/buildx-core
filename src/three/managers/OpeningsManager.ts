@@ -8,7 +8,6 @@ import { createColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ScopeElement } from "../objects/types";
 import { Side, getSide } from "../utils/camera";
-import { hideObject } from "../utils/layers";
 
 export type OpeningsChangeInfo = {
   side: Side;
@@ -76,7 +75,7 @@ class OpeningsManager {
                         layoutGroup
                       );
 
-                      hideObject(layoutGroup);
+                      layoutGroup.hide();
 
                       return {
                         candidate,

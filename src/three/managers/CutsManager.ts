@@ -186,31 +186,39 @@ class CutsManager {
     );
   }
 
-  showClippedBrushes(object: Object3D) {
+  setClipped(object: Object3D, b: boolean) {
     object.traverse((node) => {
       if (node instanceof ModuleGroup) {
-        node.showClippedBrushes();
-        node.updateElementBrushes();
+        node.setClipped(b);
       }
     });
   }
 
-  showFullBrushes(object: Object3D) {
-    object.traverse((node) => {
-      if (node instanceof ModuleGroup) {
-        node.showFullBrushes();
-        node.updateElementBrushes();
-      }
-    });
-  }
+  // showClippedBrushes(object: Object3D) {
+  //   object.traverse((node) => {
+  //     if (node instanceof ModuleGroup) {
+  //       node.setClipped(true);
+  //       node.updateElementBrushes();
+  //     }
+  //   });
+  // }
+
+  // showFullBrushes(object: Object3D) {
+  //   object.traverse((node) => {
+  //     if (node instanceof ModuleGroup) {
+  //       node.setClipped(false);
+  //       node.updateElementBrushes();
+  //     }
+  //   });
+  // }
 
   showAppropriateBrushes(object: Object3D) {
     const { rowIndex, x, z } = this.settings;
 
     if (rowIndex !== null || x || z) {
-      this.showClippedBrushes(object);
+      this.setClipped(object, true);
     } else {
-      this.showFullBrushes(object);
+      this.setClipped(object, false);
     }
   }
 

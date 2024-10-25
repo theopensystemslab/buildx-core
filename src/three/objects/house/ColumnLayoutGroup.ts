@@ -291,6 +291,24 @@ export class ColumnLayoutGroup extends Group {
       })
     );
   }
+
+  show() {
+    this.visible = true;
+
+    this.children.forEach((x) => {
+      if (x instanceof ColumnGroup) {
+        x.show();
+      }
+    });
+  }
+
+  hide() {
+    this.children.forEach((x) => {
+      if (x instanceof ColumnGroup) {
+        x.hide();
+      }
+    });
+  }
 }
 
 export const createColumnLayoutGroup = ({

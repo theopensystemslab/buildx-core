@@ -13,7 +13,6 @@ import {
   Texture,
   CanvasTexture,
 } from "three";
-import { hideObject, showObject } from "../utils/layers";
 
 class RotateManager {
   private houseGroup: HouseGroup;
@@ -153,11 +152,11 @@ class RotateManager {
 
   showHandles() {
     this.rotateHandlesGroup.updateHandles();
-    showObject(this.rotateHandlesGroup);
+    this.rotateHandlesGroup.show();
   }
 
   hideHandles() {
-    hideObject(this.rotateHandlesGroup);
+    this.rotateHandlesGroup.hide();
   }
 
   updateHandles() {

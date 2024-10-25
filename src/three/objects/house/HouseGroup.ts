@@ -237,6 +237,16 @@ export class HouseGroup extends Group {
   getAllVisibleBrushes(): ElementBrush[] {
     return Array.from(this.elementBrushes.values()).flat();
   }
+
+  updateDB() {
+    this.hooks?.onHouseUpdate?.(this.house.houseId, {
+      dnas: this.unsafeActiveLayoutGroup.userData.dnas,
+      position: this.position,
+      rotation: this.rotation.y,
+      activeElementMaterials: this.managers.elements?.overrides ?? {},
+      friendlyName: this.friendlyName,
+    });
+  }
 }
 
 export type { Hooks as HouseGroupHooks, Managers as HouseGroupManagers };

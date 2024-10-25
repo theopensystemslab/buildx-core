@@ -204,7 +204,7 @@ class ContextManager {
                       rowIndex,
                     });
                     cuts?.createObjectCuts(activeLayoutGroup);
-                    cuts?.showClippedBrushes(activeLayoutGroup);
+                    cuts?.setClipped(activeLayoutGroup, true);
 
                     xStretch?.initData?.alts?.forEach(({ layoutGroup }) => {
                       if (layoutGroup === activeLayoutGroup) return;

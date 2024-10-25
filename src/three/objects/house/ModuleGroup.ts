@@ -62,20 +62,36 @@ export class ModuleGroup extends Group {
     });
   }
 
-  showClippedBrushes() {
+  setClipped(b: boolean) {
     this.traverse((node) => {
       if (node instanceof ElementGroup) {
-        node.showClippedBrush();
+        node.setClipped(b);
       }
     });
   }
 
-  showFullBrushes() {
-    this.traverse((node) => {
-      if (node instanceof ElementGroup) {
-        node.showFullBrush();
-      }
-    });
+  // showClippedBrushes() {
+  //   this.traverse((node) => {
+  //     if (node instanceof ElementGroup) {
+  //       node.setClipped(true);
+  //     }
+  //   });
+  // }
+
+  // showFullBrushes() {
+  //   this.traverse((node) => {
+  //     if (node instanceof ElementGroup) {
+  //       node.setClipped(false);
+  //     }
+  //   });
+  // }
+
+  show() {
+    this.visible = true;
+  }
+
+  hide() {
+    this.visible = false;
   }
 
   updateElementBrushes() {
