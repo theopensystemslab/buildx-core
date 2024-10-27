@@ -47,10 +47,10 @@ class CutsManager {
       this.brush,
       O.map((brush) => {
         if (this.debugged) {
-          this.houseGroup.scene.remove(brush);
+          this.houseGroup.scene?.remove(brush);
           this.debugged = false;
         } else {
-          this.houseGroup.scene.add(brush);
+          this.houseGroup.scene?.add(brush);
           this.debugged = true;
         }
       })

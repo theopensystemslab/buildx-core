@@ -429,14 +429,14 @@ class ProgressShowHideManager implements StretchManager {
     showObjectCameraOnly(line);
 
     // Update or create BoxHelper
-    let helper = this.houseGroup.scene.getObjectByName(
+    let helper = this.houseGroup.scene?.getObjectByName(
       `boxHelper_${column.id}`
     ) as BoxHelper | undefined;
 
     if (!helper) {
       helper = new BoxHelper(column, color); // Create an empty BoxHelper
       helper.name = `boxHelper_${column.id}`;
-      this.houseGroup.scene.add(helper);
+      this.houseGroup.scene?.add(helper);
     } else {
       helper.update();
     }

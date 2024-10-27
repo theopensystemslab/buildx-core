@@ -94,8 +94,6 @@ class ZStretchManager implements StretchManager {
               this.houseGroup.managers.collisions?.computeLengthWiseNeighbours() ??
               [];
 
-            console.log({ lengthWiseNeighbours });
-
             this.initData = {
               startColumn: startColumnGroup,
               midColumns: midColumnGroups,
@@ -130,7 +128,7 @@ class ZStretchManager implements StretchManager {
 
     const columnOBBMesh = new OBBMesh(columnOBB);
 
-    scene.add(columnOBBMesh);
+    scene?.add(columnOBBMesh);
   }
 
   gestureStart(side: 1 | -1) {

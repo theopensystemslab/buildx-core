@@ -15,7 +15,7 @@ class CollisionManager {
     const thisAABB = this.houseGroup.unsafeAABB;
 
     this.nearNeighbours = pipe(
-      scene.houses,
+      scene?.houses ?? [],
       A.filter(
         (x) => x !== this.houseGroup && x.unsafeAABB.intersectsBox(thisAABB)
       )
@@ -38,7 +38,7 @@ class CollisionManager {
     const thisOBB = this.houseGroup.unsafeOBB;
 
     return pipe(
-      this.houseGroup.scene.houses,
+      this.houseGroup.scene?.houses ?? [],
       A.filter((houseGroup) => {
         if (houseGroup.uuid === this.houseGroup.uuid) return false;
 

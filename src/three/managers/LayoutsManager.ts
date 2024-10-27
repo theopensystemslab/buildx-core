@@ -50,6 +50,7 @@ class LayoutsManager {
     if (this.houseTypeLayoutGroup._tag === "Some") {
       this.activeLayoutGroup = this.houseTypeLayoutGroup.value;
       this.prepareHouseTypeLayoutGroup();
+      this.houseGroup.updateDB();
     }
   }
 
