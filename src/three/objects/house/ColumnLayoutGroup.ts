@@ -17,10 +17,10 @@ import {
   Matrix4,
   Mesh,
   MeshBasicMaterial,
-  Scene,
   Vector3,
 } from "three";
 import { OBB } from "three-stdlib";
+import BuildXScene from "../scene/BuildXScene";
 import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
@@ -71,7 +71,7 @@ export class ColumnLayoutGroup extends Group {
     throw new Error(`get houseGroup failed`);
   }
 
-  get scene(): Scene {
+  get scene(): BuildXScene | null {
     return this.houseGroup.scene;
   }
 
@@ -256,7 +256,7 @@ export class ColumnLayoutGroup extends Group {
     const size = this.obb.halfSize.clone().multiplyScalar(2);
 
     if (this.debugOBBMesh) {
-      scene.remove(this.debugOBBMesh);
+      scene?.remove(this.debugOBBMesh);
     }
 
     const geom = new BoxGeometry(size.x, size.y, size.z);
@@ -264,13 +264,13 @@ export class ColumnLayoutGroup extends Group {
     mesh.position.copy(this.obb.center);
     mesh.setRotationFromMatrix(new Matrix4().setFromMatrix3(this.obb.rotation));
     mesh.userData.type = "OBB";
-    scene.add(mesh);
+    scene?.add(mesh);
     this.debugOBBMesh = mesh;
   }
 
   renderAABB() {
     return pipe(
-      O.fromNullable(this.parent),
+      O.fromNullable(this.scene),
       O.map((scene) => {
         const size = new Vector3();
         this.aabb.getSize(size);

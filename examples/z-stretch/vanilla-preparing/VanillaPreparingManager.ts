@@ -209,7 +209,7 @@ class VanillaPreparingManager implements StretchManager {
 
     const helper = new BoxHelper(column, color);
     helper.name = `boxHelper_${column.id}`;
-    this.houseGroup.scene.add(helper);
+    this.houseGroup.scene?.add(helper);
 
     const lineGeometry = new BufferGeometry().setFromPoints([
       new Vector3(0, -column.userData.height / 2, 0),
@@ -248,7 +248,7 @@ class VanillaPreparingManager implements StretchManager {
     }
 
     // Update BoxHelper
-    const helper = this.houseGroup.scene.getObjectByName(
+    const helper = this.houseGroup.scene?.getObjectByName(
       `boxHelper_${column.id}`
     ) as BoxHelper | undefined;
     if (helper) {

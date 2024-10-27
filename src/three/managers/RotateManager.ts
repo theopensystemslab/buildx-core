@@ -110,19 +110,19 @@ class RotateManager {
       new MeshBasicMaterial({ color: 0xff0000 })
     );
     centerMarker.position.copy(center);
-    this.scene.add(centerMarker);
+    this.scene?.add(centerMarker);
 
     const currentPointMarker = centerMarker.clone();
     currentPointMarker.material = new MeshBasicMaterial({ color: 0x00ff00 });
-    this.scene.add(currentPointMarker);
+    this.scene?.add(currentPointMarker);
 
     const lineMaterial = new LineBasicMaterial({ color: 0xffff00 });
     const lineGeometry = new BufferGeometry().setFromPoints([center, center]);
     const line = new Line(lineGeometry, lineMaterial);
-    this.scene.add(line);
+    this.scene?.add(line);
 
     const textSprite = this.createTextSprite("Angle: 0°");
-    this.scene.add(textSprite);
+    this.scene?.add(textSprite);
 
     this.debugObjects = { centerMarker, currentPointMarker, line, textSprite };
   }

@@ -87,7 +87,7 @@ export class ElementGroup extends Group {
     return this.columnLayoutGroup.houseGroup;
   }
 
-  get scene(): BuildXScene {
+  get scene(): BuildXScene | null {
     return this.houseGroup.scene;
   }
 
