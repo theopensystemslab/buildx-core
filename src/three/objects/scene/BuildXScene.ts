@@ -18,7 +18,6 @@ import {
   DirectionalLight,
   DoubleSide,
   LineBasicMaterial,
-  LineDashedMaterial,
   LineSegments,
   Matrix4,
   Mesh,
@@ -384,7 +383,6 @@ class BuildXScene extends Scene {
     const xAxis = { cells: 61, size: 1 };
     const zAxis = { cells: 61, size: 1 };
     const color = 0x888888;
-    const dashed = false;
     const opacity = 1;
 
     const gridGeometry = new BufferGeometry();
@@ -407,22 +405,14 @@ class BuildXScene extends Scene {
       new BufferAttribute(new Float32Array(vertices.flat()), 3)
     );
 
-    const gridMaterial = dashed
-      ? new LineDashedMaterial({
-          color,
-          scale: 1,
-          dashSize: 1,
-          gapSize: 1,
-          opacity,
-          transparent: true,
-        })
-      : new LineBasicMaterial({
-          color,
-          opacity,
-          transparent: true,
-        });
+    const gridMaterial = new LineBasicMaterial({
+      color,
+      opacity,
+      transparent: true,
+    });
 
     const rectangularGrid = new LineSegments(gridGeometry, gridMaterial);
+    rectangularGrid.position.setY(0.02);
 
     this.add(rectangularGrid);
   }

@@ -28,10 +28,9 @@ class OpeningsManager {
   getOpeningsChangeInfo(
     target: ScopeElement
   ): TE.TaskEither<Error, OpeningsChangeInfo> {
-    const side = getSide(
-      this.houseGroup,
-      this.houseGroup.scene.cameraControls.camera
-    );
+    const side = this.houseGroup.scene
+      ? getSide(this.houseGroup, this.houseGroup.scene.cameraControls.camera)
+      : "LEFT";
 
     return pipe(
       this.houseGroup.activeLayoutGroup,

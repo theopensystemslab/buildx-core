@@ -74,7 +74,6 @@ export const defaultCachedHousesOps = {
     updateProjectData();
   },
   onHouseUpdate: async (houseId: string, changes: Partial<House>) => {
-    console.log("onHouseUpdate", houseId, changes);
     await updateCachedHouse(houseId, changes)();
     updateProjectData();
   },
