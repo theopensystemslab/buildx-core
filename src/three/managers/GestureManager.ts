@@ -15,6 +15,8 @@ import {
   HIDDEN_LAYER,
   RAYCAST_ONLY_LAYER,
 } from "../utils/layers";
+import { ElementBrush } from "../objects/house/ElementGroup";
+import StretchHandleMesh from "../objects/handles/StretchHandleMesh";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
@@ -161,16 +163,35 @@ class GestureManager {
     this.pointer.y =
       -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const intersects = this.raycaster
-      .intersectObjects(this.gestureEnabledObjects)
-      .filter((x) => x.object.visible);
 
-    if (intersects.length > 0) {
+    const ix1 = this.raycaster.intersectObjects(this.gestureEnabledObjects);
+
+    const ix2 = ix1.filter((x) => {
+      if (x.object instanceof StretchHandleMesh) {
+        return x.object.visible;
+      }
+      if (x.object instanceof ElementBrush) {
+        return (
+          x.object.visible &&
+          x.object.elementGroup.visible &&
+          x.object.moduleGroup.visible &&
+          x.object.rowGroup.visible &&
+          x.object.columnGroup.visible &&
+          x.object.columnLayoutGroup.visible
+        );
+      } else {
+        return false;
+      }
+    });
+
+    console.log({ ix1, ix2 });
+
+    if (ix2.length > 0) {
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
-      this.currentGestureObject = intersects[0].object;
+      this.currentGestureObject = ix2[0].object;
       this.gestureStarted = true; // Set the gesture started flag
-      const intersectionPoint = intersects[0].point;
+      const intersectionPoint = ix2[0].point;
       this.movementPlaneXZ.setFromNormalAndCoplanarPoint(
         new Vector3(0, 1, 0),
         intersectionPoint
