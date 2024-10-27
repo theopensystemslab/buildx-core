@@ -41,7 +41,7 @@ export class RowGroup extends Group {
   }
 
   editRow() {
-    if (this.houseGroup.scene.contextManager) {
+    if (this.houseGroup.scene?.contextManager) {
       this.houseGroup.scene.contextManager.buildingRowIndex = O.some(
         this.userData.rowIndex
       );

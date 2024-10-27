@@ -3,19 +3,19 @@ import CollisionsManager from "@/three/managers/CollisionsManager";
 import CutsManager from "@/three/managers/CutsManager";
 import ElementsManager from "@/three/managers/ElementsManager";
 import LayoutsManager from "@/three/managers/LayoutsManager";
+import LevelTypesManager from "@/three/managers/LevelTypesManager";
 import MoveManager from "@/three/managers/MoveManager";
 import OpeningsManager from "@/three/managers/OpeningsManager";
 import RotateManager from "@/three/managers/RotateManager";
 import XStretchManager from "@/three/managers/XStretchManager";
 import ZStretchManager from "@/three/managers/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
-import { O, someOrError } from "@/utils/functions";
+import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { Box3, Group, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import LevelTypesManager from "@/three/managers/LevelTypesManager";
 import { ElementBrush, ElementGroup } from "./ElementGroup";
 
 type Hooks = {
@@ -155,11 +155,11 @@ export class HouseGroup extends Group {
     }
   }
 
-  get scene(): BuildXScene {
+  get scene(): BuildXScene | null {
     return pipe(
       this,
       findFirstGuardUp((o): o is BuildXScene => o instanceof BuildXScene),
-      someOrError(`scene not found above HouseGroup`)
+      O.toNullable
     );
   }
 
@@ -204,7 +204,7 @@ export class HouseGroup extends Group {
   }
 
   editHouse() {
-    if (this.scene.contextManager) {
+    if (this.scene?.contextManager) {
       this.scene.contextManager.buildingHouseGroup = O.some(this);
     }
   }
