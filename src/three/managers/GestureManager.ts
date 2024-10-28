@@ -17,6 +17,7 @@ import {
 } from "../utils/layers";
 import { ElementBrush } from "../objects/house/ElementGroup";
 import StretchHandleMesh from "../objects/handles/StretchHandleMesh";
+import RotateHandleMesh from "../objects/handles/RotateHandleMesh";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 
@@ -167,7 +168,10 @@ class GestureManager {
     const ix1 = this.raycaster.intersectObjects(this.gestureEnabledObjects);
 
     const ix2 = ix1.filter((x) => {
-      if (x.object instanceof StretchHandleMesh) {
+      if (
+        x.object instanceof StretchHandleMesh ||
+        x.object instanceof RotateHandleMesh
+      ) {
         return x.object.visible;
       }
       if (x.object instanceof ElementBrush) {
