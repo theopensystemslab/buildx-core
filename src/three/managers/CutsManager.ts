@@ -42,21 +42,6 @@ class CutsManager {
     this.debugged = false;
   }
 
-  debugClippingBrush() {
-    pipe(
-      this.brush,
-      O.map((brush) => {
-        if (this.debugged) {
-          this.houseGroup.scene?.remove(brush);
-          this.debugged = false;
-        } else {
-          this.houseGroup.scene?.add(brush);
-          this.debugged = true;
-        }
-      })
-    );
-  }
-
   private createClippingBrushX() {
     return pipe(
       this.houseGroup.activeLayoutGroup,
@@ -173,7 +158,7 @@ class CutsManager {
     );
   }
 
-  private createClippedBrushes(object: Object3D) {
+  createClippedBrushes(object: Object3D) {
     pipe(
       this.brush,
       O.map((brush) => {
@@ -307,18 +292,10 @@ class CutsManager {
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
-        this.createObjectCuts(activeLayoutGroup);
+        this.createClippedBrushes(activeLayoutGroup);
         this.showAppropriateBrushes(activeLayoutGroup);
       })
     );
-  }
-
-  createObjectCuts(object: Object3D) {
-    const brush = this.brush;
-
-    if (brush !== null) {
-      this.createClippedBrushes(object);
-    }
   }
 
   cycleClippingBrush() {
