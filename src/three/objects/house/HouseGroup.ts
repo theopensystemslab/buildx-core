@@ -76,7 +76,7 @@ export class HouseGroup extends Group {
       rotate: managers.rotate ?? new RotateManager(this),
       layouts: managers.layouts ?? new LayoutsManager(this),
       xStretch: managers.xStretch ?? new XStretchManager(this),
-      // zStretch: managers.zStretch ?? new ZStretchManager(this),
+      zStretch: managers.zStretch ?? new ZStretchManager(this),
       cuts: managers.cuts ?? new CutsManager(this),
       openings: managers.openings ?? new OpeningsManager(this),
       collisions: managers.collisions ?? new CollisionsManager(this),
