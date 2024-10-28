@@ -73,13 +73,12 @@ class XStretchManager implements StretchManager {
                   TE.map((layoutGroup) => {
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
-                    this.houseGroup.managers.cuts?.createClippedBrushes(
-                      layoutGroup
-                    );
-                    this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                      layoutGroup
-                    );
-                    // layoutGroup.visible = false;
+                    // this.houseGroup.managers.cuts?.createClippedBrushes(
+                    //   layoutGroup
+                    // );
+                    // this.houseGroup.managers.cuts?.showAppropriateBrushes(
+                    //   layoutGroup
+                    // );
                     hideObject(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
@@ -224,6 +223,9 @@ class XStretchManager implements StretchManager {
     nextIndex: number
   ) {
     if (this.houseGroup.managers.layouts && this.houseGroup.managers.cuts) {
+      this.houseGroup.managers.cuts.createClippedBrushes(
+        nextLayout.layoutGroup
+      );
       this.houseGroup.managers.cuts.showAppropriateBrushes(
         nextLayout.layoutGroup
       );

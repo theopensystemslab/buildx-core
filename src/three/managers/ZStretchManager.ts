@@ -186,7 +186,7 @@ class ZStretchManager implements StretchManager {
             break;
           }
 
-          this.houseGroup.managers.cuts?.createObjectCuts(column);
+          this.houseGroup.managers.cuts?.createClippedBrushes(column);
           orderedColumns.push(column);
         }
 
@@ -222,7 +222,7 @@ class ZStretchManager implements StretchManager {
             break;
           }
 
-          this.houseGroup.managers.cuts?.createObjectCuts(column);
+          this.houseGroup.managers.cuts?.createClippedBrushes(column);
           orderedColumns.push(column);
         }
       }
