@@ -143,7 +143,7 @@ class ProgressShowHideManager implements StretchManager {
             columnGroup.userData.depth
         );
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.createClippedBrushes(columnGroup);
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 
@@ -159,7 +159,7 @@ class ProgressShowHideManager implements StretchManager {
           startDepth + index * columnGroup.userData.depth
         );
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.createClippedBrushes(columnGroup);
         // this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
 

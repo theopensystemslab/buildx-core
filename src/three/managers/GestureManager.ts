@@ -188,7 +188,7 @@ class GestureManager {
       }
     });
 
-    console.log({ ix1, ix2 });
+    // console.log({ ix1, ix2 });
 
     if (ix2.length > 0) {
       this.isDraggingGestureEnabledObject = true;
