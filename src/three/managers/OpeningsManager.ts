@@ -68,7 +68,7 @@ class OpeningsManager {
 
                       layoutGroup.updateBBs();
 
-                      this.houseGroup.managers.cuts?.createObjectCuts(
+                      this.houseGroup.managers.cuts?.createClippedBrushes(
                         layoutGroup
                       );
                       this.houseGroup.managers.cuts?.showAppropriateBrushes(

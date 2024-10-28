@@ -143,7 +143,7 @@ class VanillaPreparingManager implements StretchManager {
 
         this.updateColumnAnnotations(columnGroup);
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.createClippedBrushes(columnGroup);
         this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
     } else if (side === 1) {
@@ -158,7 +158,7 @@ class VanillaPreparingManager implements StretchManager {
 
         this.updateColumnAnnotations(columnGroup);
 
-        this.houseGroup.managers.cuts?.createObjectCuts(columnGroup);
+        this.houseGroup.managers.cuts?.createClippedBrushes(columnGroup);
         this.houseGroup.managers.cuts?.showAppropriateBrushes(columnGroup);
       });
     }
