@@ -66,6 +66,7 @@ const CAMERA_DISTANCE = 15;
 type BuildXSceneConfig = {
   canvas?: HTMLCanvasElement;
   enableGestures?: boolean;
+  enableOutlining?: boolean;
   enableLighting?: boolean;
   enableAxesHelper?: boolean;
   enableGroundObjects?: boolean;
@@ -84,6 +85,7 @@ type BuildXSceneConfig = {
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
   onHouseDelete?: (houseId: string) => void;
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
+  container?: HTMLElement;
 };
 
 class BuildXScene extends Scene {
@@ -103,14 +105,18 @@ class BuildXScene extends Scene {
 
   siteBoundary: SiteBoundary | null;
 
+  private container: HTMLElement;
+
   constructor(config: BuildXSceneConfig = {}) {
     super();
 
     this.siteBoundary = null;
 
     const {
+      container = document.body,
       canvas,
       enableGestures = true,
+      enableOutlining = true,
       enableLighting = true,
       enableAxesHelper = true,
       enableGroundObjects = true,
@@ -128,6 +134,8 @@ class BuildXScene extends Scene {
       cameraOpts = {},
     } = config;
 
+    this.container = container;
+
     this.onHouseCreate = onHouseCreate;
     this.onHouseUpdate = onHouseUpdate;
     this.onHouseDelete = onHouseDelete;
@@ -140,7 +148,7 @@ class BuildXScene extends Scene {
 
     const camera = new PerspectiveCamera(
       60,
-      window.innerWidth / window.innerHeight,
+      container.clientWidth / container.clientHeight,
       0.01,
       1000
     );
@@ -153,7 +161,7 @@ class BuildXScene extends Scene {
     }
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setClearColor("white");
 
     this.cameraControls = new CameraControls(camera, this.renderer.domElement);
@@ -187,6 +195,7 @@ class BuildXScene extends Scene {
         domElement: this.renderer.domElement,
         camera,
         scene: this,
+        enableOutlining,
         onGestureStart: () => {
           this.cameraControls.enabled = false;
         },
@@ -425,14 +434,15 @@ class BuildXScene extends Scene {
   }
 
   handleResize() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
     if (this.cameraControls.camera instanceof PerspectiveCamera) {
       this.cameraControls.camera.aspect = width / height;
     }
     this.cameraControls.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.composer.setSize(width, height);
+    console.log("resize", width, height);
   }
 
   addObject(object: Object3D, options?: { gestures: boolean }) {
@@ -491,6 +501,17 @@ class BuildXScene extends Scene {
     return this.children.filter(
       (x): x is HouseGroup => x instanceof HouseGroup
     );
+  }
+
+  dispose() {
+    this.traverse((child) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose();
+        child.material.dispose();
+      }
+    });
+    this.renderer.dispose();
+    window.removeEventListener("resize", this.handleResize);
   }
 }
 

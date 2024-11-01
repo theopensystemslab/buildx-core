@@ -70,7 +70,7 @@ class GestureManager {
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
   private originalPosition = new Vector3(); // Original position of the object being dragged
 
-  private enableOutlining: boolean = true;
+  private enableOutlining: boolean;
 
   constructor(params: {
     domElement: HTMLElement;
@@ -87,6 +87,7 @@ class GestureManager {
     onDragProgress?: DragHandler;
     onDragEnd?: () => void;
     onRightClick?: TapHandler;
+    enableOutlining?: boolean;
   }) {
     this.domElement = params.domElement;
     this.camera = params.camera;
@@ -105,6 +106,8 @@ class GestureManager {
     this.onDragEnd = params.onDragEnd;
 
     this.onRightClick = params.onRightClick;
+
+    this.enableOutlining = params.enableOutlining ?? true;
 
     this.attachEventListeners();
 
