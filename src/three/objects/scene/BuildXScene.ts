@@ -375,7 +375,7 @@ class BuildXScene extends Scene {
       color: 0xd1d1c7,
     });
     const groundCircle = new Mesh(groundCircleGeometry, groundCircleMaterial);
-    groundCircle.position.set(0, -0.04, 0);
+    groundCircle.position.set(0, -0.05, 0);
     groundCircle.rotation.set(-Math.PI / 2, 0, 0);
     this.add(groundCircle);
 
@@ -424,7 +424,7 @@ class BuildXScene extends Scene {
     });
 
     const rectangularGrid = new LineSegments(gridGeometry, gridMaterial);
-    rectangularGrid.position.setY(0.02);
+    rectangularGrid.position.setY(-0.04);
 
     this.add(rectangularGrid);
   }
