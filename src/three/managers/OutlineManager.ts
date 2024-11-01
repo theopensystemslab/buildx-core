@@ -46,7 +46,10 @@ class OutlineManager {
         this.outlinePass.selectedObjects = this.getOutlineObjects(object);
       }
     } else {
-      this.outlinePass.selectedObjects = [];
+      if (this.hoveredBrush !== null) {
+        this.hoveredBrush = null;
+        this.outlinePass.selectedObjects = [];
+      }
     }
   }
 
@@ -59,6 +62,13 @@ class OutlineManager {
     } else {
       this.outlinePass.selectedObjects = [];
     }
+  }
+
+  dispose() {
+    // Clear references
+    this.selectedBrush = null;
+    this.hoveredBrush = null;
+    this.outlinePass.selectedObjects = [];
   }
 }
 
