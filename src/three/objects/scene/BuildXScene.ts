@@ -39,7 +39,7 @@ import {
 import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 // @ts-ignore
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
-import { getOutlinePass } from "../../effects/outline";
+import { createOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
@@ -66,6 +66,7 @@ const CAMERA_DISTANCE = 15;
 type BuildXSceneConfig = {
   canvas?: HTMLCanvasElement;
   enableGestures?: boolean;
+  enableOutlining?: boolean;
   enableLighting?: boolean;
   enableAxesHelper?: boolean;
   enableGroundObjects?: boolean;
@@ -84,6 +85,7 @@ type BuildXSceneConfig = {
   onHouseUpdate?: (houseId: string, change: Partial<House>) => void;
   onHouseDelete?: (houseId: string) => void;
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
+  container?: HTMLElement;
 };
 
 class BuildXScene extends Scene {
@@ -103,14 +105,20 @@ class BuildXScene extends Scene {
 
   siteBoundary: SiteBoundary | null;
 
+  private container: HTMLElement;
+
+  private animationFrameId: number | null = null;
+
   constructor(config: BuildXSceneConfig = {}) {
     super();
 
     this.siteBoundary = null;
 
     const {
+      container = document.body,
       canvas,
       enableGestures = true,
+      enableOutlining = true,
       enableLighting = true,
       enableAxesHelper = true,
       enableGroundObjects = true,
@@ -128,6 +136,8 @@ class BuildXScene extends Scene {
       cameraOpts = {},
     } = config;
 
+    this.container = container;
+
     this.onHouseCreate = onHouseCreate;
     this.onHouseUpdate = onHouseUpdate;
     this.onHouseDelete = onHouseDelete;
@@ -140,7 +150,7 @@ class BuildXScene extends Scene {
 
     const camera = new PerspectiveCamera(
       60,
-      window.innerWidth / window.innerHeight,
+      container.clientWidth / container.clientHeight,
       0.01,
       1000
     );
@@ -153,7 +163,7 @@ class BuildXScene extends Scene {
     }
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setClearColor("white");
 
     this.cameraControls = new CameraControls(camera, this.renderer.domElement);
@@ -187,6 +197,7 @@ class BuildXScene extends Scene {
         domElement: this.renderer.domElement,
         camera,
         scene: this,
+        enableOutlining,
         onGestureStart: () => {
           this.cameraControls.enabled = false;
         },
@@ -297,13 +308,14 @@ class BuildXScene extends Scene {
     const renderPass = new RenderPass(this, camera);
     this.composer.addPass(renderPass);
 
-    this.outlinePass = getOutlinePass(this, camera);
+    this.outlinePass = createOutlinePass(this, camera);
 
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
 
     this.composer.addPass(this.outlinePass);
 
+    console.log("new outline manager");
     this.outlineManager = new OutlineManager(this, this.outlinePass);
 
     this.handleResize();
@@ -421,18 +433,19 @@ class BuildXScene extends Scene {
     const delta = this.clock.getDelta();
     this.cameraControls.update(delta);
     this.composer.render();
-    requestAnimationFrame(() => this.animate());
+    this.animationFrameId = requestAnimationFrame(() => this.animate());
   }
 
   handleResize() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
     if (this.cameraControls.camera instanceof PerspectiveCamera) {
       this.cameraControls.camera.aspect = width / height;
     }
     this.cameraControls.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.composer.setSize(width, height);
+    console.log("resize", width, height);
   }
 
   addObject(object: Object3D, options?: { gestures: boolean }) {
@@ -491,6 +504,53 @@ class BuildXScene extends Scene {
     return this.children.filter(
       (x): x is HouseGroup => x instanceof HouseGroup
     );
+  }
+
+  dispose() {
+    // Cancel animation frame first
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+
+    // First, clean up managers
+    if (this.gestureManager) {
+      this.gestureManager.dispose();
+      this.gestureManager = undefined;
+    }
+
+    if (this.outlineManager) {
+      this.outlineManager.dispose();
+      this.outlineManager = undefined;
+    }
+
+    // Then clean up scene objects
+    this.traverse((child) => {
+      if (child instanceof Mesh) {
+        child.geometry.dispose();
+        if (Array.isArray(child.material)) {
+          child.material.forEach((m) => m.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+
+    // Clean up composer and its passes
+    if (this.composer) {
+      // Clean up passes first
+      this.composer.passes.forEach((pass) => {
+        if ("dispose" in pass && typeof pass.dispose === "function") {
+          pass.dispose();
+        }
+      });
+
+      // Clear the passes array
+      this.composer.passes = [];
+    }
+
+    this.renderer.dispose();
+    window.removeEventListener("resize", this.handleResize.bind(this));
   }
 }
 

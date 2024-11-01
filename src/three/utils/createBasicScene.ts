@@ -18,7 +18,7 @@ import {
   WebGLRenderer,
 } from "three";
 import { EffectComposer, RenderPass } from "three-stdlib";
-import { getOutlinePass } from "../effects/outline";
+import { createOutlinePass } from "../effects/outline";
 
 const subsetOfTHREE = {
   Vector2,
@@ -78,7 +78,7 @@ function createBasicScene({
   const renderPass = new RenderPass(scene, camera);
   composer.addPass(renderPass);
 
-  const outlinePass = getOutlinePass(scene, camera);
+  const outlinePass = createOutlinePass(scene, camera);
   composer.addPass(outlinePass);
 
   const light = new AmbientLight(0xffffff, 4);
