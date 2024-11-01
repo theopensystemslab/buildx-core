@@ -70,7 +70,7 @@ class GestureManager {
   private movementPlaneY = new Plane(new Vector3(1, 0, 0), 0); // The plane for Y tracking
   private originalPosition = new Vector3(); // Original position of the object being dragged
 
-  private enableOutlining: boolean = true;
+  private enableOutlining: boolean;
 
   constructor(params: {
     domElement: HTMLElement;
@@ -87,6 +87,7 @@ class GestureManager {
     onDragProgress?: DragHandler;
     onDragEnd?: () => void;
     onRightClick?: TapHandler;
+    enableOutlining?: boolean;
   }) {
     this.domElement = params.domElement;
     this.camera = params.camera;
@@ -105,6 +106,8 @@ class GestureManager {
     this.onDragEnd = params.onDragEnd;
 
     this.onRightClick = params.onRightClick;
+
+    this.enableOutlining = params.enableOutlining ?? true;
 
     this.attachEventListeners();
 
@@ -394,6 +397,36 @@ class GestureManager {
     this.gestureEnabledObjects = this.gestureEnabledObjects.filter(
       (obj) => obj !== object
     );
+  }
+
+  dispose() {
+    // Remove all event listeners
+    this.domElement.removeEventListener(
+      "pointerdown",
+      this.onPointerDown.bind(this)
+    );
+    this.domElement.removeEventListener(
+      "pointerup",
+      this.onPointerUp.bind(this)
+    );
+    this.domElement.removeEventListener(
+      "pointermove",
+      this.onPointerMove.bind(this)
+    );
+    this.domElement.removeEventListener(
+      "contextmenu",
+      this.onContextMenu.bind(this)
+    );
+    window.removeEventListener("resize", this.onResize.bind(this));
+
+    // Clear timeouts
+    if (this.tapTimeoutId) clearTimeout(this.tapTimeoutId);
+    if (this.longTapTimeoutId) clearTimeout(this.longTapTimeoutId);
+
+    // Clear references
+    this.gestureEnabledObjects = [];
+    this.currentGestureObject = null;
+    this.cleanup();
   }
 }
 
