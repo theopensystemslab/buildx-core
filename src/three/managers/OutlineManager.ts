@@ -63,6 +63,13 @@ class OutlineManager {
       this.outlinePass.selectedObjects = [];
     }
   }
+
+  dispose() {
+    // Clear references
+    this.selectedBrush = null;
+    this.hoveredBrush = null;
+    this.outlinePass.selectedObjects = [];
+  }
 }
 
 export default OutlineManager;

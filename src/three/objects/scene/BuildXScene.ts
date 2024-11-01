@@ -39,7 +39,7 @@ import {
 import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
 // @ts-ignore
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
-import { getOutlinePass } from "../../effects/outline";
+import { createOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
 import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
@@ -106,6 +106,8 @@ class BuildXScene extends Scene {
   siteBoundary: SiteBoundary | null;
 
   private container: HTMLElement;
+
+  private animationFrameId: number | null = null;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -306,13 +308,14 @@ class BuildXScene extends Scene {
     const renderPass = new RenderPass(this, camera);
     this.composer.addPass(renderPass);
 
-    this.outlinePass = getOutlinePass(this, camera);
+    this.outlinePass = createOutlinePass(this, camera);
 
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
 
     this.composer.addPass(this.outlinePass);
 
+    console.log("new outline manager");
     this.outlineManager = new OutlineManager(this, this.outlinePass);
 
     this.handleResize();
@@ -430,7 +433,7 @@ class BuildXScene extends Scene {
     const delta = this.clock.getDelta();
     this.cameraControls.update(delta);
     this.composer.render();
-    requestAnimationFrame(() => this.animate());
+    this.animationFrameId = requestAnimationFrame(() => this.animate());
   }
 
   handleResize() {
@@ -504,14 +507,50 @@ class BuildXScene extends Scene {
   }
 
   dispose() {
+    // Cancel animation frame first
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+
+    // First, clean up managers
+    if (this.gestureManager) {
+      this.gestureManager.dispose();
+      this.gestureManager = undefined;
+    }
+
+    if (this.outlineManager) {
+      this.outlineManager.dispose();
+      this.outlineManager = undefined;
+    }
+
+    // Then clean up scene objects
     this.traverse((child) => {
       if (child instanceof Mesh) {
         child.geometry.dispose();
-        child.material.dispose();
+        if (Array.isArray(child.material)) {
+          child.material.forEach((m) => m.dispose());
+        } else {
+          child.material.dispose();
+        }
       }
     });
+
+    // Clean up composer and its passes
+    if (this.composer) {
+      // Clean up passes first
+      this.composer.passes.forEach((pass) => {
+        if ("dispose" in pass && typeof pass.dispose === "function") {
+          pass.dispose();
+        }
+      });
+
+      // Clear the passes array
+      this.composer.passes = [];
+    }
+
     this.renderer.dispose();
-    window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener("resize", this.handleResize.bind(this));
   }
 }
 

@@ -398,6 +398,36 @@ class GestureManager {
       (obj) => obj !== object
     );
   }
+
+  dispose() {
+    // Remove all event listeners
+    this.domElement.removeEventListener(
+      "pointerdown",
+      this.onPointerDown.bind(this)
+    );
+    this.domElement.removeEventListener(
+      "pointerup",
+      this.onPointerUp.bind(this)
+    );
+    this.domElement.removeEventListener(
+      "pointermove",
+      this.onPointerMove.bind(this)
+    );
+    this.domElement.removeEventListener(
+      "contextmenu",
+      this.onContextMenu.bind(this)
+    );
+    window.removeEventListener("resize", this.onResize.bind(this));
+
+    // Clear timeouts
+    if (this.tapTimeoutId) clearTimeout(this.tapTimeoutId);
+    if (this.longTapTimeoutId) clearTimeout(this.longTapTimeoutId);
+
+    // Clear references
+    this.gestureEnabledObjects = [];
+    this.currentGestureObject = null;
+    this.cleanup();
+  }
 }
 
 export default GestureManager;
