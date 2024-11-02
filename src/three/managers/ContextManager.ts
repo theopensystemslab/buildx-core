@@ -181,7 +181,7 @@ class ContextManager {
                       ...buildingHouseGroup.managers.cuts.settings,
                       rowIndex: null,
                     });
-                    buildingHouseGroup.managers.cuts?.createObjectCuts(
+                    buildingHouseGroup.managers.cuts?.createClippedBrushes(
                       activeLayoutGroup
                     );
                     buildingHouseGroup.managers.cuts?.showAppropriateBrushes(
@@ -203,12 +203,13 @@ class ContextManager {
                       ...cuts.settings,
                       rowIndex,
                     });
-                    cuts?.createObjectCuts(activeLayoutGroup);
-                    cuts?.showClippedBrushes(activeLayoutGroup);
+                    cuts?.createClippedBrushes(activeLayoutGroup);
+                    cuts?.showAppropriateBrushes(activeLayoutGroup);
 
                     xStretch?.initData?.alts?.forEach(({ layoutGroup }) => {
                       if (layoutGroup === activeLayoutGroup) return;
-                      cuts?.createObjectCuts(layoutGroup);
+                      cuts?.createClippedBrushes(layoutGroup);
+                      cuts?.showAppropriateBrushes(layoutGroup);
                     });
                   })
                 );

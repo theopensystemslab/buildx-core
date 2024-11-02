@@ -1,6 +1,12 @@
 import { A, O, compareProps, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { BoxGeometry, DoubleSide, MeshBasicMaterial, Object3D } from "three";
+import {
+  BoxGeometry,
+  DoubleSide,
+  MeshBasicMaterial,
+  Object3D,
+  Vector3,
+} from "three";
 import { ADDITION, Brush, Evaluator } from "three-bvh-csg";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ModuleGroup } from "../objects/house/ModuleGroup";
@@ -22,39 +28,59 @@ class CutsManager {
     y?: Brush;
     z?: Brush;
   };
-  private brush: O.Option<Brush>;
+  private brush: Brush | null;
   settings: {
     x: boolean;
     z: boolean;
     rowIndex: number | null;
   };
-  debugged: boolean;
+  private debugTimeout?: NodeJS.Timeout;
+  private debuggedBrush?: Brush;
+  private debug: boolean = false;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
     this.clippingBrushes = {};
-    this.brush = O.none;
+    this.brush = null;
     this.settings = {
       rowIndex: null,
       x: false,
       z: false,
     };
-    this.debugged = false;
+  }
+
+  setDebug(enabled: boolean) {
+    this.debug = enabled;
   }
 
   debugClippingBrush() {
-    pipe(
-      this.brush,
-      O.map((brush) => {
-        if (this.debugged) {
-          this.houseGroup.scene?.remove(brush);
-          this.debugged = false;
-        } else {
-          this.houseGroup.scene?.add(brush);
-          this.debugged = true;
+    if (!this.debug) return;
+
+    if (this.brush) {
+      if (this.debugTimeout) {
+        clearTimeout(this.debugTimeout);
+        this.debugTimeout = undefined;
+      }
+
+      if (this.debuggedBrush) {
+        console.log(`removing ${this.debuggedBrush.id}`);
+        this.houseGroup.scene?.remove(this.debuggedBrush);
+        this.debuggedBrush = undefined;
+      }
+
+      console.log(`adding ${this.brush.id}`);
+      this.houseGroup.scene?.add(this.brush);
+      this.debuggedBrush = this.brush;
+
+      this.debugTimeout = setTimeout(() => {
+        if (this.debuggedBrush) {
+          console.log(`removing ${this.debuggedBrush.id}`);
+          this.houseGroup.scene?.remove(this.debuggedBrush);
+          this.debuggedBrush = undefined;
         }
-      })
-    );
+        this.debugTimeout = undefined;
+      }, 500);
+    }
   }
 
   private createClippingBrushX() {
@@ -173,9 +199,10 @@ class CutsManager {
     );
   }
 
-  private createClippedBrushes(object: Object3D) {
+  createClippedBrushes(object: Object3D) {
     pipe(
       this.brush,
+      O.fromNullable,
       O.map((brush) => {
         object.traverse((node) => {
           if (node instanceof ModuleGroup) {
@@ -212,6 +239,7 @@ class CutsManager {
     } else {
       this.showFullBrushes(object);
     }
+    this.debugClippingBrush();
   }
 
   setClippingBrush(settings: typeof this.settings) {
@@ -219,19 +247,19 @@ class CutsManager {
 
     const { x, z, rowIndex } = settings;
 
-    this.brush = O.none;
+    let nextBrush: O.Option<Brush> = O.none;
 
     if (x) {
-      this.brush = this.createClippingBrushX();
+      nextBrush = this.createClippingBrushX();
     }
     if (z) {
-      this.brush = pipe(
+      nextBrush = pipe(
         this.createClippingBrushZ(),
         O.match(
-          () => this.brush,
+          () => nextBrush,
           (brushZ) =>
             pipe(
-              this.brush,
+              nextBrush,
               O.match(
                 () => brushZ,
                 (brushX) => evaluator.evaluate(brushX, brushZ, ADDITION)
@@ -241,14 +269,15 @@ class CutsManager {
         )
       );
     }
+
     if (rowIndex !== null) {
-      this.brush = pipe(
+      nextBrush = pipe(
         this.createClippingBrushY(rowIndex),
         O.match(
-          () => this.brush,
+          () => nextBrush,
           (brushY) =>
             pipe(
-              this.brush,
+              nextBrush,
               O.match(
                 () => brushY,
                 (brushXZ) => evaluator.evaluate(brushXZ, brushY, ADDITION)
@@ -260,13 +289,25 @@ class CutsManager {
     }
 
     pipe(
-      this.brush,
-      O.map((brush) => {
-        brush.rotateY(this.houseGroup.rotation.y);
-        brush.position.add(this.houseGroup.position);
+      nextBrush,
+      O.match(
+        () => {
+          this.brush = null;
+        },
+        (brush) => {
+          this.brush = brush;
 
-        brush.updateMatrixWorld();
-      })
+          this.brush.rotation.y = this.houseGroup.rotation.y;
+
+          this.brush.position.applyAxisAngle(
+            new Vector3(0, 1, 0),
+            this.houseGroup.rotation.y
+          );
+          this.brush.position.add(this.houseGroup.position);
+
+          this.brush.updateMatrixWorld();
+        }
+      )
     );
   }
 
@@ -307,18 +348,10 @@ class CutsManager {
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
-        this.createObjectCuts(activeLayoutGroup);
+        this.createClippedBrushes(activeLayoutGroup);
         this.showAppropriateBrushes(activeLayoutGroup);
       })
     );
-  }
-
-  createObjectCuts(object: Object3D) {
-    const brush = this.brush;
-
-    if (brush !== null) {
-      this.createClippedBrushes(object);
-    }
   }
 
   cycleClippingBrush() {

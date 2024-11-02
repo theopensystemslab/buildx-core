@@ -28,7 +28,7 @@ pipe(
   cachedHouseTypesTE,
   TE.chain(
     flow(
-      A.lookup(2),
+      A.lookup(0),
       TE.fromOption(() => Error())
     )
   ),
@@ -47,9 +47,6 @@ pipe(
     window.addEventListener("keydown", (ev) => {
       if (ev.key === "m") {
         scene.contextManager?.contextUp();
-      }
-      if (ev.key === "d") {
-        houseGroup.managers.cuts?.debugClippingBrush();
       }
       if (ev.key === "x") {
         houseGroup.managers.cuts?.toggleXCut();
