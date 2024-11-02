@@ -45,6 +45,27 @@ pipe(
         });
       }
 
+      if (key === "x") {
+        scene.traverse((node) => {
+          if (node instanceof HouseGroup) {
+            node.managers.cuts?.toggleXCut();
+            node.managers.cuts?.createClippedBrushes(node);
+            node.managers.cuts?.showAppropriateBrushes(node);
+            // node.managers.cuts?.syncActiveLayout();
+          }
+        });
+      }
+      if (key === "z") {
+        scene.traverse((node) => {
+          if (node instanceof HouseGroup) {
+            node.managers.cuts?.toggleZCut();
+            node.managers.cuts?.createClippedBrushes(node);
+            // node.managers.cuts?.syncActiveLayout();
+            node.managers.cuts?.showAppropriateBrushes(node);
+          }
+        });
+      }
+
       if (numbers.includes(Number(key))) {
         pipe(
           houseTypes,

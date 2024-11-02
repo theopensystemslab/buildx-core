@@ -73,7 +73,7 @@ class XStretchManager implements StretchManager {
                   TE.map((layoutGroup) => {
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
-                    this.houseGroup.managers.cuts?.createObjectCuts(
+                    this.houseGroup.managers.cuts?.createClippedBrushes(
                       layoutGroup
                     );
                     this.houseGroup.managers.cuts?.showAppropriateBrushes(
@@ -223,9 +223,12 @@ class XStretchManager implements StretchManager {
     nextIndex: number
   ) {
     if (this.houseGroup.managers.layouts && this.houseGroup.managers.cuts) {
-      this.houseGroup.managers.cuts.showAppropriateBrushes(
-        nextLayout.layoutGroup
-      );
+      // this.houseGroup.managers.cuts.createClippedBrushes(
+      //   nextLayout.layoutGroup
+      // );
+      // this.houseGroup.managers.cuts.showAppropriateBrushes(
+      //   nextLayout.layoutGroup
+      // );
       this.houseGroup.managers.layouts.activeLayoutGroup =
         nextLayout.layoutGroup;
       this.progressData!.currentLayoutIndex = nextIndex;
