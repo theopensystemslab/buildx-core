@@ -1,6 +1,12 @@
 import { A, O, compareProps, someOrError } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { BoxGeometry, DoubleSide, MeshBasicMaterial, Object3D } from "three";
+import {
+  BoxGeometry,
+  DoubleSide,
+  MeshBasicMaterial,
+  Object3D,
+  Vector3,
+} from "three";
 import { ADDITION, Brush, Evaluator } from "three-bvh-csg";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { ModuleGroup } from "../objects/house/ModuleGroup";
@@ -30,7 +36,7 @@ class CutsManager {
   };
   private debugTimeout?: NodeJS.Timeout;
   private debuggedBrush?: Brush;
-  private debug: boolean = true;
+  private debug: boolean = false;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
@@ -291,8 +297,14 @@ class CutsManager {
         (brush) => {
           this.brush = brush;
 
-          this.brush.rotateY(this.houseGroup.rotation.y);
+          this.brush.rotation.y = this.houseGroup.rotation.y;
+
+          this.brush.position.applyAxisAngle(
+            new Vector3(0, 1, 0),
+            this.houseGroup.rotation.y
+          );
           this.brush.position.add(this.houseGroup.position);
+
           this.brush.updateMatrixWorld();
         }
       )
