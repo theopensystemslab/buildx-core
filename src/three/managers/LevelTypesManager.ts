@@ -63,7 +63,9 @@ class LevelTypesManager {
                 layoutGroup.updateBBs();
 
                 // Apply cuts and brushes
-                this.houseGroup.managers.cuts?.createObjectCuts(layoutGroup);
+                this.houseGroup.managers.cuts?.createClippedBrushes(
+                  layoutGroup
+                );
                 this.houseGroup.managers.cuts?.showAppropriateBrushes(
                   layoutGroup
                 );

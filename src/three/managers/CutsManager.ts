@@ -28,7 +28,7 @@ class CutsManager {
     z: boolean;
     rowIndex: number | null;
   };
-  debugged: boolean;
+  debugged: boolean = false;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
@@ -39,7 +39,6 @@ class CutsManager {
       x: false,
       z: false,
     };
-    this.debugged = false;
   }
 
   debugClippingBrush() {
@@ -173,7 +172,7 @@ class CutsManager {
     );
   }
 
-  private createClippedBrushes(object: Object3D) {
+  createClippedBrushes(object: Object3D) {
     pipe(
       this.brush,
       O.map((brush) => {
@@ -307,18 +306,10 @@ class CutsManager {
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
-        this.createObjectCuts(activeLayoutGroup);
+        this.createClippedBrushes(activeLayoutGroup);
         this.showAppropriateBrushes(activeLayoutGroup);
       })
     );
-  }
-
-  createObjectCuts(object: Object3D) {
-    const brush = this.brush;
-
-    if (brush !== null) {
-      this.createClippedBrushes(object);
-    }
   }
 
   cycleClippingBrush() {
