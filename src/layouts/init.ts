@@ -251,6 +251,7 @@ export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
     A.flatten
   );
 };
+
 export const positionRows = A.reduceWithIndex(
   [],
   (rowIndex, acc: PositionedRow[], row: Row) => {
@@ -267,6 +268,7 @@ export const positionRows = A.reduceWithIndex(
     return [...acc, { ...row, rowIndex: rowIndex, y }];
   }
 );
+
 export const createRowLayout = (rowsMatrix: BuildModule[][]): PositionedRow[] =>
   pipe(rowsMatrix, A.map(createRow), positionRows);
 

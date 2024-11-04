@@ -27,7 +27,8 @@
     "build-examples": "npm run clean && tsc && vite build --mode examples",
     "preview": "vite preview",
     "prepare": "npm run build",
-    "test": "vitest"
+    "test": "vitest",
+    "slides": "npx @marp-team/marp-cli@latest -s ./slides"
   },
   "repository": {
     "type": "git",
