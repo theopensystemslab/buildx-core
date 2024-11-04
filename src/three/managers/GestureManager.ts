@@ -147,6 +147,7 @@ class GestureManager {
 
     if (intersects.length > 0) {
       const intersection = intersects[0];
+      this.gestureStarted = true;
       this.onRightClick?.(intersection, new Vector2(ev.clientX, ev.clientY));
     }
   }
@@ -262,7 +263,7 @@ class GestureManager {
       this.currentGestureObject
     ) {
       this.onDragEnd?.();
-    } else if (!this.pointerMoved) {
+    } else if (!this.pointerMoved && _event.button === 0) {
       if (duration < this.longTapThreshold) {
         this.tapCount++;
         if (this.tapCount === 1) {
