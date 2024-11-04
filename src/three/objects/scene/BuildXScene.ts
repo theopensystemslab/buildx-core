@@ -63,6 +63,17 @@ CameraControls.install({ THREE: subsetOfTHREE });
 
 const CAMERA_DISTANCE = 15;
 
+const getDefaultContainer = () => {
+  const container = document.createElement("div");
+  container.style.position = "absolute";
+  container.style.width = "100%";
+  container.style.height = "100%";
+  container.style.top = "0";
+  container.style.left = "0";
+  document.body.appendChild(container);
+  return container;
+};
+
 type BuildXSceneConfig = {
   canvas?: HTMLCanvasElement;
   enableGestures?: boolean;
@@ -115,7 +126,7 @@ class BuildXScene extends Scene {
     this.siteBoundary = null;
 
     const {
-      container = document.body,
+      container = getDefaultContainer(),
       canvas,
       enableGestures = true,
       enableOutlining = true,
@@ -159,7 +170,7 @@ class BuildXScene extends Scene {
     if (enableShadows) this.renderer.shadowMap.enabled = true;
 
     if (!canvas) {
-      document.body.appendChild(this.renderer.domElement);
+      container.appendChild(this.renderer.domElement);
     }
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
