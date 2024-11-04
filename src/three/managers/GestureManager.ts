@@ -168,37 +168,35 @@ class GestureManager {
       -((event.clientY - this.domRect.top) / this.domRect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    const ix1 = this.raycaster.intersectObjects(this.gestureEnabledObjects);
+    const intersects = this.raycaster
+      .intersectObjects(this.gestureEnabledObjects)
+      .filter((x) => {
+        if (
+          x.object instanceof StretchHandleMesh ||
+          x.object instanceof RotateHandleMesh
+        ) {
+          return x.object.visible;
+        }
+        if (x.object instanceof ElementBrush) {
+          return (
+            x.object.visible &&
+            x.object.elementGroup.visible &&
+            x.object.moduleGroup.visible &&
+            x.object.rowGroup.visible &&
+            x.object.columnGroup.visible &&
+            x.object.columnLayoutGroup.visible
+          );
+        } else {
+          return false;
+        }
+      });
 
-    const ix2 = ix1.filter((x) => {
-      if (
-        x.object instanceof StretchHandleMesh ||
-        x.object instanceof RotateHandleMesh
-      ) {
-        return x.object.visible;
-      }
-      if (x.object instanceof ElementBrush) {
-        return (
-          x.object.visible &&
-          x.object.elementGroup.visible &&
-          x.object.moduleGroup.visible &&
-          x.object.rowGroup.visible &&
-          x.object.columnGroup.visible &&
-          x.object.columnLayoutGroup.visible
-        );
-      } else {
-        return false;
-      }
-    });
-
-    // console.log({ ix1, ix2 });
-
-    if (ix2.length > 0) {
+    if (intersects.length > 0) {
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
-      this.currentGestureObject = ix2[0].object;
+      this.currentGestureObject = intersects[0].object;
       this.gestureStarted = true; // Set the gesture started flag
-      const intersectionPoint = ix2[0].point;
+      const intersectionPoint = intersects[0].point;
       this.movementPlaneXZ.setFromNormalAndCoplanarPoint(
         new Vector3(0, 1, 0),
         intersectionPoint
