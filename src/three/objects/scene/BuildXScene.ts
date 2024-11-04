@@ -315,7 +315,6 @@ class BuildXScene extends Scene {
 
     this.composer.addPass(this.outlinePass);
 
-    console.log("new outline manager");
     this.outlineManager = new OutlineManager(this, this.outlinePass);
 
     this.handleResize();
@@ -445,7 +444,6 @@ class BuildXScene extends Scene {
     this.cameraControls.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.composer.setSize(width, height);
-    console.log("resize", width, height);
   }
 
   addObject(object: Object3D, options?: { gestures: boolean }) {
