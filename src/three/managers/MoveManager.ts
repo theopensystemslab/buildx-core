@@ -1,7 +1,6 @@
 import { Vector3 } from "three";
 import { HouseGroup } from "../objects/house/HouseGroup";
-import { AABB_OFFSET } from "../objects/house/ColumnLayoutGroup";
-
+import { AABB_OFFSET } from "@/constants";
 const MOVEMENT_THRESHOLD = AABB_OFFSET / 2;
 
 class MoveManager {

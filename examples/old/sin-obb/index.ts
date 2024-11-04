@@ -1,7 +1,7 @@
 import { AxesHelper, Matrix3, Matrix4, Vector3 } from "three";
 import { OBB } from "three-stdlib";
-import createBasicScene from "../../src/three/utils/createBasicScene";
-import OBBMesh from "../../src/three/objects/OBBMesh";
+import createBasicScene from "../../../src/three/utils/createBasicScene";
+import OBBMesh from "../../../src/three/objects/OBBMesh";
 
 const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
 

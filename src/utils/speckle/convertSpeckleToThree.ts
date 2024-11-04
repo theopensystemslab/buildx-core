@@ -1,3 +1,4 @@
+// inspired by Speckle's object loader
 import { BufferGeometry, BufferAttribute, Vector3 } from "three";
 
 type InputData = {
@@ -219,7 +220,7 @@ export const convertSpeckleToThree = (input: InputData): BufferGeometry => {
       // Quad or N-gon face
       const triangulation = triangulateFace(k, input.faces, input.vertices);
       indices.push(
-        ...triangulation.filter(el => {
+        ...triangulation.filter((el) => {
           return el !== undefined;
         })
       );
