@@ -2,14 +2,14 @@ import Airtable from "airtable";
 import { TE } from "./functions";
 
 // Access the environment variable with import.meta.env
-const apiKey = import.meta.env.VITE_AIRTABLE_API_KEY;
+const accessToken = import.meta.env.VITE_AIRTABLE_ACCESS_TOKEN;
 
-if (!apiKey) {
+if (!accessToken) {
   throw new Error("Airtable API key is not defined in environment variables.");
 }
 
 Airtable.configure({
-  apiKey,
+  apiKey: accessToken,
 });
 
 const airtable = new Airtable();
