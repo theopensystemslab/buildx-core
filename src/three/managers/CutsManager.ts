@@ -63,18 +63,15 @@ class CutsManager {
       }
 
       if (this.debuggedBrush) {
-        console.log(`removing ${this.debuggedBrush.id}`);
         this.houseGroup.scene?.remove(this.debuggedBrush);
         this.debuggedBrush = undefined;
       }
 
-      console.log(`adding ${this.brush.id}`);
       this.houseGroup.scene?.add(this.brush);
       this.debuggedBrush = this.brush;
 
       this.debugTimeout = setTimeout(() => {
         if (this.debuggedBrush) {
-          console.log(`removing ${this.debuggedBrush.id}`);
           this.houseGroup.scene?.remove(this.debuggedBrush);
           this.debuggedBrush = undefined;
         }
