@@ -155,17 +155,17 @@ const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> = pipe(
 );
 
 export const defaultModuleGroupCreator = ({
-  moduleIndex,
+  moduleIndex = 0,
   buildModule,
-  z,
-  flip,
+  z = 0,
+  flip = false,
   getBuildModelTE = getCachedModelTE,
   materialGettersTE = defaultMaterialGettersTE,
 }: {
-  moduleIndex: number;
+  moduleIndex?: number;
   buildModule: BuildModule;
-  z: number;
-  flip: boolean;
+  z?: number;
+  flip?: boolean;
   getBuildModelTE?: typeof getCachedModelTE;
   materialGettersTE?: typeof defaultMaterialGettersTE;
 }): TE.TaskEither<Error, ModuleGroup> => {
