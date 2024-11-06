@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "0.7.0-canary.4",
+  "version": "0.7.0-canary.6",
   "type": "module",
   "exports": {
     ".": {
@@ -48,6 +48,7 @@
     "core-js": "^3.37.1",
     "d3-dsv": "^3.0.1",
     "dat.gui": "^0.7.9",
+    "deep-equal": "^2.2.3",
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
     "fp-ts": "^2.16.8",
