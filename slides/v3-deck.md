@@ -62,3 +62,7 @@ So how is a house built in BuildX?
 - example
 
 ---
+
+# Let's look at a manager class
+
+- example
