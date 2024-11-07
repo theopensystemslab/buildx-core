@@ -19,9 +19,39 @@ class ElementsManager {
   overrides: Record<string, string> = {};
   private categories: Map<string, boolean> = new Map();
 
-  constructor(houseGroup: HouseGroup) {
+  constructor(
+    houseGroup: HouseGroup,
+    activeElementMaterials: Record<string, string> = {}
+  ) {
     this.houseGroup = houseGroup;
     this.updateCategories();
+    this.initializeElementMaterials(activeElementMaterials);
+  }
+
+  private initializeElementMaterials(
+    activeElementMaterials: Record<string, string>
+  ) {
+    Object.entries(activeElementMaterials).forEach(([ifcTag, materialSpec]) => {
+      const material = unsafeGetMaterialBySpec(materialSpec);
+      const threeMaterial = getThreeMaterial(material);
+
+      this.houseGroup.traverse((node) => {
+        if (
+          node instanceof ElementGroup &&
+          node.userData.element.ifcTag === ifcTag
+        ) {
+          node.traverse((child) => {
+            if (child instanceof FullElementBrush) {
+              child.material = threeMaterial;
+            } else if (child instanceof ClippedElementBrush) {
+              child.material = [threeMaterial, clippingMaterial];
+            }
+          });
+        }
+      });
+
+      this.overrides[ifcTag] = materialSpec;
+    });
   }
 
   setElementMaterial(ifcTag: string, materialSpec: string) {
@@ -44,6 +74,8 @@ class ElementsManager {
     });
 
     this.overrides[ifcTag] = materialSpec;
+
+    this.houseGroup.updateDB();
   }
 
   getCurrentElementMaterial(ifcTag: string) {

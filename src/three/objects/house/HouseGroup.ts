@@ -57,6 +57,7 @@ export class HouseGroup extends Group {
     position = { x: 0, y: 0, z: 0 },
     rotation = 0,
     managers = {},
+    activeElementMaterials = {},
   }: {
     userData: HouseGroupUserData;
     initialColumnLayoutGroup: ColumnLayoutGroup;
@@ -64,6 +65,7 @@ export class HouseGroup extends Group {
     position?: { x: number; y: number; z: number };
     rotation?: number;
     managers?: Partial<Managers>;
+    activeElementMaterials?: Record<string, string>;
   }) {
     super();
     this.userData = userData;
@@ -71,7 +73,8 @@ export class HouseGroup extends Group {
     this.add(initialColumnLayoutGroup);
 
     this.managers = {
-      elements: managers.elements ?? new ElementsManager(this),
+      elements:
+        managers.elements ?? new ElementsManager(this, activeElementMaterials),
       move: managers.move ?? new MoveManager(this),
       rotate: managers.rotate ?? new RotateManager(this),
       layouts: managers.layouts ?? new LayoutsManager(this),
@@ -175,6 +178,7 @@ export class HouseGroup extends Group {
       position,
       rotation: { y: rotation },
       activeLayoutGroup,
+      managers: { elements },
     } = this;
 
     return pipe(
@@ -191,7 +195,7 @@ export class HouseGroup extends Group {
           return {
             systemId,
             houseId,
-            activeElementMaterials: {},
+            activeElementMaterials: elements?.overrides ?? {},
             dnas,
             friendlyName,
             houseTypeId,

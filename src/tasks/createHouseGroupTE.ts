@@ -18,6 +18,7 @@ type HouseGroupParams = {
   position?: { x: number; y: number; z: number };
   rotation?: number;
   managers?: Partial<HouseGroupManagers>;
+  activeElementMaterials?: Record<string, string>;
 };
 
 const createHouseGroupTE = ({
@@ -29,6 +30,7 @@ const createHouseGroupTE = ({
   position,
   rotation,
   managers = {},
+  activeElementMaterials,
 }: HouseGroupParams): TE.TaskEither<Error, HouseGroup> => {
   return pipe(
     friendlyName,
@@ -51,6 +53,7 @@ const createHouseGroupTE = ({
               position,
               rotation,
               managers,
+              activeElementMaterials,
             })
           )
         )
