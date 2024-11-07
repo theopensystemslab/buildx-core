@@ -1,9 +1,14 @@
 {
   "systems": [
     {
-      "id": "speckle-skylark",
-      "name": "WikiHouse Skylark",
+      "id": "skylark-v0.2",
+      "name": "Skylark 0.2",
       "airtableId": "app9duJc6vjuA9b8m"
+    },
+    {
+      "id": "skylark-v1.0",
+      "name": "Skylark 1.0",
+      "airtableId": "appGyeTqCSfY5JDif"
     }
   ]
 }
