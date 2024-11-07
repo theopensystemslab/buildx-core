@@ -50,6 +50,8 @@ export class ElementGroup extends Group {
 
     this.clippedBrush.geometry.applyMatrix4(this.matrixWorld.invert());
     this.clippedBrush.updateMatrixWorld();
+    this.clippedBrush.geometry.computeVertexNormals();
+    this.clippedBrush.castShadow = true;
   }
 
   showClippedBrush() {
