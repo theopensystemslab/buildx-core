@@ -97,6 +97,8 @@ type BuildXSceneConfig = {
   onHouseDelete?: (houseId: string) => void;
   onModeChange?: (prev: SceneContextMode, next: SceneContextMode) => void;
   container?: HTMLElement;
+  orbitMode?: boolean;
+  orbitSpeed?: number;
 };
 
 class BuildXScene extends Scene {
@@ -119,6 +121,9 @@ class BuildXScene extends Scene {
   private container: HTMLElement;
 
   private animationFrameId: number | null = null;
+
+  private orbitMode: boolean;
+  private orbitSpeed: number;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -145,6 +150,8 @@ class BuildXScene extends Scene {
       onHouseDelete,
       onModeChange,
       cameraOpts = {},
+      orbitMode = false,
+      orbitSpeed = 0.05,
     } = config;
 
     this.container = container;
@@ -328,6 +335,13 @@ class BuildXScene extends Scene {
 
     this.outlineManager = new OutlineManager(this, this.outlinePass);
 
+    this.orbitMode = orbitMode;
+    this.orbitSpeed = orbitSpeed;
+
+    if (this.orbitMode) {
+      this.enableOrbitMode();
+    }
+
     this.handleResize();
     window.addEventListener("resize", () => this.handleResize());
 
@@ -441,6 +455,25 @@ class BuildXScene extends Scene {
 
   animate() {
     const delta = this.clock.getDelta();
+
+    if (this.orbitMode) {
+      // Calculate new position using CAMERA_DISTANCE to maintain fixed radius
+      const angle = this.clock.getElapsedTime() * this.orbitSpeed;
+      const x = Math.cos(angle) * CAMERA_DISTANCE * 2;
+      const z = Math.sin(angle) * CAMERA_DISTANCE * 2;
+
+      // Update camera position, maintaining the same height
+      this.cameraControls.setLookAt(
+        x,
+        CAMERA_DISTANCE, // Use fixed height instead of pos.y
+        z,
+        0,
+        0,
+        0,
+        true // Force immediate update
+      );
+    }
+
     this.cameraControls.update(delta);
     this.composer.render();
     this.animationFrameId = requestAnimationFrame(() => this.animate());
@@ -560,6 +593,22 @@ class BuildXScene extends Scene {
 
     this.renderer.dispose();
     window.removeEventListener("resize", this.handleResize.bind(this));
+  }
+
+  private enableOrbitMode() {
+    // Disable normal camera controls
+    this.cameraControls.enabled = false;
+
+    // Position camera at a fixed point
+    this.cameraControls.setLookAt(
+      CAMERA_DISTANCE,
+      CAMERA_DISTANCE,
+      CAMERA_DISTANCE,
+      0,
+      0,
+      0,
+      true // Force immediate update
+    );
   }
 }
 
