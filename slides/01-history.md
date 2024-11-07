@@ -11,13 +11,11 @@ theme: default
 
 _(March 2021 - Jan 2022)_
 
-- `ModuleLayout` with cell widths, heights, lengths
-- `localStorage` instead of IndexedDB
+- `ModuleLayout` requires uniformly-lengthed columns
+- localStorage instead of IndexedDB
 - custom AABB `Box3` based collisions code (buggy?)
-- fairly heavy `valtio` usage and React Context for state
-  - bridged contexts for R3F compatibility
-- heavy R3F usage
-- `SiteHouse` holy shit
+- competing state management solutions (r3f, react context bridging, valtio, three)
+- `SiteHouse` component is a monolith
 
 ---
 
@@ -27,10 +25,10 @@ _(March 2021 - Jan 2022)_
 
 _(Feb - July 2022)_
 
-- uses Next.js instead of Vite
+- Next.js instead of Vite
 - `StretchedColumns`
-- dashboard page
-- download page
+- dashboard page (old version of "analyse" page)
+- download page (old version of "build" page)
 - no x-stretch; z-stretch uses simple white mesh and loaders a lot
 
 ---
@@ -41,8 +39,8 @@ _(Sep 2022 - Dec 2023)_
 
 ### deployment: [build.wikihouse.cc](https://build.wikihouse.cc)
 
-- indexeddb for caching (maybe see that old miro)
-- workers
+- IndexedDB for caching (maybe see that old miro)
+- workers overkill
 - analyse and build pages
 - collisions - OBB’s, centering houses; still laying them out from front to back but then centering with a parenting group, for the sake of OBB’s and rotating about actual center
 - x-stretch
@@ -56,6 +54,7 @@ _(Sep 2022 - Dec 2023)_
 
 _(Jan 2024 - Present)_
 
-- capped cuts (csg)
-- R3F completely ripped out
+- separation of core and app code
+- R3F finally ripped out completely
+- capped cuts with [three-bvh-csg](https://github.com/gkjohnson/three-bvh-csg)
 - optional manager classes for most (all?) interactions

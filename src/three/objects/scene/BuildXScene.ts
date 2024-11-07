@@ -257,6 +257,7 @@ class BuildXScene extends Scene {
                 const normalizedDelta = delta
                   .clone()
                   .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
+
                 stretchManager.gestureProgress(
                   stretchManager instanceof XStretchManager
                     ? normalizedDelta.x
