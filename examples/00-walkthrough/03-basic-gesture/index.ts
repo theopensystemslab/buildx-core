@@ -11,7 +11,7 @@ import {
   Scene,
   WebGLRenderer,
 } from "three";
-import GestureManager from "./GestureManager";
+import GestureManager from "./hover-log/GestureManager";
 
 // Initialize CameraControls with subset
 CameraControls.install({ THREE: THREE });
