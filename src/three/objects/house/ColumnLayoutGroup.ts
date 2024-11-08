@@ -25,8 +25,7 @@ import { ColumnGroup, defaultColumnGroupCreator } from "./ColumnGroup";
 import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup, ModuleGroupUserData } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
-
-export const AABB_OFFSET = 2;
+import { AABB_OFFSET } from "@/constants";
 
 const obbMaterial = new MeshBasicMaterial({
   color: "blue",
