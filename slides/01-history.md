@@ -11,11 +11,11 @@ theme: default
 
 _(March 2021 - Jan 2022)_
 
-- `ModuleLayout` requires uniformly-lengthed columns
-- localStorage instead of IndexedDB
-- custom AABB `Box3` based collisions code (buggy?)
 - competing state management solutions (r3f, react context bridging, valtio, three)
+- `ModuleLayout` requires uniformly-lengthed columns
 - `SiteHouse` component is a monolith
+- localStorage instead of IndexedDB
+- custom AABB based collisions code (buggy?)
 
 ---
 
@@ -45,6 +45,7 @@ _(Sep 2022 - Dec 2023)_
 - collisions - OBB’s, centering houses; still laying them out from front to back but then centering with a parenting group, for the sake of OBB’s and rotating about actual center
 - x-stretch
 - no loaders for interactions (fast)
+- trpc
 
 ---
 
