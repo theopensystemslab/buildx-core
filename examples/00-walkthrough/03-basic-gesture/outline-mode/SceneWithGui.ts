@@ -1,3 +1,4 @@
+import { SceneContextModeLabel } from "@/three/managers/ContextManager";
 import CameraControls from "camera-controls";
 import * as dat from "dat.gui";
 import {
@@ -5,15 +6,14 @@ import {
   Clock,
   DirectionalLight,
   PerspectiveCamera,
+  Raycaster,
   Scene,
   Vector2,
   WebGLRenderer,
 } from "three";
-import { EffectComposer } from "three-stdlib";
-import { OutlinePass } from "three-stdlib";
-import { RenderPass } from "three-stdlib";
+import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import { GUIConfig, GUIManager } from "./GUIManager";
 import OutlineManager from "./OutlineManager";
-import { SceneContextModeLabel } from "@/three/managers/ContextManager";
 
 class SceneWithGui extends Scene {
   camera: PerspectiveCamera;
@@ -21,8 +21,11 @@ class SceneWithGui extends Scene {
   cameraControls: CameraControls;
   clock: Clock;
   outlineManager: OutlineManager;
-  private gui: dat.GUI;
+  private outlineModeGui: dat.GUI;
   private composer: EffectComposer;
+  private guiManagers: GUIManager<any>[] = [];
+  private raycaster: Raycaster;
+  private mouse: Vector2;
 
   constructor() {
     super();
@@ -32,14 +35,16 @@ class SceneWithGui extends Scene {
     this.cameraControls = this.createCameraControls();
     this.composer = this.createComposer();
     this.outlineManager = this.createOutlineManager();
-    this.gui = this.createGui();
+    this.outlineModeGui = this.createGui();
+    this.raycaster = new Raycaster();
+    this.mouse = new Vector2();
 
     this.setupLights();
     this.setupEventListeners();
   }
 
   private createRenderer(): WebGLRenderer {
-    const renderer = new WebGLRenderer();
+    const renderer = new WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     return renderer;
@@ -111,7 +116,22 @@ class SceneWithGui extends Scene {
 
   private setupEventListeners(): void {
     window.addEventListener("resize", this.handleResize);
+    window.addEventListener("mousemove", this.handleMouseMove);
   }
+
+  private handleMouseMove = (event: MouseEvent) => {
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.children, true);
+
+    if (intersects.length > 0) {
+      this.outlineManager.setHoveredObject(intersects[0].object);
+    } else {
+      this.outlineManager.setHoveredObject(null);
+    }
+  };
 
   public animate(): void {
     const delta = this.clock.getDelta();
@@ -122,9 +142,11 @@ class SceneWithGui extends Scene {
   }
 
   public dispose(): void {
-    this.gui.destroy();
+    this.guiManagers.forEach((manager) => manager.dispose());
+    this.outlineModeGui.destroy();
     this.outlineManager.dispose();
     window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener("mousemove", this.handleMouseMove);
     this.renderer.dispose();
   }
 
@@ -137,6 +159,11 @@ class SceneWithGui extends Scene {
     this.renderer.setSize(width, height);
     this.composer.setSize(width, height);
   };
+
+  public initializeGUI<T>(config: GUIConfig<T>) {
+    const manager = new GUIManager(this, config);
+    this.guiManagers.push(manager);
+  }
 }
 
 export default SceneWithGui;
