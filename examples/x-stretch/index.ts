@@ -3,7 +3,8 @@ import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import { TE } from "@/utils/functions";
 import { addNumkeyHouseCreateListeners } from "@@/examples/utils";
 import { flow } from "fp-ts/lib/function";
-import MovingBookendsManager from "./MovingBookendsManager";
+import MovingHandlesManager from "./MovingHandlesManager";
+import XStretchManager from "@/three/managers/XStretchManager";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
@@ -21,7 +22,7 @@ addNumkeyHouseCreateListeners(
         managers: { ...managers, xStretch: undefined },
       }),
     TE.map((x) => {
-      x.managers.xStretch = new MovingBookendsManager(x);
+      x.managers.xStretch = new MovingHandlesManager(x) as XStretchManager;
       return x;
     })
   )

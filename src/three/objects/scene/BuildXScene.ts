@@ -4,7 +4,6 @@ import ContextManager, {
 } from "@/three/managers/ContextManager";
 import GestureManager, { DragDetail } from "@/three/managers/GestureManager";
 import OutlineManager from "@/three/managers/OutlineManager";
-import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
 import { Polygon } from "geojson";
 import {
@@ -52,6 +51,10 @@ import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
 import SiteBoundary from "./SiteBoundary";
+import {
+  AbstractXStretchManager,
+  AbstractZStretchManager,
+} from "@/three/managers/AbstractStretchManagers";
 
 const subsetOfTHREE = {
   Vector2,
@@ -264,11 +267,13 @@ class BuildXScene extends Scene {
                   .clone()
                   .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
 
-                stretchManager.gestureProgress(
-                  stretchManager instanceof XStretchManager
-                    ? normalizedDelta.x
-                    : normalizedDelta.z
-                );
+                if (stretchManager instanceof AbstractZStretchManager) {
+                  stretchManager.gestureProgress(normalizedDelta.z);
+                }
+
+                if (stretchManager instanceof AbstractXStretchManager) {
+                  stretchManager.gestureProgress(normalizedDelta.x);
+                }
               };
 
               dragEnd = () => {

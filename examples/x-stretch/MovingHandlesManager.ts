@@ -1,12 +1,11 @@
 import { HouseGroup } from "@/index";
-import StretchManager from "@/three/managers/StretchManager";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
+import { AbstractXStretchManager } from "@/three/managers/AbstractStretchManagers";
 
-class MovingBookendsManager implements StretchManager {
-  houseGroup: HouseGroup;
+class MovingHandlesManager extends AbstractXStretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   initData?: {
@@ -20,7 +19,7 @@ class MovingBookendsManager implements StretchManager {
   };
 
   constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+    super(houseGroup);
     this.handles = [
       new StretchHandleGroup({ axis: "x", side: -1, manager: this }),
       new StretchHandleGroup({ axis: "x", side: 1, manager: this }),
@@ -55,9 +54,6 @@ class MovingBookendsManager implements StretchManager {
   gestureProgress(delta: number) {
     if (!this.initData || !this.startData) return;
 
-    const { initialWidth, minWidth, maxWidth } = this.initData;
-    const { side } = this.startData;
-
     // Calculate potential new width
     const halfDelta = delta / 2;
     const [handleLeft, handleRight] = this.handles;
@@ -65,18 +61,6 @@ class MovingBookendsManager implements StretchManager {
     // Move handles symmetrically
     handleLeft.position.x -= halfDelta;
     handleRight.position.x += halfDelta;
-
-    // Update layout width (this will be expanded in future versions)
-    pipe(
-      this.houseGroup.activeLayoutGroup,
-      O.map((activeLayoutGroup) => {
-        const newWidth = Math.max(
-          minWidth,
-          Math.min(maxWidth, initialWidth + side * delta)
-        );
-        activeLayoutGroup.scale.x = newWidth / initialWidth;
-      })
-    );
   }
 
   gestureEnd() {
@@ -92,4 +76,4 @@ class MovingBookendsManager implements StretchManager {
   }
 }
 
-export default MovingBookendsManager;
+export default MovingHandlesManager;
