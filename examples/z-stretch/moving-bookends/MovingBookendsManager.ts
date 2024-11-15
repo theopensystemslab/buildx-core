@@ -78,6 +78,8 @@ class MovingBookendsManager extends AbstractZStretchManager {
   hideHandles() {
     this.handles.forEach(hideObject);
   }
+
+  cleanup(): void {}
 }
 
 export default MovingBookendsManager;

@@ -265,6 +265,8 @@ class VanillaPreparingManager extends AbstractZStretchManager {
     context.fillText(text, 64, 32);
     return new CanvasTexture(canvas);
   }
+
+  cleanup(): void {}
 }
 
 export default VanillaPreparingManager;

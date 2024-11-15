@@ -74,6 +74,8 @@ class MovingHandlesManager extends AbstractXStretchManager {
   hideHandles() {
     this.handles.forEach(hideObject);
   }
+
+  cleanup(): void {}
 }
 
 export default MovingHandlesManager;
