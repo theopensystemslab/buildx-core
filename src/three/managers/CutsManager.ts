@@ -16,7 +16,7 @@ export const evaluator = new Evaluator();
 const PAD = 5;
 
 export const clippingMaterial = new MeshBasicMaterial({
-  color: "white",
+  color: "red",
   side: DoubleSide,
 });
 

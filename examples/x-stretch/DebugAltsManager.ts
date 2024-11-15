@@ -1,7 +1,7 @@
 import { HouseGroup, SectionType } from "@/index";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
-import { A, O, S, TE } from "@/utils/functions";
+import { A, E, O, S, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { AbstractXStretchManager } from "@/three/managers/AbstractStretchManagers";
 import {
@@ -28,6 +28,8 @@ class DebugAltsManager extends AbstractXStretchManager {
   startData?: {
     side: 1 | -1;
   };
+
+  alts: Array<AltSectionTypeLayout> = [];
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -69,6 +71,7 @@ class DebugAltsManager extends AbstractXStretchManager {
           getAltSectionTypeLayouts({ systemId, layout, sectionType }),
           TE.chain(
             flow(
+              A.takeLeft(1),
               A.traverseWithIndex(TE.ApplicativePar)(
                 (i, { layout, sectionType }) =>
                   pipe(
@@ -78,20 +81,11 @@ class DebugAltsManager extends AbstractXStretchManager {
                       layout,
                     }),
                     TE.map((layoutGroup) => {
-                      if (i === 0) throw new Error("eh");
                       this.houseGroup.add(layoutGroup);
                       layoutGroup.position.z +=
                         i * layoutGroup.userData.depth +
                         this.houseGroup.unsafeActiveLayoutGroup.userData.depth;
                       layoutGroup.updateBBs();
-                      this.houseGroup.managers.cuts?.updateClippingBrush();
-                      this.houseGroup.managers.cuts?.createClippedBrushes(
-                        this.houseGroup
-                      );
-                      this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                        this.houseGroup
-                      );
-                      console.log(`call ${i}`);
                       return { layoutGroup, sectionType };
                     })
                   )
@@ -115,10 +109,18 @@ class DebugAltsManager extends AbstractXStretchManager {
       TE.flatten
     );
   }
+
   gestureStart(side: 1 | -1) {
     this.startData = { side };
     this.houseGroup.managers.zStretch?.hideHandles();
-    this.getCreateAltsTE()();
+    this.getCreateAltsTE()().then((x) => {
+      pipe(
+        x,
+        E.map((xs) => {
+          this.alts = xs;
+        })
+      );
+    });
   }
 
   gestureProgress(delta: number) {
@@ -135,6 +137,12 @@ class DebugAltsManager extends AbstractXStretchManager {
 
   gestureEnd() {
     this.houseGroup.managers.zStretch?.showHandles();
+
+    for (let { layoutGroup } of this.alts) {
+      this.houseGroup.managers.cuts?.updateClippingBrush();
+      this.houseGroup.managers.cuts?.createClippedBrushes(layoutGroup);
+      this.houseGroup.managers.cuts?.showAppropriateBrushes(layoutGroup);
+    }
   }
 
   showHandles() {
