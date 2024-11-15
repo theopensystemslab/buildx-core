@@ -60,8 +60,6 @@ class DebugAltsManager extends AbstractXStretchManager {
   getCreateAltsTE(): TE.TaskEither<Error, Array<AltSectionTypeLayout>> {
     const { systemId } = this.houseGroup.userData;
 
-    console.log("get create alts te");
-
     return pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -80,16 +78,18 @@ class DebugAltsManager extends AbstractXStretchManager {
                       layout,
                     }),
                     TE.map((layoutGroup) => {
+                      if (i === 0) throw new Error("eh");
                       this.houseGroup.add(layoutGroup);
                       layoutGroup.position.z +=
                         i * layoutGroup.userData.depth +
                         this.houseGroup.unsafeActiveLayoutGroup.userData.depth;
                       layoutGroup.updateBBs();
+                      this.houseGroup.managers.cuts?.updateClippingBrush();
                       this.houseGroup.managers.cuts?.createClippedBrushes(
-                        layoutGroup
+                        this.houseGroup
                       );
                       this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                        layoutGroup
+                        this.houseGroup
                       );
                       console.log(`call ${i}`);
                       return { layoutGroup, sectionType };

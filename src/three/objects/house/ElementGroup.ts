@@ -1,17 +1,24 @@
+import { BuildElement } from "@/data/build-systems";
+import { evaluator } from "@/three/managers/CutsManager";
 import { ThreeMaterial } from "@/three/materials/types";
 import { hideObject, showObject } from "@/three/utils/layers";
-import { BufferGeometry, Group, NormalBufferAttributes } from "three";
+import { O } from "@/utils/functions";
+import {
+  BoxGeometry,
+  BufferGeometry,
+  Group,
+  NormalBufferAttributes,
+} from "three";
 import { Brush, SUBTRACTION } from "three-bvh-csg";
+import BuildXScene from "../scene/BuildXScene";
 import { ScopeElement } from "../types";
 import { ColumnGroup } from "./ColumnGroup";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { HouseGroup } from "./HouseGroup";
 import { ModuleGroup } from "./ModuleGroup";
 import { RowGroup } from "./RowGroup";
-import { evaluator } from "@/three/managers/CutsManager";
-import BuildXScene from "../scene/BuildXScene";
-import { BuildElement } from "@/data/build-systems";
-import { O } from "@/utils/functions";
+
+let debuggingUuid: string | null = null;
 
 export class ElementGroup extends Group {
   userData: {
@@ -28,8 +35,61 @@ export class ElementGroup extends Group {
     this.fullBrush = fullBrush;
   }
 
+  private logBrushDetails(brush: Brush, label: string = "") {
+    console.log(`=== Brush Details ${label} ===`);
+    console.log("Position:", {
+      x: brush.position.x,
+      y: brush.position.y,
+      z: brush.position.z,
+    });
+    console.log("Rotation:", {
+      x: brush.rotation.x,
+      y: brush.rotation.y,
+      z: brush.rotation.z,
+    });
+    console.log("Scale:", {
+      x: brush.scale.x,
+      y: brush.scale.y,
+      z: brush.scale.z,
+    });
+    console.log("Matrix:", brush.matrix.elements);
+
+    if (brush.geometry instanceof BoxGeometry) {
+      const parameters = brush.geometry.parameters;
+      console.log("Geometry parameters:", {
+        width: parameters.width,
+        height: parameters.height,
+        depth: parameters.depth,
+      });
+    } else {
+      console.log("Geometry type:", brush.geometry.constructor.name);
+      console.log("Geometry bounds:", brush.geometry.boundingBox);
+    }
+  }
+
   createClippedBrush(clippingBrush: Brush) {
     if (!this.fullBrush) return;
+
+    const dna = "XXS-MID-R2-GRID2-01-ST0-L0-SIDE0-SIDE0-END0-TOP0";
+
+    const shouldLog =
+      this.userData.element.category === "Structure" &&
+      this.moduleGroup.userData.module.dna === dna;
+
+    if (shouldLog && debuggingUuid === null) {
+      debuggingUuid = this.uuid;
+    }
+
+    const debug = debuggingUuid === this.uuid;
+
+    if (debug) {
+      console.log(
+        `=== Creating Clipped Brush for ElementGroup ${this.uuid} ===`
+      );
+      console.log(this.userData.element);
+      this.logBrushDetails(this.fullBrush, "Full Brush");
+      this.logBrushDetails(clippingBrush, "Clipping Brush");
+    }
 
     if (this.clippedBrush) {
       this.clippedBrush.removeFromParent();
@@ -41,6 +101,13 @@ export class ElementGroup extends Group {
 
     this.fullBrush.updateMatrixWorld();
 
+    if (debug) {
+      console.log(
+        "Before CSG operation - Element Matrix World:",
+        this.matrixWorld.elements
+      );
+    }
+
     evaluator.evaluate(
       this.fullBrush,
       clippingBrush,
@@ -48,7 +115,16 @@ export class ElementGroup extends Group {
       this.clippedBrush
     );
 
+    if (debug) {
+      this.logBrushDetails(this.clippedBrush, "After CSG");
+    }
+
     this.clippedBrush.geometry.applyMatrix4(this.matrixWorld.invert());
+
+    if (debug) {
+      this.logBrushDetails(this.clippedBrush, "Final State");
+    }
+
     this.clippedBrush.updateMatrixWorld();
     this.clippedBrush.geometry.computeVertexNormals();
     this.clippedBrush.castShadow = true;

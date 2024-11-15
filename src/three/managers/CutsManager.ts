@@ -36,7 +36,7 @@ class CutsManager {
   };
   private debugTimeout?: NodeJS.Timeout;
   private debuggedBrush?: Brush;
-  private debug: boolean = false;
+  private debug: boolean = true;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
@@ -169,7 +169,6 @@ class CutsManager {
           ),
           O.map((rowHeight) => {
             const width = halfSize.x * 2 + PAD;
-
             const height = halfSize.y * 2 + PAD;
             const depth = 999;
 
@@ -293,15 +292,12 @@ class CutsManager {
         },
         (brush) => {
           this.brush = brush;
-
           this.brush.rotation.y = this.houseGroup.rotation.y;
-
           this.brush.position.applyAxisAngle(
             new Vector3(0, 1, 0),
             this.houseGroup.rotation.y
           );
           this.brush.position.add(this.houseGroup.position);
-
           this.brush.updateMatrixWorld();
         }
       )
@@ -390,6 +386,10 @@ class CutsManager {
     const nextIndex = (currentIndex + 1) % settings.length;
     const nextSetting = settings[nextIndex];
     this.setClippingBrush(nextSetting);
+  }
+
+  updateClippingBrush() {
+    this.setClippingBrush(this.settings);
   }
 }
 
