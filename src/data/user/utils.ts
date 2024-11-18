@@ -12,17 +12,16 @@ import userCache, {
   defaultProjectData,
   getDefaultProjectData,
   PROJECT_DATA_KEY,
-  ProjectData,
 } from "./cache";
 import { houseParser } from "./houses";
 import { polygonGeometryParser } from "./polygon";
 
-export const useProjectData = (): ProjectData =>
+export const useProjectData = () =>
   useLiveQuery(
-    () => userCache.projectData.get(PROJECT_DATA_KEY) as Promise<ProjectData>,
-    [],
-    defaultProjectData as ProjectData
-  );
+    () => userCache.projectData.get(PROJECT_DATA_KEY),
+    [PROJECT_DATA_KEY],
+    defaultProjectData
+  ) ?? defaultProjectData;
 
 export const useProjectCurrency = () => {
   const { region } = useProjectData();

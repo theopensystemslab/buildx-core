@@ -1,6 +1,6 @@
 import Dexie from "dexie";
-import { House } from "./houses";
 import { Polygon } from "geojson";
+import { House } from "./houses";
 
 export const PROJECT_DATA_KEY = "PROJECT_DATA_KEY";
 
@@ -10,15 +10,16 @@ export type ProjectData = {
   region: "UK" | "EU";
   polygon: Polygon | null;
   shareUrlPayload: string | null;
-  lastSaved: number;
+  lastSaved: number | null;
 };
 
-export const defaultProjectData: Omit<ProjectData, "lastSaved"> = {
+export const defaultProjectData: ProjectData = {
   key: PROJECT_DATA_KEY,
-  projectName: "My BuildX Project",
+  projectName: "New Project",
   region: "UK",
   polygon: null,
   shareUrlPayload: null,
+  lastSaved: null,
 };
 
 export const getDefaultProjectData = (): ProjectData => {
@@ -56,10 +57,12 @@ class UserCache extends Dexie {
 
 const userCache = new UserCache();
 
-userCache.projectData.get(PROJECT_DATA_KEY).then((x) => {
-  if (typeof x === "undefined") {
-    userCache.projectData.put(getDefaultProjectData());
+// Initialize default data when database is created
+(async () => {
+  const existing = await userCache.projectData.get(PROJECT_DATA_KEY);
+  if (!existing) {
+    await userCache.projectData.put(getDefaultProjectData());
   }
-});
+})();
 
 export default userCache;
