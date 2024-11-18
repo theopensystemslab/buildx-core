@@ -17,7 +17,12 @@ const subscriber = ({
   projectData,
 }: Awaited<ReturnType<typeof querier>>) => {
   const polygon = projectData?.polygon ?? null;
-  const encodedShareUrlPayload = encodeShareUrlPayload({ houses, polygon });
+  const projectName = `Copy of ` + (projectData?.projectName ?? "New Project");
+  const encodedShareUrlPayload = encodeShareUrlPayload({
+    houses,
+    polygon,
+    projectName,
+  });
 
   if (encodedShareUrlPayload !== projectData?.shareUrlPayload) {
     updateShareUrlPayload(encodedShareUrlPayload);

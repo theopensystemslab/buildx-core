@@ -88,6 +88,7 @@ export const decodeShareUrlPayload = flow(
   z.object({
     houses: z.array(houseParser).nullish().default([]),
     polygon: polygonGeometryParser.nullish().default(null),
+    projectName: z.string().default("Copy of New Project"),
   }).parse
 );
 
