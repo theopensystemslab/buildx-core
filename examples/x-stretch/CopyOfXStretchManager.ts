@@ -106,6 +106,8 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   init() {
+    this.cleanup();
+
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
@@ -252,10 +254,19 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
-    // check alts
-    // check if current active visible layout group is in alts
-    // remove parent of all other alts
-    // delete the initData, startData, progressData
+    // Remove all alternative layouts except the active one
+    if (this.initData?.alts) {
+      this.initData.alts.forEach(({ layoutGroup }) => {
+        if (layoutGroup !== this.houseGroup.unsafeActiveLayoutGroup) {
+          this.houseGroup.remove(layoutGroup);
+        }
+      });
+    }
+
+    // Reset all state data
+    this.initData = undefined;
+    this.startData = undefined;
+    this.progressData = undefined;
   }
 }
 
