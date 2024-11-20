@@ -231,8 +231,10 @@ class CutsManager {
     const { rowIndex, x, z } = this.settings;
 
     if (rowIndex !== null || x || z) {
+      console.log(`showing clipped`);
       this.showClippedBrushes(object);
     } else {
+      console.log(`showing full`);
       this.showFullBrushes(object);
     }
     this.debugClippingBrush();

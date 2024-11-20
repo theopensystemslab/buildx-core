@@ -73,13 +73,13 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                     layoutGroup.name = `alt-${sectionType.code}-${layoutGroup.uuid}`;
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
-                    console.log(`createAlts cuts ${sectionType.code}`);
-                    this.houseGroup.managers.cuts?.createClippedBrushes(
-                      layoutGroup
-                    );
-                    this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                      layoutGroup
-                    );
+                    // console.log(`createAlts cuts ${sectionType.code}`);
+                    // this.houseGroup.managers.cuts?.createClippedBrushes(
+                    //   layoutGroup
+                    // );
+                    // this.houseGroup.managers.cuts?.showAppropriateBrushes(
+                    //   layoutGroup
+                    // );
                     hideObject(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
@@ -142,6 +142,13 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
               children: this.houseGroup.children.filter(
                 (x) => x instanceof ColumnLayoutGroup
               ),
+            });
+
+            alts.forEach((alt) => {
+              console.log(`createAlts cuts ${alt.sectionType.code}`);
+              this.houseGroup.managers.cuts?.createClippedBrushes(
+                alt.layoutGroup
+              );
             });
 
             this.progressData = {
@@ -233,6 +240,14 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     nextIndex: number
   ) {
     if (this.houseGroup.managers.layouts) {
+      console.log(`show appropriate brushes ${nextLayout.sectionType.code}`);
+
+      this.houseGroup.managers.cuts?.createClippedBrushes(
+        nextLayout.layoutGroup
+      );
+      this.houseGroup.managers.cuts?.showAppropriateBrushes(
+        nextLayout.layoutGroup
+      );
       this.houseGroup.managers.layouts.activeLayoutGroup =
         nextLayout.layoutGroup;
       this.progressData!.currentLayoutIndex = nextIndex;
