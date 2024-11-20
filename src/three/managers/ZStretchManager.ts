@@ -187,6 +187,7 @@ class ZStretchManager extends AbstractZStretchManager {
             break;
           }
 
+          console.log(`ZStretchManager - vanilla column createClippedBrushes`);
           this.houseGroup.managers.cuts?.createClippedBrushes(column);
           orderedColumns.push(column);
         }
@@ -223,6 +224,7 @@ class ZStretchManager extends AbstractZStretchManager {
             break;
           }
 
+          console.log(`ZStretchManager + vanilla column createClippedBrushes`);
           this.houseGroup.managers.cuts?.createClippedBrushes(column);
           orderedColumns.push(column);
         }
@@ -389,7 +391,9 @@ class ZStretchManager extends AbstractZStretchManager {
       })
     );
 
+    console.log(`XStretch init from ZStretch gestureEnd`);
     this.houseGroup.managers.xStretch?.init();
+    this.houseGroup.managers.xStretch?.showHandles();
 
     // this.cleanup();
 
@@ -397,6 +401,7 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   showVanillaColumn(column: ColumnGroup) {
+    console.log(`showVanillaColumn`);
     this.houseGroup.managers.cuts?.showAppropriateBrushes(column);
     showObject(column);
   }

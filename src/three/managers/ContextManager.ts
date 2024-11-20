@@ -177,6 +177,7 @@ class ContextManager {
                 pipe(
                   buildingHouseGroup.activeLayoutGroup,
                   O.map((activeLayoutGroup) => {
+                    console.log("ContextManager pop row cut");
                     buildingHouseGroup.managers.cuts?.setClippingBrush({
                       ...buildingHouseGroup.managers.cuts.settings,
                       rowIndex: null,
@@ -202,18 +203,13 @@ class ContextManager {
                 pipe(
                   activeLayoutGroup,
                   O.map((activeLayoutGroup) => {
+                    console.log(`ContextManager drill into row ${rowIndex}`);
                     cuts?.setClippingBrush({
                       ...cuts.settings,
                       rowIndex,
                     });
                     cuts?.createClippedBrushes(activeLayoutGroup);
                     cuts?.showAppropriateBrushes(activeLayoutGroup);
-
-                    // xStretch?.initData?.alts?.forEach(({ layoutGroup }) => {
-                    //   if (layoutGroup === activeLayoutGroup) return;
-                    //   cuts?.createClippedBrushes(layoutGroup);
-                    //   cuts?.showAppropriateBrushes(layoutGroup);
-                    // });
                   })
                 );
               }
