@@ -132,6 +132,9 @@ class ZStretchManager extends AbstractZStretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
+    const { xStretch } = this.houseGroup.managers;
+    xStretch?.hideHandles();
+
     const {
       startColumn,
       endColumn,

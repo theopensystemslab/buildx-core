@@ -39,6 +39,10 @@ export const addNumkeyHouseCreateListeners = (
             })
           )();
         }
+
+        if (key === "m") {
+          scene.contextManager?.contextUp();
+        }
       });
     })
   )();

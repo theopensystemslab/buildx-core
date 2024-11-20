@@ -16,7 +16,7 @@ export const evaluator = new Evaluator();
 const PAD = 5;
 
 export const clippingMaterial = new MeshBasicMaterial({
-  color: "red",
+  color: "white",
   side: DoubleSide,
 });
 
@@ -36,7 +36,7 @@ class CutsManager {
   };
   private debugTimeout?: NodeJS.Timeout;
   private debuggedBrush?: Brush;
-  private debug: boolean = true;
+  private debug: boolean = false;
 
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
