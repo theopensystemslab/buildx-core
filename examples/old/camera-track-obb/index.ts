@@ -1,5 +1,4 @@
 import { createBasicScene } from "@/index";
-import GroundCircle from "@/three/objects/GroundCircle";
 import OBBMesh from "@/three/objects/OBBMesh";
 import { cameraFrameOBB2 } from "@/three/utils/camera";
 import { PI, floor, random } from "@/utils/math";
@@ -19,9 +18,6 @@ import PngSnapshotsWorker from "./png-snapshots.worker?worker";
 const snapshotWorker = new PngSnapshotsWorker();
 
 const { addObjectToScene, scene, renderer, camera } = createBasicScene();
-
-const groundCircle = new GroundCircle();
-addObjectToScene(groundCircle);
 
 const halfSize = new Vector3(1.5, 1, 2);
 const center = new Vector3(-3, 1, -1);

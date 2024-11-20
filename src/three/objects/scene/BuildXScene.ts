@@ -61,7 +61,7 @@ const subsetOfTHREE = {
 
 CameraControls.install({ THREE: subsetOfTHREE });
 
-const CAMERA_DISTANCE = 15;
+export const defaultCamPos: [number, number, number] = [-12, 24, -12];
 
 const getDefaultContainer = () => {
   const container = document.createElement("div");
@@ -382,14 +382,7 @@ class BuildXScene extends Scene {
   }
 
   resetCamera() {
-    this.cameraControls.setLookAt(
-      CAMERA_DISTANCE,
-      CAMERA_DISTANCE,
-      CAMERA_DISTANCE,
-      0,
-      0,
-      0
-    );
+    this.cameraControls.setLookAt(...defaultCamPos, 0, 0, 0);
   }
 
   enableGroundObjects() {
@@ -397,7 +390,7 @@ class BuildXScene extends Scene {
     const groundCircleGeometry = new CircleGeometry(500, 32);
     const groundCircleMaterial = new MeshBasicMaterial({
       side: DoubleSide,
-      color: 0xd1d1c7,
+      color: 0xdddddd,
     });
     const groundCircle = new Mesh(groundCircleGeometry, groundCircleMaterial);
     groundCircle.position.set(0, -0.05, 0);
@@ -419,8 +412,8 @@ class BuildXScene extends Scene {
     // RectangularGrid
     const xAxis = { cells: 61, size: 1 };
     const zAxis = { cells: 61, size: 1 };
-    const color = 0x888888;
-    const opacity = 1;
+    const color = 0x000000;
+    const opacity = 0.18;
 
     const gridGeometry = new BufferGeometry();
     const vertices: number[][] = [];
@@ -459,14 +452,15 @@ class BuildXScene extends Scene {
 
     if (this.orbitMode) {
       // Calculate new position using CAMERA_DISTANCE to maintain fixed radius
+      const [x0, y, z0] = defaultCamPos;
       const angle = this.clock.getElapsedTime() * this.orbitSpeed;
-      const x = Math.cos(angle) * CAMERA_DISTANCE * 2;
-      const z = Math.sin(angle) * CAMERA_DISTANCE * 2;
+      const x = Math.cos(angle) * x0 * 2;
+      const z = Math.sin(angle) * z0 * 2;
 
       // Update camera position, maintaining the same height
       this.cameraControls.setLookAt(
         x,
-        CAMERA_DISTANCE, // Use fixed height instead of pos.y
+        y, // Use fixed height instead of pos.y
         z,
         0,
         0,
@@ -602,9 +596,7 @@ class BuildXScene extends Scene {
 
     // Position camera at a fixed point
     this.cameraControls.setLookAt(
-      CAMERA_DISTANCE,
-      CAMERA_DISTANCE,
-      CAMERA_DISTANCE,
+      ...defaultCamPos,
       0,
       0,
       0,
