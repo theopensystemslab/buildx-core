@@ -36,7 +36,13 @@ import {
   Vector4,
   WebGLRenderer,
 } from "three";
-import { EffectComposer, OutlinePass, RenderPass } from "three-stdlib";
+import {
+  EffectComposer,
+  FXAAShader,
+  OutlinePass,
+  RenderPass,
+  ShaderPass,
+} from "three-stdlib";
 // @ts-ignore
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
 import { createOutlinePass } from "../../effects/outline";
@@ -328,11 +334,18 @@ class BuildXScene extends Scene {
     this.composer.addPass(renderPass);
 
     this.outlinePass = createOutlinePass(this, camera);
+    this.composer.addPass(this.outlinePass);
 
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
 
-    this.composer.addPass(this.outlinePass);
+    // FXAA after output pass (following Three.js examples)
+    const fxaaPass = new ShaderPass(FXAAShader);
+    fxaaPass.material.uniforms["resolution"].value.x =
+      1 / (container.clientWidth * window.devicePixelRatio);
+    fxaaPass.material.uniforms["resolution"].value.y =
+      1 / (container.clientHeight * window.devicePixelRatio);
+    this.composer.addPass(fxaaPass);
 
     this.outlineManager = new OutlineManager(this, this.outlinePass);
 
