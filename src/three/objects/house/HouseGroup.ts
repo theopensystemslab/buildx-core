@@ -93,7 +93,7 @@ export class HouseGroup extends Group {
     this.rotation.setFromVector3(new Vector3(0, rotation, 0));
 
     this.updateBBs();
-    this.updateElementMeshes();
+    this.updateElementBrushes();
   }
 
   get friendlyName(): string {
@@ -213,7 +213,7 @@ export class HouseGroup extends Group {
     }
   }
 
-  updateElementMeshes() {
+  updateElementBrushes() {
     this.elementBrushes.clear();
     this.traverse((object) => {
       if (object instanceof ElementGroup) {
@@ -224,7 +224,7 @@ export class HouseGroup extends Group {
           object.getVisibleBrush(),
           O.map((brush) => {
             if (!this.elementBrushes.has(ifcTag)) {
-              this.elementBrushes.set(ifcTag, []);
+              this.elementBrushes.set(ifcTag, [brush]);
             } else {
               this.elementBrushes.get(ifcTag)!.push(brush);
             }

@@ -23,6 +23,7 @@ class SceneWithGui extends Scene {
   outlineManager: OutlineManager;
   private outlineModeGui: dat.GUI;
   private composer: EffectComposer;
+  private outlinePass: OutlinePass;
   private guiManagers: GUIManager<any>[] = [];
   private raycaster: Raycaster;
   private mouse: Vector2;
@@ -33,6 +34,7 @@ class SceneWithGui extends Scene {
     this.camera = this.createCamera();
     this.clock = new Clock();
     this.cameraControls = this.createCameraControls();
+    this.outlinePass = this.createOutlinePass();
     this.composer = this.createComposer();
     this.outlineManager = this.createOutlineManager();
     this.outlineModeGui = this.createGui();
@@ -68,26 +70,30 @@ class SceneWithGui extends Scene {
     return controls;
   }
 
+  private createOutlinePass(): OutlinePass {
+    this.outlinePass = new OutlinePass(
+      new Vector2(window.innerWidth, window.innerHeight),
+      this,
+      this.camera
+    );
+    this.outlinePass.visibleEdgeColor.set("#ff0000");
+    this.outlinePass.edgeStrength = 3;
+
+    return this.outlinePass;
+  }
+
   private createComposer(): EffectComposer {
     const composer = new EffectComposer(this.renderer);
     const renderPass = new RenderPass(this, this.camera);
     composer.addPass(renderPass);
 
-    const outlinePass = new OutlinePass(
-      new Vector2(window.innerWidth, window.innerHeight),
-      this,
-      this.camera
-    );
-    outlinePass.visibleEdgeColor.set("#ff0000");
-    outlinePass.edgeStrength = 3;
-    composer.addPass(outlinePass);
+    composer.addPass(this.outlinePass);
 
     return composer;
   }
 
   private createOutlineManager(): OutlineManager {
-    const outlinePass = this.composer.passes[1] as OutlinePass;
-    return new OutlineManager(outlinePass);
+    return new OutlineManager(this.outlinePass);
   }
 
   private createGui(): dat.GUI {

@@ -36,6 +36,7 @@ export class GUIManager<T> {
     folder
       .add(params, "selectedSystem", Object.keys(itemsBySystem))
       .onChange((systemId: string) => {
+        this.config.clearScene(this.scene);
         this.updateItemDropdown(folder, params, systemId, itemsBySystem);
       });
 
@@ -65,8 +66,13 @@ export class GUIManager<T> {
       folder.remove(oldControl);
     }
 
+    // Set initial value before creating the control
+    if (systemItems.length > 0) {
+      params.selectedItem = this.config.getDisplayName(systemItems[0]);
+    }
+
     // Add new item dropdown
-    folder
+    const controller = folder
       .add(
         params,
         "selectedItem",
@@ -83,9 +89,9 @@ export class GUIManager<T> {
         }
       });
 
-    // Set initial value
+    // Force the controller to update its display
     if (systemItems.length > 0) {
-      params.selectedItem = this.config.getDisplayName(systemItems[0]);
+      controller.updateDisplay();
       this.config.loadItem(this.scene, systemItems[0]);
     }
   }
