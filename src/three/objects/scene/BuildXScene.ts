@@ -146,7 +146,7 @@ class BuildXScene extends Scene {
       enableGestures = true,
       enableOutlining = true,
       enableLighting = true,
-      enableAxesHelper = true,
+      enableAxesHelper = false,
       enableGroundObjects = true,
       enableShadows = true,
       antialias = true,
