@@ -245,19 +245,28 @@ class ZStretchManager implements StretchManager {
     const { side, bookendColumn, orderedColumns } = this.startData;
 
     if (side === 1) {
-      // Calculate new bookend position
-      const maxZ =
-        orderedColumns[orderedColumns.length - 1].position.z +
-        orderedColumns[orderedColumns.length - 1].userData.depth;
-      const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
-      bookendColumn.position.z = newBookendZ;
+      // Rear side stretching
+      if (delta > 0) {
+        // Stretching outwards
+        const maxZ =
+          orderedColumns[orderedColumns.length - 1].position.z +
+          orderedColumns[orderedColumns.length - 1].userData.depth;
+        const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      } else {
+        // Stretching inwards
+        const minZ =
+          orderedColumns[0].position.z + orderedColumns[0].userData.depth;
+        const newBookendZ = max(minZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      }
 
       // Show/hide columns based on final position
       for (let i = 0; i <= orderedColumns.length - 1; i++) {
         const column = orderedColumns[i];
         const columnEndZ = column.position.z + column.userData.depth;
 
-        if (columnEndZ <= newBookendZ + GRACE) {
+        if (columnEndZ <= bookendColumn.position.z + GRACE) {
           if (!column.visible) {
             this.showVanillaColumn(column);
             this.startData.lastVisibleIndex = i;
@@ -272,18 +281,30 @@ class ZStretchManager implements StretchManager {
     }
 
     if (side === -1) {
-      // Similar logic for the negative side...
-      const minZ = orderedColumns[0].position.z - bookendColumn.userData.depth;
-      const newBookendZ = max(minZ, bookendColumn.position.z + delta);
-      bookendColumn.position.z = newBookendZ;
+      // Front side stretching
+      if (delta < 0) {
+        // Stretching outwards
+        const minZ =
+          orderedColumns[0].position.z - bookendColumn.userData.depth;
+        const newBookendZ = max(minZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      } else {
+        // Stretching inwards
+        const maxZ =
+          orderedColumns[orderedColumns.length - 1].position.z -
+          bookendColumn.userData.depth;
+        const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      }
 
+      // Show/hide columns based on final position
       for (let i = orderedColumns.length - 1; i >= 0; i--) {
         const column = orderedColumns[i];
         const columnStartZ = column.position.z;
 
         if (
           columnStartZ >=
-          newBookendZ + bookendColumn.userData.depth - GRACE
+          bookendColumn.position.z + bookendColumn.userData.depth - GRACE
         ) {
           if (!column.visible) {
             this.showVanillaColumn(column);
