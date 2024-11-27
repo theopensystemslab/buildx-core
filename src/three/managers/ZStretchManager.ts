@@ -48,6 +48,9 @@ class ZStretchManager implements StretchManager {
   }
 
   init() {
+    // Hide handles at the start of initialization
+    this.hideHandles();
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -102,6 +105,9 @@ class ZStretchManager implements StretchManager {
               maxDepth,
               lengthWiseNeighbours,
             };
+
+            // Show handles only after everything is prepared
+            this.showHandles();
           })
         )();
       })
@@ -133,6 +139,8 @@ class ZStretchManager implements StretchManager {
 
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
+
+    this.houseGroup.managers.xStretch?.hideHandles();
 
     const {
       startColumn,
@@ -234,112 +242,57 @@ class ZStretchManager implements StretchManager {
   gestureProgress(delta: number) {
     if (!this.startData) return;
 
-    const {
-      side,
-      bookendColumn,
-      orderedColumns,
-      lastVisibleIndex: visibilityBoundaryIndex,
-    } = this.startData;
-
-    const isValidIndex = (idx: number) =>
-      idx >= 0 && idx < orderedColumns.length;
+    const { side, bookendColumn, orderedColumns } = this.startData;
 
     if (side === 1) {
-      // Stretching outward (delta > 0)
-      const nextInvisibleIdx = visibilityBoundaryIndex + 1;
-      const nextInvisibleColumn = isValidIndex(nextInvisibleIdx)
-        ? orderedColumns[nextInvisibleIdx]
-        : null;
+      // Calculate new bookend position
+      const maxZ =
+        orderedColumns[orderedColumns.length - 1].position.z +
+        orderedColumns[orderedColumns.length - 1].userData.depth;
+      const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
+      bookendColumn.position.z = newBookendZ;
 
-      if (delta > 0) {
-        const maxZ =
-          orderedColumns[orderedColumns.length - 1].position.z +
-          orderedColumns[orderedColumns.length - 1].userData.depth;
-        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
+      // Show/hide columns based on final position
+      for (let i = 0; i <= orderedColumns.length - 1; i++) {
+        const column = orderedColumns[i];
+        const columnEndZ = column.position.z + column.userData.depth;
 
-        if (nextInvisibleColumn) {
-          const targetZ = nextInvisibleColumn.position.z;
-          const bookendZ = bookendColumn.position.z;
-
-          if (bookendZ > targetZ) {
-            this.showVanillaColumn(nextInvisibleColumn);
-            this.startData.lastVisibleIndex++;
+        if (columnEndZ <= newBookendZ + GRACE) {
+          if (!column.visible) {
+            this.showVanillaColumn(column);
+            this.startData.lastVisibleIndex = i;
           }
-        }
-      }
-
-      // Compressing inward (delta < 0)
-      if (delta < 0 && isValidIndex(visibilityBoundaryIndex)) {
-        const currentLastVisible = orderedColumns[visibilityBoundaryIndex];
-        const previousColumnIdx = visibilityBoundaryIndex - 1;
-        const previousColumn = isValidIndex(previousColumnIdx)
-          ? orderedColumns[previousColumnIdx]
-          : null;
-
-        const minZ =
-          orderedColumns[0].position.z + orderedColumns[0].userData.depth;
-        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
-
-        if (previousColumn) {
-          const targetZ =
-            previousColumn.position.z + previousColumn.userData.depth;
-          const bookendZ = bookendColumn.position.z;
-
-          // More eager to compress with GRACE * 2
-          if (bookendZ <= targetZ + GRACE * 2) {
-            hideObject(currentLastVisible);
-            this.startData.lastVisibleIndex--;
+        } else {
+          if (column.visible) {
+            hideObject(column);
+            this.startData.lastVisibleIndex = i - 1;
           }
         }
       }
     }
 
     if (side === -1) {
-      // Stretching outward (delta < 0)
-      const nextInvisibleIdx = visibilityBoundaryIndex - 1;
-      const nextInvisibleColumn = isValidIndex(nextInvisibleIdx)
-        ? orderedColumns[nextInvisibleIdx]
-        : null;
+      // Similar logic for the negative side...
+      const minZ = orderedColumns[0].position.z - bookendColumn.userData.depth;
+      const newBookendZ = max(minZ, bookendColumn.position.z + delta);
+      bookendColumn.position.z = newBookendZ;
 
-      if (delta < 0) {
-        const minZ =
-          orderedColumns[0].position.z - bookendColumn.userData.depth;
-        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
+      for (let i = orderedColumns.length - 1; i >= 0; i--) {
+        const column = orderedColumns[i];
+        const columnStartZ = column.position.z;
 
-        if (nextInvisibleColumn) {
-          const targetZ = nextInvisibleColumn.position.z;
-          const bookendZ =
-            bookendColumn.position.z + bookendColumn.userData.depth;
-
-          if (bookendZ <= targetZ + GRACE) {
-            this.showVanillaColumn(nextInvisibleColumn);
-            this.startData.lastVisibleIndex--;
+        if (
+          columnStartZ >=
+          newBookendZ + bookendColumn.userData.depth - GRACE
+        ) {
+          if (!column.visible) {
+            this.showVanillaColumn(column);
+            this.startData.lastVisibleIndex = i;
           }
-        }
-      }
-
-      // Compressing inward (delta > 0)
-      if (delta > 0 && isValidIndex(visibilityBoundaryIndex)) {
-        const currentFirstVisible = orderedColumns[visibilityBoundaryIndex];
-        const nextColumnIdx = visibilityBoundaryIndex + 1;
-        const nextColumn = isValidIndex(nextColumnIdx)
-          ? orderedColumns[nextColumnIdx]
-          : null;
-
-        const maxZ =
-          orderedColumns[orderedColumns.length - 1].position.z -
-          bookendColumn.userData.depth;
-        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
-
-        if (nextColumn) {
-          const targetZ = nextColumn.position.z;
-          const bookendZ =
-            bookendColumn.position.z + bookendColumn.userData.depth;
-
-          // More eager to compress
-          if (bookendZ > targetZ - GRACE) {
-            hideObject(currentFirstVisible);
-            this.startData.lastVisibleIndex++;
+        } else {
+          if (column.visible) {
+            hideObject(column);
+            this.startData.lastVisibleIndex = i + 1;
           }
         }
       }
@@ -401,6 +354,7 @@ class ZStretchManager implements StretchManager {
     );
 
     this.houseGroup.managers.xStretch?.init();
+    this.houseGroup.managers.xStretch?.showHandles();
 
     // this.cleanup();
 
