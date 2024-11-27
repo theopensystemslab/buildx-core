@@ -39,6 +39,9 @@ class ZStretchManager implements StretchManager {
     lastVisibleIndex: number;
   };
 
+  // Add debug flag as class property
+  private debug: boolean = false;
+
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
     this.handles = [
@@ -48,6 +51,9 @@ class ZStretchManager implements StretchManager {
   }
 
   init() {
+    // Hide handles at the start of initialization
+    this.hideHandles();
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -102,6 +108,9 @@ class ZStretchManager implements StretchManager {
               maxDepth,
               lengthWiseNeighbours,
             };
+
+            // Show handles only after everything is prepared
+            this.showHandles();
           })
         )();
       })
@@ -131,8 +140,30 @@ class ZStretchManager implements StretchManager {
     scene?.add(columnOBBMesh);
   }
 
+  // Modify the debug visualization method to check debug flag
+  private debugVisualizeOBB(obb: OBB, color: string = "red") {
+    if (!this.debug) return;
+
+    const scene = this.houseGroup.scene;
+    if (!scene) return;
+
+    const obbMesh = new OBBMesh(obb);
+    // @ts-ignore
+    obbMesh.material.color.set(color);
+    // @ts-ignore
+    obbMesh.material.opacity = 0.5;
+    // @ts-ignore
+    obbMesh.material.transparent = true;
+    scene.add(obbMesh);
+
+    // Optional: Remove after 5 seconds
+    setTimeout(() => scene.remove(obbMesh), 5000);
+  }
+
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
+
+    this.houseGroup.managers.xStretch?.hideHandles();
 
     const {
       startColumn,
@@ -142,192 +173,192 @@ class ZStretchManager implements StretchManager {
       lengthWiseNeighbours,
     } = this.initData;
 
-    let orderedColumns: ColumnGroup[] = [],
-      lastVisibleIndex: number = -1;
+    let orderedColumns: ColumnGroup[] = [];
+    let visibilityBoundaryIndex: number;
 
-    // place the vanilla columns if there are any
-    if (vanillaColumns.length > 0) {
-      const firstVanillaColumn = vanillaColumns[0];
+    // Setup collision detection
+    const firstVanillaColumn = vanillaColumns[0];
+    const PADDING_MULTIPLIER = 1.75;
+    const FIXED_PADDING = 0.1;
 
-      const halfSize = new Vector3(
-        firstVanillaColumn.userData.width / 2,
-        firstVanillaColumn.userData.height / 2,
-        firstVanillaColumn.userData.depth / 2
-      ).multiplyScalar(1.5);
+    const halfSize = new Vector3(
+      firstVanillaColumn?.userData.width / 2,
+      firstVanillaColumn?.userData.height / 2,
+      firstVanillaColumn?.userData.depth / 2
+    )
+      .multiplyScalar(PADDING_MULTIPLIER)
+      .addScalar(FIXED_PADDING);
 
-      const rotation = new Matrix3().setFromMatrix4(
-        new Matrix4().makeRotationY(this.houseGroup.rotation.y)
-      );
+    const rotation = new Matrix3().setFromMatrix4(
+      new Matrix4().makeRotationY(this.houseGroup.rotation.y)
+    );
 
-      if (side === -1) {
-        for (let i = 0; i < vanillaColumns.length; i++) {
-          const column = vanillaColumns[i];
-          const startDepth = midColumns[0].position.z;
+    // Debug visualize lengthwise neighbors
+    lengthWiseNeighbours.forEach((neighbour) => {
+      this.debugVisualizeOBB(neighbour.unsafeOBB, "blue");
+    });
 
-          const depth =
-            startDepth - i * column.userData.depth - column.userData.depth;
+    if (side === 1) {
+      // Rear side: start with mid columns, then add vanilla columns
+      orderedColumns = [...midColumns];
+      visibilityBoundaryIndex = orderedColumns.length - 1; // Point to last visible column
 
-          column.position.set(0, 0, depth);
+      const startDepth = endColumn.position.z;
 
-          const vanillaColumnOBB = new OBB(
-            column
-              .getWorldPosition(new Vector3())
-              .add(new Vector3(0, 0, column.userData.depth)),
-            halfSize,
-            rotation
-          );
+      // Add vanilla columns (they start hidden)
+      for (let i = 0; i < vanillaColumns.length; i++) {
+        const column = vanillaColumns[i];
+        column.position.set(0, 0, startDepth + i * column.userData.depth);
 
-          const collision = lengthWiseNeighbours.some((neighbour) => {
-            const neighbourOBB = neighbour.unsafeOBB;
-            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
-          });
+        const vanillaColumnOBB = new OBB(
+          column.getWorldPosition(new Vector3()),
+          halfSize.clone(),
+          rotation
+        );
 
-          if (collision) {
-            break;
+        // Debug visualize vanilla column OBB
+        this.debugVisualizeOBB(vanillaColumnOBB, "green");
+
+        const collision = lengthWiseNeighbours.some((neighbour) => {
+          const neighbourOBB = neighbour.unsafeOBB;
+          // Debug visualize actual collision test
+          if (vanillaColumnOBB.intersectsOBB(neighbourOBB)) {
+            this.debugVisualizeOBB(neighbourOBB, "red");
+            return true;
           }
+          return false;
+        });
 
-          this.houseGroup.managers.cuts?.createClippedBrushes(column);
-          orderedColumns.push(column);
-        }
+        if (collision) break;
 
-        orderedColumns.reverse();
-
-        lastVisibleIndex = orderedColumns.length;
-        orderedColumns.push(...midColumns);
-      } else if (side === 1) {
-        orderedColumns = [...midColumns];
-        lastVisibleIndex = midColumns.length - 1;
-
-        const startDepth = endColumn.position.z;
-
-        for (let i = 0; i < vanillaColumns.length; i++) {
-          const column = vanillaColumns[i];
-
-          column.position.set(0, 0, startDepth + i * column.userData.depth);
-
-          const vanillaColumnOBB = new OBB(
-            column
-              .getWorldPosition(new Vector3())
-              .add(new Vector3(0, 0, column.userData.depth)),
-            halfSize,
-            rotation
-          );
-
-          const collision = lengthWiseNeighbours.some((neighbour) => {
-            const neighbourOBB = neighbour.unsafeOBB;
-            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
-          });
-
-          if (collision) {
-            break;
-          }
-
-          this.houseGroup.managers.cuts?.createClippedBrushes(column);
-          orderedColumns.push(column);
-        }
+        this.houseGroup.managers.cuts?.createClippedBrushes(column);
+        hideObject(column); // Make sure vanilla columns start hidden
+        orderedColumns.push(column);
       }
     } else {
-      orderedColumns = [...midColumns];
+      // Front side: start with vanilla columns (hidden), then add mid columns
+      for (let i = 0; i < vanillaColumns.length; i++) {
+        const column = vanillaColumns[i];
+        const startDepth = midColumns[0].position.z;
+        const depth =
+          startDepth - i * column.userData.depth - column.userData.depth;
+
+        column.position.set(0, 0, depth);
+
+        const vanillaColumnOBB = new OBB(
+          column.getWorldPosition(new Vector3()),
+          halfSize.clone(),
+          rotation
+        );
+
+        // Debug visualize vanilla column OBB
+        this.debugVisualizeOBB(vanillaColumnOBB, "green");
+
+        const collision = lengthWiseNeighbours.some((neighbour) => {
+          const neighbourOBB = neighbour.unsafeOBB;
+          // Debug visualize actual collision test
+          if (vanillaColumnOBB.intersectsOBB(neighbourOBB)) {
+            this.debugVisualizeOBB(neighbourOBB, "red");
+            return true;
+          }
+          return false;
+        });
+
+        if (collision) break;
+
+        this.houseGroup.managers.cuts?.createClippedBrushes(column);
+        hideObject(column); // Make sure vanilla columns start hidden
+        orderedColumns.push(column);
+      }
+
+      orderedColumns.reverse();
+      visibilityBoundaryIndex = 0; // Point to first visible column
+      orderedColumns.push(...midColumns);
     }
 
     this.startData = {
       side,
       orderedColumns,
       bookendColumn: side === 1 ? endColumn : startColumn,
-      lastVisibleIndex,
+      lastVisibleIndex: visibilityBoundaryIndex, // Store as lastVisibleIndex for compatibility
     };
   }
 
   gestureProgress(delta: number) {
     if (!this.startData) return;
 
-    const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
-      this.startData!;
+    const { side, bookendColumn, orderedColumns } = this.startData;
 
     if (side === 1) {
-      const firstInvisibleColumn = orderedColumns[lastVisibleIndex + 1]; // +1 because side 1
-
+      // Rear side stretching
       if (delta > 0) {
-        // bookend column movement logic
-        const lastColumn = orderedColumns[orderedColumns.length - 1];
-        const maxZ = lastColumn.position.z + lastColumn.userData.depth;
-        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
-
-        // middle column show/hide logic
-        if (firstInvisibleColumn) {
-          const targetZ = firstInvisibleColumn.position.z;
-          const bookendZ = bookendColumn.position.z; // + bookendColumn.userData.depth;
-
-          if (bookendZ > targetZ) {
-            this.showVanillaColumn(firstInvisibleColumn);
-            this.startData.lastVisibleIndex++;
-          }
-        }
-      }
-
-      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
-
-      if (delta < 0) {
-        // bookend column movement logic
+        // Stretching outwards
+        const maxZ =
+          orderedColumns[orderedColumns.length - 1].position.z +
+          orderedColumns[orderedColumns.length - 1].userData.depth;
+        const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      } else {
+        // Stretching inwards
         const minZ =
           orderedColumns[0].position.z + orderedColumns[0].userData.depth;
-        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
+        const newBookendZ = max(minZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      }
 
-        // middle column show/hide logic
-        if (lastVisibleColumn) {
-          const targetZ =
-            lastVisibleColumn.position.z + lastVisibleColumn.userData.depth;
-          const bookendZ =
-            bookendColumn.position.z + bookendColumn.userData.depth;
+      // Show/hide columns based on final position
+      for (let i = 0; i <= orderedColumns.length - 1; i++) {
+        const column = orderedColumns[i];
+        const columnEndZ = column.position.z + column.userData.depth;
 
-          if (bookendZ <= targetZ) {
-            hideObject(lastVisibleColumn);
-            this.startData.lastVisibleIndex--;
+        if (columnEndZ <= bookendColumn.position.z + GRACE) {
+          if (!column.visible) {
+            this.showVanillaColumn(column);
+            this.startData.lastVisibleIndex = i;
+          }
+        } else {
+          if (column.visible) {
+            hideObject(column);
+            this.startData.lastVisibleIndex = i - 1;
           }
         }
       }
     }
 
     if (side === -1) {
-      const firstInvisibleColumn = orderedColumns[lastVisibleIndex - 1]; // -1 because side -1
-
+      // Front side stretching
       if (delta < 0) {
-        // bookend column movement logic
+        // Stretching outwards
         const minZ =
           orderedColumns[0].position.z - bookendColumn.userData.depth;
-
-        bookendColumn.position.z = max(minZ, bookendColumn.position.z + delta);
-
-        // middle column show/hide logic
-        if (firstInvisibleColumn) {
-          const targetZ = firstInvisibleColumn.position.z;
-          const bookendZ =
-            bookendColumn.position.z + bookendColumn.userData.depth;
-
-          if (bookendZ <= targetZ + GRACE) {
-            this.showVanillaColumn(firstInvisibleColumn);
-            this.startData.lastVisibleIndex--;
-          }
-        }
+        const newBookendZ = max(minZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
+      } else {
+        // Stretching inwards
+        const maxZ =
+          orderedColumns[orderedColumns.length - 1].position.z -
+          bookendColumn.userData.depth;
+        const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
+        bookendColumn.position.z = newBookendZ;
       }
 
-      const lastVisibleColumn = orderedColumns[lastVisibleIndex];
+      // Show/hide columns based on final position
+      for (let i = orderedColumns.length - 1; i >= 0; i--) {
+        const column = orderedColumns[i];
+        const columnStartZ = column.position.z;
 
-      if (delta > 0) {
-        // bookend column movement logic
-        const lastColumn = orderedColumns[orderedColumns.length - 1];
-        const maxZ = lastColumn.position.z - bookendColumn.userData.depth;
-        bookendColumn.position.z = min(maxZ, bookendColumn.position.z + delta);
-
-        // middle column show/hide logic
-        if (lastVisibleColumn) {
-          const targetZ = lastVisibleColumn.position.z;
-          const bookendZ =
-            bookendColumn.position.z + bookendColumn.userData.depth;
-
-          if (bookendZ > targetZ) {
-            hideObject(lastVisibleColumn);
-            this.startData.lastVisibleIndex++;
+        if (
+          columnStartZ >=
+          bookendColumn.position.z + bookendColumn.userData.depth - GRACE
+        ) {
+          if (!column.visible) {
+            this.showVanillaColumn(column);
+            this.startData.lastVisibleIndex = i;
+          }
+        } else {
+          if (column.visible) {
+            hideObject(column);
+            this.startData.lastVisibleIndex = i + 1;
           }
         }
       }
@@ -389,6 +420,7 @@ class ZStretchManager implements StretchManager {
     );
 
     this.houseGroup.managers.xStretch?.init();
+    this.houseGroup.managers.xStretch?.showHandles();
 
     // this.cleanup();
 
@@ -435,6 +467,11 @@ class ZStretchManager implements StretchManager {
 
   hideHandles() {
     this.handles.forEach(hideObject);
+  }
+
+  // Add method to toggle debug mode
+  public toggleDebugMode(enabled?: boolean) {
+    this.debug = enabled ?? !this.debug;
   }
 }
 

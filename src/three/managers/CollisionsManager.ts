@@ -35,17 +35,21 @@ class CollisionManager {
   }
 
   computeLengthWiseNeighbours(): HouseGroup[] {
-    const thisOBB = this.houseGroup.unsafeOBB;
+    const NEIGHBOUR_PADDING = 1.1;
+
+    const thisOBB = this.houseGroup.unsafeOBB.clone();
+    thisOBB.halfSize.setZ(999);
 
     return pipe(
       this.houseGroup.scene?.houses ?? [],
       A.filter((houseGroup) => {
         if (houseGroup.uuid === this.houseGroup.uuid) return false;
 
-        const obb = houseGroup.unsafeOBB.clone();
-        obb.halfSize.setZ(999);
+        const neighbourOBB = houseGroup.unsafeOBB.clone();
+        neighbourOBB.halfSize.multiplyScalar(NEIGHBOUR_PADDING);
+        neighbourOBB.halfSize.setZ(999);
 
-        return obb.intersectsOBB(thisOBB);
+        return neighbourOBB.intersectsOBB(thisOBB);
       })
     );
   }
