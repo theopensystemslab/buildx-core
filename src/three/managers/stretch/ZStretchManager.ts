@@ -145,94 +145,47 @@ class ZStretchManager extends AbstractZStretchManager {
       lengthWiseNeighbours,
     } = this.initData;
 
-    let orderedColumns: ColumnGroup[] = [],
-      visibilityBoundaryIndex: number = -1;
+    let orderedColumns: ColumnGroup[] = [];
+    let visibilityBoundaryIndex: number;
 
-    // place the vanilla columns if there are any
-    if (vanillaColumns.length > 0) {
-      const firstVanillaColumn = vanillaColumns[0];
+    if (side === 1) {
+      // Rear side: start with mid columns, then add vanilla columns
+      orderedColumns = [...midColumns];
+      visibilityBoundaryIndex = orderedColumns.length - 1; // Point to last visible column
 
-      const halfSize = new Vector3(
-        firstVanillaColumn.userData.width / 2,
-        firstVanillaColumn.userData.height / 2,
-        firstVanillaColumn.userData.depth / 2
-      ).multiplyScalar(1.5);
+      const startDepth = endColumn.position.z;
 
-      const rotation = new Matrix3().setFromMatrix4(
-        new Matrix4().makeRotationY(this.houseGroup.rotation.y)
-      );
+      // Add vanilla columns (they start hidden)
+      for (let i = 0; i < vanillaColumns.length; i++) {
+        const column = vanillaColumns[i];
+        column.position.set(0, 0, startDepth + i * column.userData.depth);
 
-      if (side === -1) {
-        for (let i = 0; i < vanillaColumns.length; i++) {
-          const column = vanillaColumns[i];
-          const startDepth = midColumns[0].position.z;
+        // Collision checks...
+        if (collision) break;
 
-          const depth =
-            startDepth - i * column.userData.depth - column.userData.depth;
-
-          column.position.set(0, 0, depth);
-
-          const vanillaColumnOBB = new OBB(
-            column
-              .getWorldPosition(new Vector3())
-              .add(new Vector3(0, 0, column.userData.depth)),
-            halfSize,
-            rotation
-          );
-
-          const collision = lengthWiseNeighbours.some((neighbour) => {
-            const neighbourOBB = neighbour.unsafeOBB;
-            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
-          });
-
-          if (collision) {
-            break;
-          }
-
-          console.log(`ZStretchManager - vanilla column createClippedBrushes`);
-          this.houseGroup.managers.cuts?.createClippedBrushes(column);
-          orderedColumns.push(column);
-        }
-
-        orderedColumns.reverse();
-
-        visibilityBoundaryIndex = orderedColumns.length;
-        orderedColumns.push(...midColumns);
-      } else if (side === 1) {
-        orderedColumns = [...midColumns];
-        visibilityBoundaryIndex = midColumns.length - 1;
-
-        const startDepth = endColumn.position.z;
-
-        for (let i = 0; i < vanillaColumns.length; i++) {
-          const column = vanillaColumns[i];
-
-          column.position.set(0, 0, startDepth + i * column.userData.depth);
-
-          const vanillaColumnOBB = new OBB(
-            column
-              .getWorldPosition(new Vector3())
-              .add(new Vector3(0, 0, column.userData.depth)),
-            halfSize,
-            rotation
-          );
-
-          const collision = lengthWiseNeighbours.some((neighbour) => {
-            const neighbourOBB = neighbour.unsafeOBB;
-            return vanillaColumnOBB.intersectsOBB(neighbourOBB);
-          });
-
-          if (collision) {
-            break;
-          }
-
-          console.log(`ZStretchManager + vanilla column createClippedBrushes`);
-          this.houseGroup.managers.cuts?.createClippedBrushes(column);
-          orderedColumns.push(column);
-        }
+        this.houseGroup.managers.cuts?.createClippedBrushes(column);
+        orderedColumns.push(column);
       }
     } else {
-      orderedColumns = [...midColumns];
+      // Front side: start with vanilla columns (hidden), then add mid columns
+      for (let i = 0; i < vanillaColumns.length; i++) {
+        const column = vanillaColumns[i];
+        const startDepth = midColumns[0].position.z;
+        const depth =
+          startDepth - i * column.userData.depth - column.userData.depth;
+
+        column.position.set(0, 0, depth);
+
+        // Collision checks...
+        if (collision) break;
+
+        this.houseGroup.managers.cuts?.createClippedBrushes(column);
+        orderedColumns.push(column);
+      }
+
+      orderedColumns.reverse();
+      visibilityBoundaryIndex = 0; // Point to first visible column
+      orderedColumns.push(...midColumns);
     }
 
     this.startData = {
@@ -253,6 +206,7 @@ class ZStretchManager extends AbstractZStretchManager {
       idx >= 0 && idx < orderedColumns.length;
 
     if (side === 1) {
+      // Stretching outward (delta > 0)
       const nextInvisibleIdx = visibilityBoundaryIndex + 1;
       const nextInvisibleColumn = isValidIndex(nextInvisibleIdx)
         ? orderedColumns[nextInvisibleIdx]
@@ -268,21 +222,31 @@ class ZStretchManager extends AbstractZStretchManager {
         }
       }
 
+      // Compressing inward (delta < 0)
       if (delta < 0 && isValidIndex(visibilityBoundaryIndex)) {
         const currentLastVisible = orderedColumns[visibilityBoundaryIndex];
-        const targetZ =
-          currentLastVisible.position.z + currentLastVisible.userData.depth;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        const previousColumnIdx = visibilityBoundaryIndex - 1;
+        const previousColumn = isValidIndex(previousColumnIdx)
+          ? orderedColumns[previousColumnIdx]
+          : null;
 
-        if (bookendZ <= targetZ) {
-          hideObject(currentLastVisible);
-          this.startData.visibilityBoundaryIndex--;
+        if (previousColumn) {
+          const targetZ =
+            previousColumn.position.z + previousColumn.userData.depth;
+          const bookendZ = bookendColumn.position.z;
+
+          // More eager to compress: add GRACE to the comparison
+          if (bookendZ <= targetZ + GRACE * 2) {
+            // Made more sensitive
+            hideObject(currentLastVisible);
+            this.startData.visibilityBoundaryIndex--;
+          }
         }
       }
     }
 
     if (side === -1) {
+      // Stretching outward (delta < 0)
       const nextInvisibleIdx = visibilityBoundaryIndex - 1;
       const nextInvisibleColumn = isValidIndex(nextInvisibleIdx)
         ? orderedColumns[nextInvisibleIdx]
@@ -299,15 +263,25 @@ class ZStretchManager extends AbstractZStretchManager {
         }
       }
 
+      // Compressing inward (delta > 0)
       if (delta > 0 && isValidIndex(visibilityBoundaryIndex)) {
         const currentFirstVisible = orderedColumns[visibilityBoundaryIndex];
-        const targetZ = currentFirstVisible.position.z;
-        const bookendZ =
-          bookendColumn.position.z + bookendColumn.userData.depth;
+        const nextColumnIdx = visibilityBoundaryIndex + 1;
+        const nextColumn = isValidIndex(nextColumnIdx)
+          ? orderedColumns[nextColumnIdx]
+          : null;
 
-        if (bookendZ > targetZ) {
-          hideObject(currentFirstVisible);
-          this.startData.visibilityBoundaryIndex++;
+        if (nextColumn) {
+          const targetZ = nextColumn.position.z;
+          const bookendZ =
+            bookendColumn.position.z + bookendColumn.userData.depth;
+
+          // More eager to compress: subtract GRACE from the comparison
+          if (bookendZ > targetZ - GRACE) {
+            // Made more sensitive
+            hideObject(currentFirstVisible);
+            this.startData.visibilityBoundaryIndex++;
+          }
         }
       }
     }
