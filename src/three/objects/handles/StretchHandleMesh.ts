@@ -4,7 +4,7 @@ import StretchHandleGroup, {
   StretchAxis,
   StretchSide,
 } from "./StretchHandleGroup";
-import AbstractStretchManager from "@/three/managers/AbstractStretchManagers";
+import AbstractStretchManager from "@/three/managers/stretch/AbstractStretchManagers";
 
 class StretchHandleMesh extends HandleMesh {
   constructor(...args: ConstructorParameters<typeof Mesh>) {

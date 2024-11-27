@@ -1,4 +1,4 @@
-import { HouseGroup } from "../objects/house/HouseGroup";
+import { HouseGroup } from "@/three/objects/house/HouseGroup";
 
 abstract class AbstractStretchManager {
   houseGroup: HouseGroup;

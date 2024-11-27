@@ -5,7 +5,7 @@ import { ColumnLayoutGroup } from "../house/ColumnLayoutGroup";
 import HandleGroup from "./HandleGroup";
 import StretchHandleMesh from "./StretchHandleMesh";
 import handleMaterial from "./handleMaterial";
-import AbstractStretchManager from "@/three/managers/AbstractStretchManagers";
+import AbstractStretchManager from "@/three/managers/stretch/AbstractStretchManagers";
 
 export type StretchAxis = "x" | "z";
 export type StretchSide = 1 | -1;

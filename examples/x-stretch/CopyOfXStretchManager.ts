@@ -10,7 +10,7 @@ import {
 import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { SectionType } from "@/data/build-systems";
-import { AbstractXStretchManager } from "@/three/managers/AbstractStretchManagers";
+import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;

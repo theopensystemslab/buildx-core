@@ -11,7 +11,7 @@ import { floor, max, min } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { Matrix3, Matrix4, Vector3 } from "three";
 import { OBB } from "three-stdlib";
-import OBBMesh from "../objects/OBBMesh";
+import OBBMesh from "@/three/objects/OBBMesh";
 import { AbstractZStretchManager } from "./AbstractStretchManagers";
 
 const DEFAULT_MAX_DEPTH = 8;
