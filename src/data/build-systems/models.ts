@@ -117,31 +117,6 @@ export const speckleObjectToGeometries = flow(
   )
 );
 
-export const remoteModelTE = (
-  speckleBranchUrl: string
-): TE.TaskEither<Error, BuildModel> =>
-  pipe(
-    speckleBranchUrl,
-    speckleObjectTE,
-    TE.map(
-      flow(speckleObjectToGeometries, (geometries) => ({
-        geometries,
-        speckleBranchUrl,
-      }))
-    )
-  );
-
-export const remoteModelsTE: TE.TaskEither<Error, BuildModel[]> = pipe(
-  cachedModulesTE,
-  TE.chain(
-    flow(
-      A.traverse(TE.ApplicativePar)(({ speckleBranchUrl }) =>
-        pipe(remoteModelTE(speckleBranchUrl))
-      )
-    )
-  )
-);
-
 export const localModelTE = (
   speckleBranchUrl: string
 ): TE.TaskEither<Error, BuildModel> => {
@@ -197,15 +172,47 @@ export const getCachedModelTE = (speckleBranchUrl: string) => {
   ]);
 };
 
-export const cachedModelsTE = runUntilFirstSuccess([
+export const remoteModelTE = (
+  speckleBranchUrl: string
+): TE.TaskEither<Error, BuildModel> =>
   pipe(
-    cachedModulesTE,
-    TE.chain(
+    speckleBranchUrl,
+    speckleObjectTE,
+    TE.map(
+      flow(speckleObjectToGeometries, (geometries) => ({
+        geometries: pipe(
+          geometries,
+          R.map((geometry: any) => geometry.toJSON())
+        ),
+        speckleBranchUrl,
+      }))
+    )
+  );
+
+export const remoteModelsTE: TE.TaskEither<Error, BuildModel[]> = pipe(
+  cachedModulesTE,
+  TE.chain(
+    flow(
       A.traverse(TE.ApplicativePar)(({ speckleBranchUrl }) =>
-        getCachedModelTE(speckleBranchUrl)
+        pipe(remoteModelTE(speckleBranchUrl))
       )
     )
-  ),
+  )
+);
+
+export const localModelsTE: TE.TaskEither<Error, BuildModel[]> = TE.tryCatch(
+  () =>
+    buildSystemsCache.models.toArray().then((models) => {
+      if (A.isEmpty(models)) {
+        throw new Error("No models found in cache");
+      }
+      return models;
+    }),
+  (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
+);
+
+export const cachedModelsTE = runUntilFirstSuccess([
+  localModelsTE,
   pipe(
     remoteModelsTE,
     TE.map((models) => {

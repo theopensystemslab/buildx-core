@@ -15,6 +15,8 @@ import { cachedSpaceTypesTE } from "./spaceTypes";
 import { cachedWindowTypesTE } from "./windowTypes";
 import { suspend } from "suspend-react";
 import { pipe } from "fp-ts/lib/function";
+import { useLiveQuery } from "dexie-react-hooks";
+import buildSystemsCache from "./cache";
 
 export const housePriorityDataTE = sequenceT(TE.ApplicativePar)(
   cachedModulesTE,
@@ -42,6 +44,44 @@ export const allBuildSystemsData = sequenceT(TE.ApplicativePar)(
 export const useSuspendAllBuildData = () =>
   suspend(() => pipe(allBuildSystemsData, unwrapTaskEither), ["allBuildData"]);
 
+export const useAllBuildSystemsDataLiveQuery = () =>
+  useLiveQuery(async () => {
+    const houseTypes = await buildSystemsCache.houseTypes.toArray();
+    const materials = await buildSystemsCache.materials.toArray();
+    const elements = await buildSystemsCache.elements.toArray();
+    const modules = await buildSystemsCache.modules.toArray();
+    const models = await buildSystemsCache.models.toArray();
+    const sectionTypes = await buildSystemsCache.sectionTypes.toArray();
+    const levelTypes = await buildSystemsCache.levelTypes.toArray();
+    const windowTypes = await buildSystemsCache.windowTypes.toArray();
+    const blocks = await buildSystemsCache.blocks.toArray();
+    const blockModuleEntries =
+      await buildSystemsCache.blockModuleEntries.toArray();
+    const spaceTypes = await buildSystemsCache.spaceTypes.toArray();
+    const energyInfos = await buildSystemsCache.energyInfos.toArray();
+    const systemSettings = await buildSystemsCache.settings.toArray();
+
+    return {
+      houseTypes,
+      materials,
+      elements,
+      modules,
+      models,
+      sectionTypes,
+      levelTypes,
+      windowTypes,
+      blocks,
+      blockModuleEntries,
+      spaceTypes,
+      energyInfos,
+      systemSettings,
+    };
+  });
+
+export type AllBuildSystemsData = NonNullable<
+  Awaited<ReturnType<typeof useAllBuildSystemsDataLiveQuery>>
+>;
+
 export const useSuspendHousePriorityData = () =>
   suspend(
     () => pipe(housePriorityDataTE, unwrapTaskEither),
@@ -65,3 +105,5 @@ export * from "./settings";
 export * from "./spaceTypes";
 export * from "./stairTypes";
 export * from "./windowTypes";
+
+export { systems as buildSystems } from "./systems";
