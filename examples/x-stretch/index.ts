@@ -7,7 +7,7 @@ import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import DebugAltsManager from "./DebugAltsManager";
+import CopyOfXStretchManager from "./CopyOfXStretchManager";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
@@ -49,7 +49,7 @@ pipe(
     })
   ),
   TE.map((houseGroup) => {
-    houseGroup.managers.xStretch = new DebugAltsManager(houseGroup);
+    houseGroup.managers.xStretch = new CopyOfXStretchManager(houseGroup);
     scene.addHouseGroup(houseGroup);
   })
 )();
