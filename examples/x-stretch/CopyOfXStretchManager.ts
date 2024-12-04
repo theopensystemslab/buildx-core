@@ -10,7 +10,7 @@ import {
 import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { SectionType } from "@/data/build-systems";
-import { AbstractXStretchManager } from "@/three/managers/AbstractStretchManagers";
+import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
@@ -74,12 +74,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
                     console.log(`createAlts cuts ${sectionType.code}`);
-                    this.houseGroup.managers.cuts?.createClippedBrushes(
-                      layoutGroup
-                    );
-                    this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                      layoutGroup
-                    );
                     hideObject(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
@@ -152,7 +146,15 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     )();
   }
 
+  cutAlts() {
+    this.initData?.alts.forEach(({ layoutGroup }) => {
+      this.houseGroup.managers.cuts?.createClippedBrushes(layoutGroup);
+      this.houseGroup.managers.cuts?.showAppropriateBrushes(layoutGroup);
+    });
+  }
+
   gestureStart(side: 1 | -1) {
+    this.cutAlts();
     this.startData = {
       side,
     };
