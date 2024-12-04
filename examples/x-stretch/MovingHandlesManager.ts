@@ -3,7 +3,7 @@ import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { AbstractXStretchManager } from "@/three/managers/AbstractStretchManagers";
+import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 
 class MovingHandlesManager extends AbstractXStretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];

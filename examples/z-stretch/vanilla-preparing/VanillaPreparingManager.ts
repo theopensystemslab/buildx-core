@@ -1,7 +1,7 @@
 // VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
-import { AbstractZStretchManager } from "@/three/managers/AbstractStretchManagers";
+import { AbstractZStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,

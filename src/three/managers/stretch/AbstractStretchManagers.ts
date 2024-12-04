@@ -1,6 +1,6 @@
-import { HouseGroup } from "../objects/house/HouseGroup";
+import { HouseGroup } from "../../objects/house/HouseGroup";
 
-abstract class AbstractStretchManager {
+export abstract class AbstractStretchManager {
   houseGroup: HouseGroup;
 
   constructor(houseGroup: HouseGroup) {
@@ -19,5 +19,3 @@ abstract class AbstractStretchManager {
 export abstract class AbstractXStretchManager extends AbstractStretchManager {}
 
 export abstract class AbstractZStretchManager extends AbstractStretchManager {}
-
-export default AbstractStretchManager;
