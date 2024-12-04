@@ -46,3 +46,24 @@ export const addNumkeyHouseCreateListeners = (
       });
     })
   )();
+
+export const addHouseTypeByIndex = (scene: BuildXScene, index: number) => {
+  pipe(
+    cachedHouseTypesTE,
+    TE.map((houseTypes) => {
+      const houseType = houseTypes[index];
+      return houseType;
+    }),
+    TE.chain((houseType) =>
+      defaultHouseGroupTE({
+        systemId: houseType.systemId,
+        dnas: houseType.dnas,
+        houseId: nanoid(),
+        houseTypeId: houseType.id,
+      })
+    ),
+    TE.map((houseGroup) => {
+      scene.addHouseGroup(houseGroup);
+    })
+  )();
+};
