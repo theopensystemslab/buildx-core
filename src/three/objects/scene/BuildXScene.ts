@@ -3,7 +3,7 @@ import { House } from "@/data/user/houses";
 import {
   AbstractXStretchManager,
   AbstractZStretchManager,
-} from "@/three/managers/AbstractStretchManagers";
+} from "@/three/managers/stretch/AbstractStretchManagers";
 import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";

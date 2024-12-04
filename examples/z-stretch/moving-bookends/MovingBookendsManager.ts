@@ -4,7 +4,7 @@ import { ColumnGroup } from "@/three/objects/house/ColumnGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
-import { AbstractZStretchManager } from "@/three/managers/AbstractStretchManagers";
+import { AbstractZStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 
 class MovingBookendsManager extends AbstractZStretchManager {
   houseGroup: HouseGroup;

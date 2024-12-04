@@ -2,13 +2,13 @@ import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { A, O, S, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
-import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
+import StretchHandleGroup from "../../objects/handles/StretchHandleGroup";
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,
-} from "../objects/house/ColumnLayoutGroup";
-import { HouseGroup } from "../objects/house/HouseGroup";
-import { hideObject, showObject } from "../utils/layers";
+} from "../../objects/house/ColumnLayoutGroup";
+import { HouseGroup } from "../../objects/house/HouseGroup";
+import { hideObject, showObject } from "../../utils/layers";
 import { SectionType } from "@/data/build-systems";
 import { AbstractXStretchManager } from "./AbstractStretchManagers";
 
