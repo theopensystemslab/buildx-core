@@ -1,10 +1,14 @@
+import { Y_LAYER_1, Y_LAYER_2, Y_LAYER_3 } from "@/constants";
 import { House } from "@/data/user/houses";
+import {
+  AbstractXStretchManager,
+  AbstractZStretchManager,
+} from "@/three/managers/AbstractStretchManagers";
 import ContextManager, {
   SceneContextMode,
 } from "@/three/managers/ContextManager";
 import GestureManager, { DragDetail } from "@/three/managers/GestureManager";
 import OutlineManager from "@/three/managers/OutlineManager";
-import XStretchManager from "@/three/managers/XStretchManager";
 import CameraControls from "camera-controls";
 import { Polygon } from "geojson";
 import {
@@ -142,7 +146,7 @@ class BuildXScene extends Scene {
       enableGestures = true,
       enableOutlining = true,
       enableLighting = true,
-      enableAxesHelper = true,
+      enableAxesHelper = false,
       enableGroundObjects = true,
       enableShadows = true,
       antialias = true,
@@ -264,11 +268,13 @@ class BuildXScene extends Scene {
                   .clone()
                   .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
 
-                stretchManager.gestureProgress(
-                  stretchManager instanceof XStretchManager
-                    ? normalizedDelta.x
-                    : normalizedDelta.z
-                );
+                if (stretchManager instanceof AbstractZStretchManager) {
+                  stretchManager.gestureProgress(normalizedDelta.z);
+                }
+
+                if (stretchManager instanceof AbstractXStretchManager) {
+                  stretchManager.gestureProgress(normalizedDelta.x);
+                }
               };
 
               dragEnd = () => {
@@ -406,7 +412,7 @@ class BuildXScene extends Scene {
       color: 0xdddddd,
     });
     const groundCircle = new Mesh(groundCircleGeometry, groundCircleMaterial);
-    groundCircle.position.set(0, -0.05, 0);
+    groundCircle.position.set(0, -Y_LAYER_3, 0);
     groundCircle.rotation.set(-Math.PI / 2, 0, 0);
     this.add(groundCircle);
 
@@ -417,7 +423,7 @@ class BuildXScene extends Scene {
       side: DoubleSide,
     });
     const shadowPlane = new Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
-    shadowPlane.position.set(0, 0, 0);
+    shadowPlane.position.set(0, -Y_LAYER_2, 0);
     shadowPlane.rotation.set(-Math.PI / 2, 0, 0);
     shadowPlane.receiveShadow = true;
     this.add(shadowPlane);
@@ -455,7 +461,7 @@ class BuildXScene extends Scene {
     });
 
     const rectangularGrid = new LineSegments(gridGeometry, gridMaterial);
-    rectangularGrid.position.setY(-0.04);
+    rectangularGrid.position.set(0, -Y_LAYER_1, 0);
 
     this.add(rectangularGrid);
   }

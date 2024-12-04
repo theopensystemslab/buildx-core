@@ -1,4 +1,3 @@
-import StretchManager from "@/three/managers/StretchManager";
 import { A } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { BoxGeometry, SphereGeometry } from "three";
@@ -6,6 +5,7 @@ import { ColumnLayoutGroup } from "../house/ColumnLayoutGroup";
 import HandleGroup from "./HandleGroup";
 import StretchHandleMesh from "./StretchHandleMesh";
 import handleMaterial from "./handleMaterial";
+import AbstractStretchManager from "@/three/managers/AbstractStretchManagers";
 
 export type StretchAxis = "x" | "z";
 export type StretchSide = 1 | -1;
@@ -22,7 +22,7 @@ class StretchHandleGroup extends HandleGroup {
   };
   boxMesh: StretchHandleMesh;
   sphereMeshes: [StretchHandleMesh, StretchHandleMesh];
-  manager: StretchManager;
+  manager: AbstractStretchManager;
 
   constructor({
     axis,
@@ -31,7 +31,7 @@ class StretchHandleGroup extends HandleGroup {
   }: {
     axis: StretchAxis;
     side: StretchSide;
-    manager: StretchManager;
+    manager: AbstractStretchManager;
   }) {
     super();
     this.manager = manager;

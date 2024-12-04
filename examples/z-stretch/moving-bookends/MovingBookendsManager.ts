@@ -1,12 +1,12 @@
 import { HouseGroup } from "@/index";
-import StretchManager from "@/three/managers/StretchManager";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import { ColumnGroup } from "@/three/objects/house/ColumnGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
+import { AbstractZStretchManager } from "@/three/managers/AbstractStretchManagers";
 
-class MovingBookendsManager implements StretchManager {
+class MovingBookendsManager extends AbstractZStretchManager {
   houseGroup: HouseGroup;
 
   handles: [StretchHandleGroup, StretchHandleGroup];
@@ -22,6 +22,7 @@ class MovingBookendsManager implements StretchManager {
   };
 
   constructor(houseGroup: HouseGroup) {
+    super(houseGroup);
     this.houseGroup = houseGroup;
     this.handles = [
       new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
@@ -77,6 +78,8 @@ class MovingBookendsManager implements StretchManager {
   hideHandles() {
     this.handles.forEach(hideObject);
   }
+
+  cleanup(): void {}
 }
 
 export default MovingBookendsManager;
