@@ -9,16 +9,15 @@ import {
 } from "../objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { hideObject, showObject } from "../utils/layers";
-import StretchManager from "./StretchManager";
 import { SectionType } from "@/data/build-systems";
+import { AbstractXStretchManager } from "./AbstractStretchManagers";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
   layoutGroup: ColumnLayoutGroup;
 };
 
-class XStretchManager implements StretchManager {
-  houseGroup: HouseGroup;
+class XStretchManager extends AbstractXStretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
   initData?: {
     alts: Array<AltSectionTypeLayout>;
@@ -35,7 +34,7 @@ class XStretchManager implements StretchManager {
   };
 
   constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+    super(houseGroup);
 
     this.handles = [
       new StretchHandleGroup({
@@ -247,6 +246,8 @@ class XStretchManager implements StretchManager {
   hideHandles() {
     this.handles.forEach(hideObject);
   }
+
+  cleanup(): void {}
 }
 
 export default XStretchManager;

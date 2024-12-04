@@ -1,6 +1,6 @@
 // VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
-import StretchManager from "@/three/managers/StretchManager";
+import { AbstractZStretchManager } from "@/three/managers/AbstractStretchManagers";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
@@ -28,9 +28,7 @@ import {
 
 const DEFAULT_MAX_DEPTH = 5;
 
-class ProgressShowHideManager implements StretchManager {
-  houseGroup: HouseGroup;
-
+class ProgressShowHideManager extends AbstractZStretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   initData?: {
@@ -52,7 +50,7 @@ class ProgressShowHideManager implements StretchManager {
   private bookendLine: Line | null = null;
 
   constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+    super(houseGroup);
     this.handles = [
       new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
       new StretchHandleGroup({ axis: "z", side: 1, manager: this }),

@@ -1,6 +1,5 @@
 // ZStretchManager.ts
 import { HouseGroup } from "@/index";
-import StretchManager from "@/three/managers/StretchManager";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
@@ -13,14 +12,13 @@ import { pipe } from "fp-ts/lib/function";
 import { Matrix3, Matrix4, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import OBBMesh from "../objects/OBBMesh";
+import { AbstractZStretchManager } from "./AbstractStretchManagers";
 
 const DEFAULT_MAX_DEPTH = 8;
 
 const GRACE = 0.001;
 
-class ZStretchManager implements StretchManager {
-  houseGroup: HouseGroup;
-
+class ZStretchManager extends AbstractZStretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   initData?: {
@@ -43,7 +41,7 @@ class ZStretchManager implements StretchManager {
   private debug: boolean = false;
 
   constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+    super(houseGroup);
     this.handles = [
       new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
       new StretchHandleGroup({ axis: "z", side: 1, manager: this }),
@@ -163,7 +161,8 @@ class ZStretchManager implements StretchManager {
   gestureStart(side: 1 | -1) {
     if (!this.initData) return;
 
-    this.houseGroup.managers.xStretch?.hideHandles();
+    const { xStretch } = this.houseGroup.managers;
+    xStretch?.hideHandles();
 
     const {
       startColumn,

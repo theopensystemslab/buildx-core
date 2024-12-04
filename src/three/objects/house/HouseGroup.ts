@@ -17,6 +17,10 @@ import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { ElementBrush, ElementGroup } from "./ElementGroup";
+import {
+  AbstractXStretchManager,
+  AbstractZStretchManager,
+} from "@/three/managers/AbstractStretchManagers";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -29,8 +33,8 @@ type Managers = {
   move?: MoveManager;
   rotate?: RotateManager;
   elements?: ElementsManager;
-  xStretch?: XStretchManager;
-  zStretch?: ZStretchManager;
+  xStretch?: AbstractXStretchManager;
+  zStretch?: AbstractZStretchManager;
   cuts?: CutsManager;
   openings?: OpeningsManager;
   collisions?: CollisionsManager;

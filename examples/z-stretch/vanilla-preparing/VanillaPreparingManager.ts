@@ -1,7 +1,7 @@
 // VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
-import StretchManager from "@/three/managers/StretchManager";
 import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
+import { AbstractZStretchManager } from "@/three/managers/AbstractStretchManagers";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
@@ -24,9 +24,7 @@ import {
 
 const DEFAULT_MAX_DEPTH = 5;
 
-class VanillaPreparingManager implements StretchManager {
-  houseGroup: HouseGroup;
-
+class VanillaPreparingManager extends AbstractZStretchManager {
   handles: [StretchHandleGroup, StretchHandleGroup];
 
   initData?: {
@@ -42,7 +40,7 @@ class VanillaPreparingManager implements StretchManager {
   };
 
   constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+    super(houseGroup);
     this.handles = [
       new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
       new StretchHandleGroup({ axis: "z", side: 1, manager: this }),
@@ -267,6 +265,8 @@ class VanillaPreparingManager implements StretchManager {
     context.fillText(text, 64, 32);
     return new CanvasTexture(canvas);
   }
+
+  cleanup(): void {}
 }
 
 export default VanillaPreparingManager;
