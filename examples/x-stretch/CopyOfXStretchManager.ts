@@ -32,6 +32,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     cumulativeDx: number;
     currentLayoutIndex: number;
   };
+  cutKey: string | null = null;
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -73,7 +74,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                     layoutGroup.name = `alt-${sectionType.code}-${layoutGroup.uuid}`;
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
-                    console.log(`createAlts cuts ${sectionType.code}`);
                     hideObject(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
@@ -147,6 +147,16 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cutAlts() {
+    const cutKey =
+      this.houseGroup.unsafeActiveLayoutGroup.userData.dnas.toString() +
+      JSON.stringify(this.houseGroup.managers.cuts?.settings);
+
+    if (this.cutKey === cutKey) return;
+
+    this.cutKey = cutKey;
+
+    console.log(`cutAlts ${cutKey}`);
+
     this.initData?.alts.forEach(({ layoutGroup }) => {
       this.houseGroup.managers.cuts?.createClippedBrushes(layoutGroup);
       this.houseGroup.managers.cuts?.showAppropriateBrushes(layoutGroup);
@@ -155,9 +165,11 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
 
   gestureStart(side: 1 | -1) {
     this.cutAlts();
+
     this.startData = {
       side,
     };
+
     this.houseGroup.managers.zStretch?.hideHandles();
   }
 
@@ -258,6 +270,10 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     // check if current active visible layout group is in alts
     // remove parent of all other alts
     // delete the initData, startData, progressData
+  }
+
+  onHandleHover(): void {
+    this.cutAlts();
   }
 }
 

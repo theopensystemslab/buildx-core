@@ -8,6 +8,7 @@ import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 import CopyOfXStretchManager from "./CopyOfXStretchManager";
+import { addNumkeyHouseCreateListeners } from "../utils";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
@@ -16,20 +17,20 @@ const scene = new BuildXScene({
   },
 });
 
-// addNumkeyHouseCreateListeners(
-//   scene,
-//   flow(
-//     ({ managers, ...rest }) =>
-//       createHouseGroupTE({
-//         ...rest,
-//         managers: { ...managers, xStretch: undefined },
-//       }),
-//     TE.map((x) => {
-//       x.managers.xStretch = new DebugAltsManager(x);
-//       return x;
-//     })
-//   )
-// );
+addNumkeyHouseCreateListeners(
+  scene
+  // flow(
+  //   ({ managers, ...rest }) =>
+  //     createHouseGroupTE({
+  //       ...rest,
+  //       managers: { ...managers, xStretch: undefined },
+  //     }),
+  //   TE.map((x) => {
+  //     x.managers.xStretch = new DebugAltsManager(x);
+  //     return x;
+  //   })
+  // )
+);
 
 const index = 3;
 

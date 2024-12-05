@@ -14,6 +14,8 @@ export abstract class AbstractStretchManager {
   abstract showHandles(): void;
   abstract hideHandles(): void;
   abstract cleanup(): void;
+
+  onHandleHover?(side: 1 | -1): void;
 }
 
 export abstract class AbstractXStretchManager extends AbstractStretchManager {}
