@@ -1,3 +1,4 @@
+import { upsertHousePng } from "@/data/outputs/cache";
 import {
   AmbientLight,
   Group,
@@ -67,7 +68,8 @@ const onHouseUpdate = ({
   renderer.render(scene, camera);
 
   offscreenCanvas.convertToBlob().then(function (blob) {
-    self.postMessage({ houseId, blob });
+    // self.postMessage({ houseId, blob });
+    upsertHousePng(houseId, blob);
 
     objectsGroup.clear();
   });
