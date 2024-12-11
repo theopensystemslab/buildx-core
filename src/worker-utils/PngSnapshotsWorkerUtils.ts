@@ -1,3 +1,4 @@
+import { upsertHousePng } from "@/data/outputs/cache";
 import {
   AmbientLight,
   Group,
@@ -55,6 +56,11 @@ const onHouseUpdate = ({
   objectJson: any;
   halfSize: number[];
 }>) => {
+  console.log({
+    houseId,
+    objectJson,
+    halfSize,
+  });
   const object = objectLoader.parse(objectJson);
   object.position.set(0, 0, 0);
   object.setRotationFromMatrix(new Matrix4());
@@ -67,7 +73,8 @@ const onHouseUpdate = ({
   renderer.render(scene, camera);
 
   offscreenCanvas.convertToBlob().then(function (blob) {
-    self.postMessage({ houseId, blob });
+    // self.postMessage({ houseId, blob });
+    upsertHousePng(houseId, blob);
 
     objectsGroup.clear();
   });

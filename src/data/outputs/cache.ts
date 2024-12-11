@@ -61,4 +61,8 @@ export const useOutputsFiles = () =>
     key: FILES_DOCUMENT_KEY,
   }) as FilesDocument;
 
+export const upsertHousePng = (houseId: string, pngBlob: Blob) => {
+  outputsCache.housePngs.put({ houseId, pngBlob });
+};
+
 export default outputsCache;
