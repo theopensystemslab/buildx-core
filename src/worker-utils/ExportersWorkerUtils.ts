@@ -1,27 +1,28 @@
 import outputsCache from "@/data/outputs/cache";
-import { FullElementBrush } from "@/three/objects/house/ElementGroup";
-import { Group, Matrix4, Object3D, ObjectLoader } from "three";
+import { Group, Matrix4, Mesh, Object3D, ObjectLoader } from "three";
 import { GLTFExporter, OBJExporter } from "three-stdlib";
 
 function flattenObject(root: Object3D): Group {
   const flatGroup = new Group();
+  let processedCount = 0;
+  let skippedCount = 0;
 
-  const positionMatrix = new Matrix4().setPosition(root.position);
-  const rotationMatrix = new Matrix4().makeRotationFromQuaternion(
-    root.quaternion
-  );
-
-  const positionInverter = positionMatrix.clone().invert();
-  const rotationInverter = rotationMatrix.clone().invert();
-
-  const skipObject = (object: Object3D): boolean =>
-    !(object instanceof FullElementBrush) || !object.visible;
+  const skipObject = (object: Object3D) =>
+    !(object instanceof Mesh) || !object.visible;
 
   root.traverse((child: Object3D) => {
     if (!skipObject(child)) {
       const newChild = child.clone();
 
       child.updateMatrixWorld();
+
+      const positionMatrix = new Matrix4().setPosition(child.position);
+      const rotationMatrix = new Matrix4().makeRotationFromQuaternion(
+        child.quaternion
+      );
+
+      const positionInverter = positionMatrix.clone().invert();
+      const rotationInverter = rotationMatrix.clone().invert();
 
       newChild.matrix.copy(child.matrixWorld);
 
@@ -37,6 +38,9 @@ function flattenObject(root: Object3D): Group {
       newChild.matrix.identity();
 
       flatGroup.add(newChild);
+      processedCount++;
+    } else {
+      skippedCount++;
     }
   });
 
@@ -51,45 +55,33 @@ const updateModels = async ({
   objectJson: any;
 }) => {
   const loader = new ObjectLoader();
+  const parsed = loader.parse(objectJson);
+  parsed.updateMatrixWorld(true);
 
-  const parsed1 = loader.parse(objectJson);
+  const flattenedOBJ = flattenObject(parsed.clone());
 
-  parsed1.updateMatrixWorld(true);
-
-  const parsed2 = parsed1.clone();
+  const objExporter = new OBJExporter();
+  const objData = objExporter.parse(flattenedOBJ);
 
   const gltfExporter = new GLTFExporter() as any;
 
-  const flattened1 = flattenObject(parsed1);
+  try {
+    const glbData = await new Promise((resolve, reject) => {
+      gltfExporter.parse(flattenedOBJ, resolve, reject, {
+        binary: true,
+        onlyVisible: true,
+      });
+    });
 
-  gltfExporter.parse(
-    flattened1,
-    function (glbData: any) {
-      const objExporter = new OBJExporter();
-      const flattened2 = flattenObject(parsed2);
-
-      const objData = objExporter.parse(flattened2);
-      outputsCache.houseModels.put({ houseId, glbData, objData });
-    },
-    function (e: any) {
-      console.error(e);
-    },
-    { binary: true, onlyVisible: true }
-  );
+    outputsCache.houseModels.put({ houseId, glbData, objData });
+  } catch (error) {
+    console.error("GLB export failed:", error);
+    throw error;
+  }
 };
-
-// const getOBJ = (houseId: string) => {
-//   return OBJMap.get(houseId)
-// }
-
-// const getGLB = (houseId: string) => {
-//   return GLBMap.get(houseId)
-// }
 
 const ExportersWorkerUtils = {
   updateModels,
-  // getOBJ,
-  // getGLB,
 };
 
 export default ExportersWorkerUtils;
