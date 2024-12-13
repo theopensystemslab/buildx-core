@@ -34,6 +34,14 @@ export type MaterialsListRow = {
   linkUrl?: string;
 };
 
+export type LabourListRow = {
+  houseId: string;
+  buildingName: string;
+  labourType: string;
+  hours: number;
+  cost: number;
+};
+
 export const useAllOrderListRows = (): OrderListRow[] =>
   useLiveQuery(() => outputsCache.orderListRows.toArray(), [], []);
 
@@ -187,17 +195,34 @@ export const useOrderListData = (selectedHouseIds?: string[]) => {
   };
 };
 
-export type LabourListRow = {
-  houseId: string;
-  buildingName: string;
-  foundationHours: number;
-  chassisHours: number;
-  exteriorHours: number;
-  interiorHours: number;
-  totalHours: number;
-  foundationCost: number;
-  chassisCost: number;
-  exteriorCost: number;
-  interiorCost: number;
-  totalCost: number;
+export const useMaterialsListRows = (
+  selectedHouseIds?: string[]
+): MaterialsListRow[] => {
+  return useLiveQuery(
+    () =>
+      selectedHouseIds
+        ? outputsCache.materialsListRows
+            .where("houseId")
+            .anyOf(selectedHouseIds)
+            .toArray()
+        : outputsCache.materialsListRows.toArray(),
+    [selectedHouseIds],
+    []
+  );
+};
+
+export const useLabourListRows = (
+  selectedHouseIds?: string[]
+): LabourListRow[] => {
+  return useLiveQuery(
+    () =>
+      selectedHouseIds
+        ? outputsCache.labourListRows
+            .where("houseId")
+            .anyOf(selectedHouseIds)
+            .toArray()
+        : outputsCache.labourListRows.toArray(),
+    [selectedHouseIds],
+    []
+  );
 };

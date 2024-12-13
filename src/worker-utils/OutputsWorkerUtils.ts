@@ -538,6 +538,7 @@ const labourProc = ({
         O.getOrElse(() => [] as BuildModule[])
       );
 
+      // Calculate hours for each type
       const foundationHours = houseModules.reduce(
         (acc, m) => acc + m.foundationLabourHours,
         0
@@ -555,31 +556,35 @@ const labourProc = ({
         0
       );
 
-      const totalHours =
-        foundationHours + chassisHours + exteriorHours + interiorHours;
-
-      const foundationCost = getLabourCost(foundationHours, "Foundation");
-      const chassisCost = getLabourCost(chassisHours, "Chassis");
-      const exteriorCost = getLabourCost(exteriorHours, "Exterior");
-      const interiorCost = getLabourCost(interiorHours, "Interior");
-
-      const totalCost =
-        foundationCost + chassisCost + exteriorCost + interiorCost;
-
+      // Create a row for each labour type
       return [
         {
           houseId,
           buildingName,
-          foundationHours,
-          chassisHours,
-          exteriorHours,
-          interiorHours,
-          totalHours,
-          foundationCost,
-          chassisCost,
-          exteriorCost,
-          interiorCost,
-          totalCost,
+          labourType: "Foundation",
+          hours: foundationHours,
+          cost: getLabourCost(foundationHours, "Foundation"),
+        },
+        {
+          houseId,
+          buildingName,
+          labourType: "Chassis",
+          hours: chassisHours,
+          cost: getLabourCost(chassisHours, "Chassis"),
+        },
+        {
+          houseId,
+          buildingName,
+          labourType: "Exterior",
+          hours: exteriorHours,
+          cost: getLabourCost(exteriorHours, "Exterior"),
+        },
+        {
+          houseId,
+          buildingName,
+          labourType: "Interior",
+          hours: interiorHours,
+          cost: getLabourCost(interiorHours, "Interior"),
         },
       ];
     }
