@@ -517,16 +517,28 @@ const labourProc = ({
 }) => {
   outputsCache.labourListRows.clear();
 
+  console.log("Debug: Labour Types available:", labourTypes);
+
   const getLabourCost = (hours: number, type: string) => {
-    const labourType = labourTypes.find((lt) => lt.type === type);
+    const labourType = labourTypes.find(
+      (lt) => lt.name === type + " install" || lt.name === type + " labour"
+    );
+    console.log(`Debug: Finding labour type "${type}":`, labourType);
     if (!labourType) return 0;
     // Use average of min and max cost
     const avgCost = (labourType.minLabourCost + labourType.maxLabourCost) / 2;
+    console.log(`Debug: Calculated cost for ${type}:`, {
+      hours,
+      avgCost,
+      total: hours * avgCost,
+    });
     return hours * avgCost;
   };
 
   const labourListRows = houses.flatMap(
     ({ houseId, dnas, friendlyName: buildingName }) => {
+      console.log(`\nDebug: Processing house ${buildingName} (${houseId})`);
+
       const houseModules = pipe(
         dnas,
         A.traverse(O.Applicative)((dna) =>
@@ -536,6 +548,17 @@ const labourProc = ({
           )
         ),
         O.getOrElse(() => [] as BuildModule[])
+      );
+
+      console.log(
+        "Debug: House modules with labour hours:",
+        houseModules.map((m) => ({
+          dna: m.dna,
+          foundationLabourHours: m.foundationLabourHours,
+          chassisLabourHours: m.chassisLabourHours,
+          exteriorLabourHours: m.exteriorLabourHours,
+          interiorLabourHours: m.interiorLabourHours,
+        }))
       );
 
       // Calculate hours for each type
@@ -555,6 +578,13 @@ const labourProc = ({
         (acc, m) => acc + m.interiorLabourHours,
         0
       );
+
+      console.log("Debug: Calculated hours:", {
+        foundationHours,
+        chassisHours,
+        exteriorHours,
+        interiorHours,
+      });
 
       // Create a row for each labour type
       return [
