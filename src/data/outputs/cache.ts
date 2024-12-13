@@ -1,6 +1,6 @@
 import Dexie from "dexie";
-import { MaterialsListRow, OrderListRow } from "./metrics";
 import { useLiveQuery } from "dexie-react-hooks";
+import { LabourListRow, MaterialsListRow, OrderListRow } from "./metrics";
 
 export type HouseModelsRow = {
   houseId: string;
@@ -21,10 +21,13 @@ export type FilesDocument = {
   orderListCsv?: File;
   materialsListCsv?: File;
   modelsZip?: File;
+  labourListCsv?: File;
 };
+
 class OutputsCache extends Dexie {
   orderListRows: Dexie.Table<OrderListRow, string>;
   materialsListRows: Dexie.Table<MaterialsListRow, string>;
+  labourListRows: Dexie.Table<LabourListRow, string>;
   houseModels: Dexie.Table<HouseModelsRow, string>;
   housePngs: Dexie.Table<HousePngsRow, string>;
   files: Dexie.Table<FilesDocument, typeof FILES_DOCUMENT_KEY>;
@@ -35,6 +38,7 @@ class OutputsCache extends Dexie {
     this.version(1).stores({
       orderListRows: "[houseId+blockName]",
       materialsListRows: "[houseId+item]",
+      labourListRows: "[houseId+buildingName]",
       houseModels: "houseId",
       housePngs: "houseId",
       files: "key",
@@ -45,6 +49,7 @@ class OutputsCache extends Dexie {
     this.houseModels = this.table("houseModels");
     this.housePngs = this.table("housePngs");
     this.files = this.table("files");
+    this.labourListRows = this.table("labourListRows");
   }
 }
 

@@ -186,3 +186,18 @@ export const useOrderListData = (selectedHouseIds?: string[]) => {
     fmt,
   };
 };
+
+export type LabourListRow = {
+  houseId: string;
+  buildingName: string;
+  foundationHours: number;
+  chassisHours: number;
+  exteriorHours: number;
+  interiorHours: number;
+  totalHours: number;
+  foundationCost: number;
+  chassisCost: number;
+  exteriorCost: number;
+  interiorCost: number;
+  totalCost: number;
+};
