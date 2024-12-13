@@ -59,6 +59,8 @@ export const parseDna = (dna: string): StructuredDna => {
   };
 };
 
+export type BuildModule = { systemId: string } & z.infer<typeof moduleParser>;
+
 export const moduleParser = z
   .object({
     id: z.string().min(1),
@@ -97,6 +99,10 @@ export const moduleParser = z
           message: "Invalid date string",
         }
       ),
+      foundation_install: z.number().default(0),
+      chassis_install: z.number().default(0),
+      exterior_labour: z.number().default(0),
+      interior_labour: z.number().default(0),
     }),
   })
   .transform(
@@ -126,6 +132,10 @@ export const moduleParser = z
         visual_reference,
         description,
         last_modified,
+        foundation_install,
+        chassis_install,
+        exterior_labour,
+        interior_labour,
       },
     }) => ({
       id,
@@ -153,10 +163,12 @@ export const moduleParser = z
       description,
       visualReference: visual_reference?.[0]?.url,
       lastModified: new Date(last_modified).getTime(),
+      foundationLabourHours: foundation_install,
+      chassisLabourHours: chassis_install,
+      exteriorLabourHours: exterior_labour,
+      interiorLabourHours: interior_labour,
     })
   );
-
-export type BuildModule = { systemId: string } & z.infer<typeof moduleParser>;
 
 export const modulesQuery = (input?: { systemIds: string[] }) => {
   const { systemIds = allSystemIds } = input ?? {};

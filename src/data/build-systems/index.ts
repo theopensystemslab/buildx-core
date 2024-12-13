@@ -17,6 +17,7 @@ import { suspend } from "suspend-react";
 import { pipe } from "fp-ts/lib/function";
 import { useLiveQuery } from "dexie-react-hooks";
 import buildSystemsCache from "./cache";
+import { cachedLabourTypesTE } from "./labourTypes";
 
 export const housePriorityDataTE = sequenceT(TE.ApplicativePar)(
   cachedModulesTE,
@@ -38,7 +39,8 @@ export const allBuildSystemsData = sequenceT(TE.ApplicativePar)(
   cachedBlockModuleEntriesTE,
   cachedSpaceTypesTE,
   cachedEnergyInfosTE,
-  cachedSystemSettingsTE
+  cachedSystemSettingsTE,
+  cachedLabourTypesTE
 );
 
 export const useSuspendAllBuildData = () =>
@@ -60,6 +62,7 @@ export const useAllBuildSystemsDataLiveQuery = () =>
     const spaceTypes = await buildSystemsCache.spaceTypes.toArray();
     const energyInfos = await buildSystemsCache.energyInfos.toArray();
     const systemSettings = await buildSystemsCache.settings.toArray();
+    const labourTypes = await buildSystemsCache.labourTypes.toArray();
 
     return {
       houseTypes,
@@ -75,6 +78,7 @@ export const useAllBuildSystemsDataLiveQuery = () =>
       spaceTypes,
       energyInfos,
       systemSettings,
+      labourTypes,
     };
   });
 
@@ -105,5 +109,6 @@ export * from "./settings";
 export * from "./spaceTypes";
 export * from "./stairTypes";
 export * from "./windowTypes";
+export * from "./labourTypes";
 
 export { systems as buildSystems } from "./systems";
