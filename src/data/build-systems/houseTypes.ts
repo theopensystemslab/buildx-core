@@ -1,4 +1,9 @@
-import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
+import {
+  A,
+  runUntilFirstSuccess,
+  TE,
+  unwrapTaskEither,
+} from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
 import { filter, map } from "fp-ts/lib/Array";
 import { pipe } from "fp-ts/lib/function";
@@ -7,6 +12,8 @@ import { allSystemIds, systemFromId } from "./systems";
 import airtable, { tryCatchImageBlob } from "@/utils/airtable";
 import buildSystemsCache, { BlobbedImage } from "./cache";
 import { useLiveQuery } from "dexie-react-hooks";
+import { cachedModulesTE } from "./modules";
+import { dnasToModules, modulesToMatrix } from "@/layouts/init";
 
 const modulesByHouseTypeSelector: QueryParams<any> = {
   filterByFormula: 'module!=""',
@@ -95,6 +102,9 @@ export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
             else return [];
           })
       );
+
+      const buildModules = await unwrapTaskEither(cachedModulesTE);
+
       return pipe(
         airtable
           .base(system.airtableId)
@@ -103,24 +113,38 @@ export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
           .all()
           .then(z.array(houseTypeParser).parse)
           .then((xs) =>
-            xs.map(({ dnas, ...rest }) => ({
-              systemId: system.id,
-              dnas: pipe(
-                dnas,
-                map((modulesByHouseTypeId) => {
-                  const moduleByHouseType = modulesByHouseType.find(
-                    (m) => m.id === modulesByHouseTypeId
-                  );
-                  return moduleByHouseType?.fields.module_code[0];
-                }),
-                filter((x): x is string => Boolean(x))
-              ),
-              ...rest,
-            }))
+            xs
+              .map(({ dnas, ...rest }) => {
+                const moduleDnas = pipe(
+                  dnas,
+                  map((modulesByHouseTypeId) => {
+                    const moduleByHouseType = modulesByHouseType.find(
+                      (m) => m.id === modulesByHouseTypeId
+                    );
+                    return moduleByHouseType?.fields.module_code[0];
+                  }),
+                  filter((x): x is string => Boolean(x))
+                );
+
+                // Convert DNAs to modules and validate the layout
+                const modules = dnasToModules({ systemId, buildModules })(
+                  moduleDnas
+                );
+                const matrix = modulesToMatrix(modules);
+
+                // Filter out house types with invalid layouts
+                if (!matrix) return null;
+
+                return {
+                  systemId: system.id,
+                  dnas: moduleDnas,
+                  ...rest,
+                };
+              })
+              .filter((x): x is NonNullable<typeof x> => x !== null)
           )
       );
     }),
-
     (ps) => Promise.all(ps).then(A.flatten)
   );
 };
