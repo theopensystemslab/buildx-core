@@ -180,8 +180,8 @@ export const columnify =
     return pipe(acc, transpose);
   };
 
-export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
-  const columns = pipe(
+export const modulesToColumns = (modules: BuildModule[]): BuildModule[][][] => {
+  return pipe(
     modules,
     modulesToRows,
     A.map((row) =>
@@ -212,32 +212,10 @@ export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
     ),
     transpose
   );
+};
 
-  const sameLengthColumns = pipe(
-    columns,
-    A.map((column) =>
-      pipe(
-        column,
-        A.map((module) =>
-          pipe(
-            module,
-            A.reduce(0, (b, v) => b + v.structuredDna.gridUnits)
-          )
-        ),
-        A.reduce(
-          { acc: true, prev: null },
-          ({ prev }: { prev: number | null }, a: number) => ({
-            acc: prev === null || prev === a,
-            prev: a as number | null,
-          })
-        ),
-        ({ acc }) => acc
-      )
-    ),
-    A.reduce(true, (b, a) => b && a)
-  );
-
-  if (!sameLengthColumns) throw new Error("not sameLengthColumns");
+export const modulesToMatrix = (modules: BuildModule[]): BuildModule[][][] => {
+  const columns = modulesToColumns(modules);
 
   return pipe(
     columns,
