@@ -1,32 +1,34 @@
-import { defaultCachedHousesOps, localHousesTE } from "@/data/user/houses";
-import { createHouseGroupTE } from "@/index";
+import { defaultCachedHousesOps } from "@/data/user/houses";
+import { allBuildSystemsData } from "@/index";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { TE, A } from "@/utils/functions";
 import { addNumkeyHouseCreateListeners } from "@@/examples/utils";
-import { pipe, flow } from "fp-ts/lib/function";
+
+// cachedHouseTypesTE();
 
 // right-click delete house
 
 // persist
 
-const scene = new BuildXScene({
-  ...defaultCachedHousesOps,
-  onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.delete();
-  },
+allBuildSystemsData().then(() => {
+  const scene = new BuildXScene({
+    ...defaultCachedHousesOps,
+    onRightClickBuildElement: (x) => {
+      x.elementGroup.houseGroup.delete();
+    },
+  });
+
+  addNumkeyHouseCreateListeners(scene);
 });
 
-addNumkeyHouseCreateListeners(scene);
-
-pipe(
-  localHousesTE,
-  TE.chain(flow(A.traverse(TE.ApplicativePar)(createHouseGroupTE))),
-  TE.map(
-    A.map((houseGroup) => {
-      scene.addHouseGroup(houseGroup);
-    })
-  )
-)();
+// pipe(
+//   localHousesTE,
+//   TE.chain(flow(A.traverse(TE.ApplicativePar)(createHouseGroupTE))),
+//   TE.map(
+//     A.map((houseGroup) => {
+//       scene.addHouseGroup(houseGroup);
+//     })
+//   )
+// )();
 
 // pipe(
 //   cachedHouseTypesTE,

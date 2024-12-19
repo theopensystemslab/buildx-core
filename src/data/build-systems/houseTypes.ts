@@ -1,12 +1,19 @@
-import { A, runUntilFirstSuccess, TE } from "@/utils/functions";
+import { dnasToModules, modulesToColumns, modulesToRows } from "@/layouts/init";
+import airtable, { tryCatchImageBlob } from "@/utils/airtable";
+import {
+  A,
+  O,
+  runUntilFirstSuccess,
+  TE,
+  unwrapTaskEither,
+} from "@/utils/functions";
 import { QueryParams } from "airtable/lib/query_params";
-import { filter, map } from "fp-ts/lib/Array";
+import { useLiveQuery } from "dexie-react-hooks";
 import { pipe } from "fp-ts/lib/function";
 import * as z from "zod";
-import { allSystemIds, systemFromId } from "./systems";
-import airtable, { tryCatchImageBlob } from "@/utils/airtable";
 import buildSystemsCache, { BlobbedImage } from "./cache";
-import { useLiveQuery } from "dexie-react-hooks";
+import { BuildModule, cachedModulesTE } from "./modules";
+import { allSystemIds, systemFromId } from "./systems";
 
 const modulesByHouseTypeSelector: QueryParams<any> = {
   filterByFormula: 'module!=""',
@@ -27,14 +34,16 @@ export const houseTypeParser = z
         // id: z.string().min(1),
         house_type_code: z.string().min(1),
         modules: z.array(z.string().min(1)),
-        image: z.array(
-          z.object({
-            url: z.string().min(1),
-          })
-        ),
-        description: z.string().min(1),
-        cost: z.number(),
-        embodied_carbon: z.number(),
+        image: z
+          .array(
+            z.object({
+              url: z.string().min(1),
+            })
+          )
+          .optional(),
+        description: z.string().min(1).default("Missing description"),
+        cost: z.number().default(0),
+        embodied_carbon: z.number().default(0),
         last_modified: z.string().refine(
           (value) => {
             // Attempt to parse the value as a date and check that it's valid
@@ -66,7 +75,7 @@ export const houseTypeParser = z
       id,
       name: house_type_code,
       dnas: modules,
-      imageUrl: image[0].url,
+      imageUrl: image?.[0]?.url,
       description,
       cost,
       carbon: embodied_carbon,
@@ -74,8 +83,74 @@ export const houseTypeParser = z
     })
   );
 
+export type HouseType = z.infer<typeof houseTypeParser> & { systemId: string };
+
+export type CachedHouseType = BlobbedImage<HouseType>;
+
+export const validateColumns = (columns: BuildModule[][][]): boolean => {
+  return pipe(
+    columns,
+    A.map((column) =>
+      pipe(
+        column,
+        A.map((module) =>
+          pipe(
+            module,
+            A.reduce(0, (b, v) => b + v.structuredDna.gridUnits)
+          )
+        ),
+        A.reduce(
+          { acc: true, prev: null },
+          ({ prev }: { prev: number | null }, a: number) => ({
+            acc: prev === null || prev === a,
+            prev: a as number | null,
+          })
+        ),
+        ({ acc }) => acc
+      )
+    ),
+    A.reduce(true, (b, a) => b && a)
+  );
+};
+
+export const validateRows = (rows: BuildModule[][]): boolean => {
+  return rows.every((row) => {
+    // Check if row starts and ends with END position type
+    if (
+      row[0]?.structuredDna.positionType !== "END" ||
+      row[row.length - 1]?.structuredDna.positionType !== "END"
+    ) {
+      return false;
+    }
+
+    // Check if all middle modules are MID position type
+    const middleModules = row.slice(1, -1);
+    if (!middleModules.every((m) => m.structuredDna.positionType === "MID")) {
+      return false;
+    }
+
+    // Check if all modules in row have same levelType and sectionType
+    const firstModule = row[0];
+    return row.every(
+      (module) =>
+        module.structuredDna.levelType ===
+          firstModule.structuredDna.levelType &&
+        module.structuredDna.sectionType ===
+          firstModule.structuredDna.sectionType
+    );
+  });
+};
+
+export const validateHouseType = (modules: BuildModule[]): boolean => {
+  const rows = modulesToRows(modules);
+  const columns = modulesToColumns(modules);
+  return validateRows(rows) && validateColumns(columns);
+};
+
 export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
   const { systemIds = allSystemIds } = input ?? {};
+
+  const buildModules = await unwrapTaskEither(cachedModulesTE);
 
   return pipe(
     systemIds,
@@ -95,7 +170,8 @@ export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
             else return [];
           })
       );
-      return pipe(
+
+      const systemHouseTypes = await pipe(
         airtable
           .base(system.airtableId)
           .table("house_types")
@@ -107,27 +183,36 @@ export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
               systemId: system.id,
               dnas: pipe(
                 dnas,
-                map((modulesByHouseTypeId) => {
-                  const moduleByHouseType = modulesByHouseType.find(
-                    (m) => m.id === modulesByHouseTypeId
-                  );
-                  return moduleByHouseType?.fields.module_code[0];
-                }),
-                filter((x): x is string => Boolean(x))
+                A.filterMap((modulesByHouseTypeId) =>
+                  pipe(
+                    modulesByHouseType,
+                    A.findFirstMap((x) =>
+                      x.id === modulesByHouseTypeId
+                        ? O.some(x.fields.module_code[0])
+                        : O.none
+                    )
+                  )
+                )
               ),
               ...rest,
             }))
           )
       );
-    }),
 
+      return pipe(
+        systemHouseTypes,
+        A.filter((systemHouseType) => {
+          const { dnas } = systemHouseType;
+
+          const modules = dnasToModules({ systemId, buildModules })(dnas);
+
+          return validateHouseType(modules);
+        })
+      );
+    }),
     (ps) => Promise.all(ps).then(A.flatten)
   );
 };
-
-export type HouseType = z.infer<typeof houseTypeParser> & { systemId: string };
-
-export type CachedHouseType = BlobbedImage<HouseType>;
 
 export const remoteHouseTypesTE: TE.TaskEither<Error, HouseType[]> =
   TE.tryCatch(
@@ -142,13 +227,13 @@ export const remoteHouseTypesTE: TE.TaskEither<Error, HouseType[]> =
 
 export const localHouseTypesTE: TE.TaskEither<Error, CachedHouseType[]> =
   TE.tryCatch(
-    () =>
-      buildSystemsCache.houseTypes.toArray().then((houseTypes) => {
-        if (A.isEmpty(houseTypes)) {
-          throw new Error("No house types found in cache");
-        }
-        return houseTypes;
-      }),
+    async () => {
+      const types = await buildSystemsCache.houseTypes.toArray();
+      if (A.isEmpty(types)) {
+        throw new Error("No house types found in cache");
+      }
+      return types;
+    },
     (reason) => (reason instanceof Error ? reason : new Error(String(reason)))
   );
 
