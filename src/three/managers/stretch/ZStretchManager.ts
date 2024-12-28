@@ -283,6 +283,13 @@ class ZStretchManager extends AbstractZStretchManager {
     };
   }
 
+  /**
+   * Handles the progress of a Z-axis stretch gesture
+   * @param delta The incremental change in Z position since the last progress event.
+   *             This is NOT the total offset from gesture start, but rather the
+   *             change since the last dragProgress event.
+   *             The delta is already normalized to the Z-axis and accounts for the house's rotation.
+   */
   gestureProgress(delta: number) {
     if (!this.startData) return;
 
