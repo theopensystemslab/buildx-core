@@ -8,7 +8,7 @@ import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 import CopyOfXStretchManager from "./CopyOfXStretchManager";
-import { addNumkeyHouseCreateListeners } from "../utils";
+import { addKeyHelperListeners } from "../utils";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
@@ -17,7 +17,7 @@ const scene = new BuildXScene({
   },
 });
 
-addNumkeyHouseCreateListeners(
+addKeyHelperListeners(
   scene
   // flow(
   //   ({ managers, ...rest }) =>

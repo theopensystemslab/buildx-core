@@ -7,7 +7,7 @@ import { A, NEA, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 
-export const addNumkeyHouseCreateListeners = (
+export const addKeyHelperListeners = (
   scene: BuildXScene,
   houseGroupTE: typeof defaultHouseGroupTE = defaultHouseGroupTE
 ) =>

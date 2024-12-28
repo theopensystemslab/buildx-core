@@ -1,6 +1,6 @@
 import { BuildXScene, defaultCachedHousesOps } from "@/index";
 import createHouseGroupTE from "@/tasks/createHouseGroupTE";
-import { addNumkeyHouseCreateListeners } from "@@/examples/utils";
+import { addKeyHelperListeners } from "@@/examples/utils";
 import { flow } from "fp-ts/lib/function";
 
 const scene = new BuildXScene({
@@ -10,7 +10,7 @@ const scene = new BuildXScene({
   },
 });
 
-addNumkeyHouseCreateListeners(
+addKeyHelperListeners(
   scene,
   flow(({ managers, ...rest }) =>
     createHouseGroupTE({

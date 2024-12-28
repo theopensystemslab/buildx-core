@@ -1,7 +1,7 @@
 import { defaultCachedHousesOps } from "@/data/user/houses";
 import { allBuildSystemsData } from "@/index";
 import BuildXScene from "@/three/objects/scene/BuildXScene";
-import { addNumkeyHouseCreateListeners } from "@@/examples/utils";
+import { addKeyHelperListeners } from "@@/examples/utils";
 
 // cachedHouseTypesTE();
 
@@ -17,7 +17,7 @@ allBuildSystemsData().then(() => {
     },
   });
 
-  addNumkeyHouseCreateListeners(scene);
+  addKeyHelperListeners(scene);
 });
 
 // pipe(
