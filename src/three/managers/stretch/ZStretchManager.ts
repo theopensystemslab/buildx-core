@@ -7,7 +7,7 @@ import {
 } from "@/three/objects/house/ColumnGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
-import { floor, max, min } from "@/utils/math";
+import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
 import { Matrix3, Matrix4, Vector3 } from "three";
 import { OBB } from "three-stdlib";
@@ -35,10 +35,14 @@ class ZStretchManager extends AbstractZStretchManager {
     orderedColumns: ColumnGroup[];
     bookendColumn: ColumnGroup;
     lastVisibleIndex: number;
+    targetBookendZ: number;
   };
 
   // Add debug flag as class property
   private debug: boolean = false;
+
+  // Add this as a class property
+  private accumulatedDelta: number = 0;
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -279,7 +283,9 @@ class ZStretchManager extends AbstractZStretchManager {
       side,
       orderedColumns,
       bookendColumn: side === 1 ? endColumn : startColumn,
-      lastVisibleIndex: visibilityBoundaryIndex, // Store as lastVisibleIndex for compatibility
+      lastVisibleIndex: visibilityBoundaryIndex,
+      targetBookendZ:
+        side === 1 ? endColumn.position.z : startColumn.position.z,
     };
   }
 
@@ -292,86 +298,60 @@ class ZStretchManager extends AbstractZStretchManager {
    */
   gestureProgress(delta: number) {
     if (!this.startData) return;
+    const { side, orderedColumns, bookendColumn } = this.startData;
 
-    const { side, bookendColumn, orderedColumns } = this.startData;
+    // Update target position directly with delta
+    this.startData.targetBookendZ += delta;
 
     if (side === 1) {
-      // Rear side stretching
-      if (delta > 0) {
-        // Stretching outwards
-        const maxZ =
-          orderedColumns[orderedColumns.length - 1].position.z +
-          orderedColumns[orderedColumns.length - 1].userData.depth;
-        const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
-        bookendColumn.position.z = newBookendZ;
+      // Rear side
+      // Ensure we can't go behind the first visible column
+      const minZ =
+        orderedColumns[0].position.z + orderedColumns[0].userData.depth;
+      this.startData.targetBookendZ = Math.max(
+        this.startData.targetBookendZ,
+        minZ
+      );
+
+      // Update visibility based on which columns should be shown
+      const previousVisible = this.startData.lastVisibleIndex;
+      const newVisible = this.findLastVisibleColumnIndex();
+
+      if (newVisible !== previousVisible) {
+        this.updateColumnVisibility(previousVisible, newVisible);
+        // Snap bookend to the last visible column
+        const lastVisibleColumn = orderedColumns[newVisible];
+        bookendColumn.position.z =
+          lastVisibleColumn.position.z + lastVisibleColumn.userData.depth;
       } else {
-        // Stretching inwards
-        const minZ =
-          orderedColumns[0].position.z + orderedColumns[0].userData.depth;
-        const newBookendZ = max(minZ, bookendColumn.position.z + delta);
-        bookendColumn.position.z = newBookendZ;
+        // bookendColumn.position.z = this.startData.targetBookendZ;
       }
+    } else {
+      // Front side
+      // Ensure we can't go beyond the last column
+      const maxZ = orderedColumns[orderedColumns.length - 1].position.z;
+      this.startData.targetBookendZ = Math.min(
+        this.startData.targetBookendZ,
+        maxZ
+      );
 
-      // Show/hide columns based on final position
-      for (let i = 0; i <= orderedColumns.length - 1; i++) {
-        const column = orderedColumns[i];
-        const columnEndZ = column.position.z + column.userData.depth;
+      const previousVisible = this.startData.lastVisibleIndex;
+      const newVisible = this.findFirstVisibleColumnIndex();
 
-        if (columnEndZ <= bookendColumn.position.z + GRACE) {
-          if (!column.visible) {
-            this.showVanillaColumn(column);
-            this.startData.lastVisibleIndex = i;
-          }
-        } else {
-          if (column.visible) {
-            hideObject(column);
-            this.startData.lastVisibleIndex = i - 1;
-          }
-        }
-      }
-    }
-
-    if (side === -1) {
-      // Front side stretching
-      if (delta < 0) {
-        // Stretching outwards
-        const minZ =
-          orderedColumns[0].position.z - bookendColumn.userData.depth;
-        const newBookendZ = max(minZ, bookendColumn.position.z + delta);
-        bookendColumn.position.z = newBookendZ;
+      if (newVisible !== previousVisible) {
+        this.updateColumnVisibility(previousVisible, newVisible);
+        // Snap bookend to the first visible column
+        const firstVisibleColumn = orderedColumns[newVisible];
+        bookendColumn.position.z =
+          firstVisibleColumn.position.z - bookendColumn.userData.depth;
       } else {
-        // Stretching inwards
-        const maxZ =
-          orderedColumns[orderedColumns.length - 1].position.z -
-          bookendColumn.userData.depth;
-        const newBookendZ = min(maxZ, bookendColumn.position.z + delta);
-        bookendColumn.position.z = newBookendZ;
-      }
-
-      // Show/hide columns based on final position
-      for (let i = orderedColumns.length - 1; i >= 0; i--) {
-        const column = orderedColumns[i];
-        const columnStartZ = column.position.z;
-
-        if (
-          columnStartZ >=
-          bookendColumn.position.z + bookendColumn.userData.depth - GRACE
-        ) {
-          if (!column.visible) {
-            this.showVanillaColumn(column);
-            this.startData.lastVisibleIndex = i;
-          }
-        } else {
-          if (column.visible) {
-            hideObject(column);
-            this.startData.lastVisibleIndex = i + 1;
-          }
-        }
+        // bookendColumn.position.z = this.startData.targetBookendZ;
       }
     }
   }
 
   gestureEnd() {
+    this.accumulatedDelta = 0;
     if (!this.initData || !this.startData) return;
     const { endColumn } = this.initData;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
@@ -478,6 +458,118 @@ class ZStretchManager extends AbstractZStretchManager {
   // Add method to toggle debug mode
   public toggleDebugMode(enabled?: boolean) {
     this.debug = enabled ?? !this.debug;
+  }
+
+  private handleRearSideMovement(delta: number) {
+    if (delta > 0) {
+      this.handleRearStretch();
+    } else {
+      this.handleRearCompress();
+    }
+  }
+
+  private handleFrontSideMovement(delta: number) {
+    if (delta > 0) {
+      this.handleFrontCompress();
+    } else {
+      this.handleFrontStretch();
+    }
+  }
+
+  private handleRearStretch() {
+    const { orderedColumns } = this.startData!;
+
+    // Enforce minimum position
+    const minZ =
+      orderedColumns[0].position.z + orderedColumns[0].userData.depth;
+    this.startData!.targetBookendZ = Math.max(
+      this.startData!.targetBookendZ,
+      minZ
+    );
+
+    const previousLastVisible = this.startData!.lastVisibleIndex;
+    let newLastVisible = this.findLastVisibleColumnIndex();
+    this.updateColumnVisibility(previousLastVisible, newLastVisible);
+  }
+
+  private handleRearCompress() {
+    // Implementation similar to handleRearStretch but for compression
+  }
+
+  private handleFrontStretch() {
+    const { orderedColumns, bookendColumn } = this.startData!;
+
+    const maxZ =
+      orderedColumns[orderedColumns.length - 1].position.z -
+      bookendColumn.userData.depth;
+    this.startData!.targetBookendZ = Math.min(
+      this.startData!.targetBookendZ,
+      maxZ
+    );
+
+    const previousLastVisible = this.startData!.lastVisibleIndex;
+    let newLastVisible = this.findFirstVisibleColumnIndex();
+    this.updateColumnVisibility(previousLastVisible, newLastVisible);
+  }
+
+  private handleFrontCompress() {
+    // Implementation similar to handleFrontStretch but for compression
+  }
+
+  private findLastVisibleColumnIndex(): number {
+    const { orderedColumns, targetBookendZ } = this.startData!;
+
+    for (let i = orderedColumns.length - 1; i >= 0; i--) {
+      const column = orderedColumns[i];
+      const columnEndZ = column.position.z + column.userData.depth;
+
+      if (columnEndZ <= targetBookendZ + GRACE) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  private findFirstVisibleColumnIndex(): number {
+    const { orderedColumns, targetBookendZ, bookendColumn } = this.startData!;
+
+    for (let i = 0; i < orderedColumns.length; i++) {
+      const column = orderedColumns[i];
+      if (
+        column.position.z >=
+        targetBookendZ + bookendColumn.userData.depth - GRACE
+      ) {
+        return i;
+      }
+    }
+    return orderedColumns.length - 1;
+  }
+
+  private updateColumnVisibility(previousVisible: number, newVisible: number) {
+    if (newVisible === previousVisible) return;
+
+    const { orderedColumns, side } = this.startData!;
+    this.startData!.lastVisibleIndex = newVisible;
+
+    if (side === 1) {
+      // For rear side, show columns up to newVisible
+      orderedColumns.forEach((column, i) => {
+        if (i <= newVisible && !column.visible) {
+          this.showVanillaColumn(column);
+        } else if (i > newVisible && column.visible) {
+          hideObject(column);
+        }
+      });
+    } else {
+      // For front side, show columns from newVisible onwards
+      orderedColumns.forEach((column, i) => {
+        if (i >= newVisible && !column.visible) {
+          this.showVanillaColumn(column);
+        } else if (i < newVisible && column.visible) {
+          hideObject(column);
+        }
+      });
+    }
   }
 }
 
