@@ -173,6 +173,12 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     this.houseGroup.managers.zStretch?.hideHandles();
   }
 
+  /**
+   * Handles the progress of an X-axis stretch gesture
+   * @param delta The incremental change in X position since the last progress event.
+   *             This is NOT the total offset from gesture start, but rather the
+   *             change since the last dragProgress event.
+   */
   gestureProgress(delta: number) {
     if (!this.initData || !this.startData || !this.progressData) {
       console.error("Gesture progress called before initialization");
@@ -182,25 +188,36 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     const { initialLayoutWidth, minWidth, maxWidth } = this.initData;
     const { side } = this.startData;
 
-    // Calculate new width directly
+    // Calculate new width by adding the new delta to our running total
     let newWidth =
       initialLayoutWidth + this.progressData.cumulativeDx + side * delta;
 
-    // Clamp new width
+    // Ensure we stay within the allowed width range for this section type
     newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
 
-    // Calculate actual delta
+    // Calculate how much we actually moved (important for handle updates)
     const actualDelta =
       newWidth - (initialLayoutWidth + this.progressData.cumulativeDx);
 
-    // Update cumulative delta
+    // Keep track of total movement since gesture start
     this.progressData.cumulativeDx += actualDelta;
 
-    // Update handle positions
-    this.updateHandlePositions(actualDelta);
+    // Store current layout index before potential transition
+    const previousLayoutIndex = this.progressData.currentLayoutIndex;
 
-    // Check for layout transitions
+    // Check if we should transition to a different layout
     this.checkAndPerformLayoutTransition(newWidth);
+
+    // Only move handles when layout actually changes
+    if (previousLayoutIndex !== this.progressData.currentLayoutIndex) {
+      const newLayoutWidth =
+        this.initData.alts[this.progressData.currentLayoutIndex].sectionType
+          .width;
+      const currentLayoutWidth =
+        this.initData.alts[previousLayoutIndex].sectionType.width;
+      const widthDelta = newLayoutWidth - currentLayoutWidth;
+      this.updateHandlePositions(widthDelta); // Remove the /2 here since updateHandlePositions already handles it
+    }
   }
 
   private updateHandlePositions(delta: number) {
