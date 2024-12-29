@@ -30,19 +30,16 @@ class ZStretchManager extends AbstractZStretchManager {
     lengthWiseNeighbours: HouseGroup[];
   };
 
-  startData?: {
+  scratchData?: {
     side: 1 | -1;
     orderedColumns: ColumnGroup[];
     bookendColumn: ColumnGroup;
     lastVisibleIndex: number;
-    targetBookendZ: number;
+    accZ: number;
   };
 
   // Add debug flag as class property
   private debug: boolean = false;
-
-  // Add this as a class property
-  private accumulatedDelta: number = 0;
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -279,13 +276,12 @@ class ZStretchManager extends AbstractZStretchManager {
       orderedColumns.push(...midColumns);
     }
 
-    this.startData = {
+    this.scratchData = {
       side,
       orderedColumns,
       bookendColumn: side === 1 ? endColumn : startColumn,
       lastVisibleIndex: visibilityBoundaryIndex,
-      targetBookendZ:
-        side === 1 ? endColumn.position.z : startColumn.position.z,
+      accZ: side === 1 ? endColumn.position.z : startColumn.position.z,
     };
   }
 
@@ -297,24 +293,21 @@ class ZStretchManager extends AbstractZStretchManager {
    *             The delta is already normalized to the Z-axis and accounts for the house's rotation.
    */
   gestureProgress(delta: number) {
-    if (!this.startData) return;
-    const { side, orderedColumns, bookendColumn } = this.startData;
+    if (!this.scratchData) return;
+    const { side, orderedColumns, bookendColumn } = this.scratchData;
 
     // Update target position directly with delta
-    this.startData.targetBookendZ += delta;
+    this.scratchData.accZ += delta;
 
     if (side === 1) {
       // Rear side
       // Ensure we can't go behind the first visible column
       const minZ =
         orderedColumns[0].position.z + orderedColumns[0].userData.depth;
-      this.startData.targetBookendZ = Math.max(
-        this.startData.targetBookendZ,
-        minZ
-      );
+      this.scratchData.accZ = Math.max(this.scratchData.accZ, minZ);
 
       // Update visibility based on which columns should be shown
-      const previousVisible = this.startData.lastVisibleIndex;
+      const previousVisible = this.scratchData.lastVisibleIndex;
       const newVisible = this.findLastVisibleColumnIndex();
 
       if (newVisible !== previousVisible) {
@@ -323,19 +316,14 @@ class ZStretchManager extends AbstractZStretchManager {
         const lastVisibleColumn = orderedColumns[newVisible];
         bookendColumn.position.z =
           lastVisibleColumn.position.z + lastVisibleColumn.userData.depth;
-      } else {
-        // bookendColumn.position.z = this.startData.targetBookendZ;
       }
     } else {
       // Front side
       // Ensure we can't go beyond the last column
       const maxZ = orderedColumns[orderedColumns.length - 1].position.z;
-      this.startData.targetBookendZ = Math.min(
-        this.startData.targetBookendZ,
-        maxZ
-      );
+      this.scratchData.accZ = Math.min(this.scratchData.accZ, maxZ);
 
-      const previousVisible = this.startData.lastVisibleIndex;
+      const previousVisible = this.scratchData.lastVisibleIndex;
       const newVisible = this.findFirstVisibleColumnIndex();
 
       if (newVisible !== previousVisible) {
@@ -344,18 +332,15 @@ class ZStretchManager extends AbstractZStretchManager {
         const firstVisibleColumn = orderedColumns[newVisible];
         bookendColumn.position.z =
           firstVisibleColumn.position.z - bookendColumn.userData.depth;
-      } else {
-        // bookendColumn.position.z = this.startData.targetBookendZ;
       }
     }
   }
 
   gestureEnd() {
-    this.accumulatedDelta = 0;
-    if (!this.initData || !this.startData) return;
+    if (!this.initData || !this.scratchData) return;
     const { endColumn } = this.initData;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
-      this.startData;
+      this.scratchData;
 
     if (side === 1) {
       bookendColumn.position.z =
@@ -419,9 +404,9 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   reindexColumns() {
-    if (!this.startData || !this.initData) return;
+    if (!this.scratchData || !this.initData) return;
     const { endColumn } = this.initData;
-    const { orderedColumns } = this.startData;
+    const { orderedColumns } = this.scratchData;
 
     [...orderedColumns, endColumn]
       .filter((x) => x.visible)
@@ -431,8 +416,8 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   cleanup() {
-    if (!this.startData) return;
-    const { orderedColumns } = this.startData;
+    if (!this.scratchData) return;
+    const { orderedColumns } = this.scratchData;
 
     pipe(
       this.houseGroup.activeLayoutGroup,
@@ -444,7 +429,7 @@ class ZStretchManager extends AbstractZStretchManager {
     );
 
     delete this.initData;
-    delete this.startData;
+    delete this.scratchData;
   }
 
   showHandles() {
@@ -460,64 +445,8 @@ class ZStretchManager extends AbstractZStretchManager {
     this.debug = enabled ?? !this.debug;
   }
 
-  private handleRearSideMovement(delta: number) {
-    if (delta > 0) {
-      this.handleRearStretch();
-    } else {
-      this.handleRearCompress();
-    }
-  }
-
-  private handleFrontSideMovement(delta: number) {
-    if (delta > 0) {
-      this.handleFrontCompress();
-    } else {
-      this.handleFrontStretch();
-    }
-  }
-
-  private handleRearStretch() {
-    const { orderedColumns } = this.startData!;
-
-    // Enforce minimum position
-    const minZ =
-      orderedColumns[0].position.z + orderedColumns[0].userData.depth;
-    this.startData!.targetBookendZ = Math.max(
-      this.startData!.targetBookendZ,
-      minZ
-    );
-
-    const previousLastVisible = this.startData!.lastVisibleIndex;
-    let newLastVisible = this.findLastVisibleColumnIndex();
-    this.updateColumnVisibility(previousLastVisible, newLastVisible);
-  }
-
-  private handleRearCompress() {
-    // Implementation similar to handleRearStretch but for compression
-  }
-
-  private handleFrontStretch() {
-    const { orderedColumns, bookendColumn } = this.startData!;
-
-    const maxZ =
-      orderedColumns[orderedColumns.length - 1].position.z -
-      bookendColumn.userData.depth;
-    this.startData!.targetBookendZ = Math.min(
-      this.startData!.targetBookendZ,
-      maxZ
-    );
-
-    const previousLastVisible = this.startData!.lastVisibleIndex;
-    let newLastVisible = this.findFirstVisibleColumnIndex();
-    this.updateColumnVisibility(previousLastVisible, newLastVisible);
-  }
-
-  private handleFrontCompress() {
-    // Implementation similar to handleFrontStretch but for compression
-  }
-
   private findLastVisibleColumnIndex(): number {
-    const { orderedColumns, targetBookendZ } = this.startData!;
+    const { orderedColumns, accZ: targetBookendZ } = this.scratchData!;
 
     for (let i = orderedColumns.length - 1; i >= 0; i--) {
       const column = orderedColumns[i];
@@ -531,7 +460,11 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   private findFirstVisibleColumnIndex(): number {
-    const { orderedColumns, targetBookendZ, bookendColumn } = this.startData!;
+    const {
+      orderedColumns,
+      accZ: targetBookendZ,
+      bookendColumn,
+    } = this.scratchData!;
 
     for (let i = 0; i < orderedColumns.length; i++) {
       const column = orderedColumns[i];
@@ -548,8 +481,8 @@ class ZStretchManager extends AbstractZStretchManager {
   private updateColumnVisibility(previousVisible: number, newVisible: number) {
     if (newVisible === previousVisible) return;
 
-    const { orderedColumns, side } = this.startData!;
-    this.startData!.lastVisibleIndex = newVisible;
+    const { orderedColumns, side } = this.scratchData!;
+    this.scratchData!.lastVisibleIndex = newVisible;
 
     if (side === 1) {
       // For rear side, show columns up to newVisible
