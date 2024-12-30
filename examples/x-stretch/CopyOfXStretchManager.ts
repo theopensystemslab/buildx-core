@@ -100,6 +100,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   init() {
+    console.log("x-stretch init");
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
@@ -161,6 +162,11 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
       this.houseGroup.managers.cuts?.createClippedBrushes(layoutGroup);
       this.houseGroup.managers.cuts?.showAppropriateBrushes(layoutGroup);
     });
+
+    console.log(
+      this.initData?.alts,
+      this.houseGroup.children.filter((x) => x instanceof ColumnLayoutGroup)
+    );
   }
 
   gestureStart(side: 1 | -1) {
@@ -269,7 +275,19 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   gestureEnd() {
-    console.log(`ZStretch  init from XStretch gestureEnd`);
+    // If we have a preview layout, make it the active layout
+    if (this.houseGroup.managers.layouts?.previewLayoutGroup._tag === "Some") {
+      this.houseGroup.managers.layouts.activeLayoutGroup =
+        this.houseGroup.managers.layouts.previewLayoutGroup.value;
+    }
+
+    // Clean up current state
+    this.cleanup();
+
+    // Re-initialize for next potential stretch
+    this.init();
+
+    console.log(`ZStretch init from XStretch gestureEnd`);
     this.houseGroup.managers.zStretch?.init();
     this.houseGroup.managers.zStretch?.showHandles();
   }
@@ -283,10 +301,21 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
-    // check alts
-    // check if current active visible layout group is in alts
-    // remove parent of all other alts
-    // delete the initData, startData, progressData
+    // Remove all alt layouts except the active one
+    if (this.initData) {
+      const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
+      this.initData.alts.forEach(({ layoutGroup }) => {
+        if (layoutGroup !== activeLayout) {
+          this.houseGroup.remove(layoutGroup);
+        }
+      });
+    }
+
+    // Reset all state data
+    this.initData = undefined;
+    this.startData = undefined;
+    this.progressData = undefined;
+    this.cutKey = null;
   }
 
   onHandleHover(): void {
