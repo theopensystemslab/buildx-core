@@ -13,6 +13,11 @@ class LayoutsManager {
   private _previewLayoutGroup: O.Option<ColumnLayoutGroup>;
   private _houseTypeLayoutGroup: O.Option<ColumnLayoutGroup>;
 
+  // Static prefixes for different types of layouts
+  private static readonly ACTIVE_LAYOUT_PREFIX = "ACTIVE_LAYOUT";
+  private static readonly PREVIEW_LAYOUT_PREFIX = "PREVIEW_LAYOUT";
+  private static readonly HOUSE_TYPE_LAYOUT_PREFIX = "HOUSE_TYPE_LAYOUT";
+
   constructor(houseGroup: HouseGroup) {
     this.houseGroup = houseGroup;
     this._activeLayoutGroup = O.none;
@@ -35,6 +40,7 @@ class LayoutsManager {
         )
       ),
       TE.map((columnLayoutGroup) => {
+        columnLayoutGroup.name = `${LayoutsManager.HOUSE_TYPE_LAYOUT_PREFIX}-${columnLayoutGroup.uuid}`;
         hideObject(columnLayoutGroup);
         this.houseGroup.add(columnLayoutGroup);
         this._houseTypeLayoutGroup = O.some(columnLayoutGroup);
@@ -61,6 +67,7 @@ class LayoutsManager {
   set activeLayoutGroup(layoutGroup: ColumnLayoutGroup) {
     const previewNone = () => {
       pipe(this.activeLayoutGroup, O.map(hideObject));
+      layoutGroup.name = `${LayoutsManager.ACTIVE_LAYOUT_PREFIX}-${layoutGroup.uuid}`;
       showObject(layoutGroup);
       this._activeLayoutGroup = O.some(layoutGroup);
     };
@@ -68,8 +75,9 @@ class LayoutsManager {
     const previewSome = (previewLayoutGroup: ColumnLayoutGroup) => {
       if (previewLayoutGroup !== layoutGroup)
         throw new Error(
-          `unexpected setting active layout group different than preivew`
+          `unexpected setting active layout group different than preview`
         );
+      // Keep the name from preview since it's the same object
       this._activeLayoutGroup = this._previewLayoutGroup;
       this._previewLayoutGroup = O.none;
     };
@@ -90,6 +98,7 @@ class LayoutsManager {
             incoming,
             O.map((previewLayoutGroup) => {
               hideObject(activeLayoutGroup);
+              previewLayoutGroup.name = `${LayoutsManager.PREVIEW_LAYOUT_PREFIX}-${previewLayoutGroup.uuid}`;
               showObject(previewLayoutGroup);
               this._previewLayoutGroup = O.some(previewLayoutGroup);
             })
@@ -102,6 +111,7 @@ class LayoutsManager {
           };
 
           const incomingSome = (incoming: ColumnLayoutGroup) => {
+            incoming.name = `${LayoutsManager.PREVIEW_LAYOUT_PREFIX}-${incoming.uuid}`;
             showObject(incoming);
             pipe(this._previewLayoutGroup, O.map(hideObject));
             this._previewLayoutGroup = O.some(incoming);

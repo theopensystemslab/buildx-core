@@ -18,6 +18,7 @@ type AltSectionTypeLayout = {
 };
 
 class CopyOfXStretchManager extends AbstractXStretchManager {
+  private static readonly ALT_LAYOUT_PREFIX = "X_STRETCH_ALT";
   handles: [StretchHandleGroup, StretchHandleGroup];
   initData?: {
     alts: Array<AltSectionTypeLayout>;
@@ -33,6 +34,8 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     currentLayoutIndex: number;
   };
   cutKey: string | null = null;
+  private isInitializing = false;
+  private _hoverTimeout: NodeJS.Timeout | null = null;
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -58,9 +61,14 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
         const { layout, sectionType } = activeLayoutGroup.userData;
+        console.log("Creating alts for:", { systemId, layout, sectionType }); // Debug log
 
         return pipe(
           getAltSectionTypeLayouts({ systemId, layout, sectionType }),
+          TE.mapLeft((error) => {
+            console.error("Failed to get alt layouts:", error);
+            return error;
+          }),
           TE.chain(
             flow(
               A.traverse(TE.ApplicativePar)(({ layout, sectionType }) =>
@@ -71,16 +79,17 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                     layout,
                   }),
                   TE.map((layoutGroup) => {
-                    layoutGroup.name = `alt-${sectionType.code}-${layoutGroup.uuid}`;
+                    layoutGroup.name = `${CopyOfXStretchManager.ALT_LAYOUT_PREFIX}-${sectionType.code}-${layoutGroup.uuid}`;
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
                     hideObject(layoutGroup);
+                    console.log("Created alt layout:", sectionType.code); // Debug log
                     return { layoutGroup, sectionType };
                   })
                 )
               ),
               TE.map((xs) => {
-                return [
+                const sorted = [
                   ...xs,
                   {
                     layoutGroup: activeLayoutGroup,
@@ -89,18 +98,23 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                 ].sort((a, b) =>
                   S.Ord.compare(b.sectionType.code, a.sectionType.code)
                 );
+                console.log(
+                  "Final alt layouts:",
+                  sorted.map((x) => x.sectionType.code)
+                ); // Debug log
+                return sorted;
               })
             )
           )
         );
       }),
-      TE.fromOption(() => Error(`eh`)),
+      TE.fromOption(() => new Error("No active layout group found")),
       TE.flatten
     );
   }
 
   init() {
-    console.log("x-stretch init");
+    this.logColumnLayouts("Before Init");
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
@@ -130,17 +144,12 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
               initialLayoutWidth: activeLayoutGroup.userData.width,
             };
 
-            console.log({
-              alts,
-              children: this.houseGroup.children.filter(
-                (x) => x instanceof ColumnLayoutGroup
-              ),
-            });
-
             this.progressData = {
               cumulativeDx: 0,
               currentLayoutIndex,
             };
+
+            this.logColumnLayouts("After Init");
           })
         )
       )
@@ -148,25 +157,61 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cutAlts() {
-    const cutKey =
+    if (!this.houseGroup.unsafeActiveLayoutGroup) {
+      console.error("No active layout group found");
+      return;
+    }
+
+    // If we're already initializing, don't start another initialization
+    if (this.isInitializing) {
+      return;
+    }
+
+    // If we don't have alts yet, initialize them
+    if (!this.initData?.alts) {
+      this.isInitializing = true;
+      this.init()
+        .then(() => {
+          if (this.initData?.alts) {
+            this.performCuts();
+          } else {
+            console.error("Failed to initialize alts");
+          }
+        })
+        .catch((error) => console.error("Failed to initialize:", error))
+        .finally(() => {
+          this.isInitializing = false;
+        });
+      return;
+    }
+
+    this.performCuts();
+  }
+
+  private performCuts() {
+    if (!this.houseGroup.unsafeActiveLayoutGroup || !this.initData?.alts)
+      return;
+
+    const newCutKey =
       this.houseGroup.unsafeActiveLayoutGroup.userData.dnas.toString() +
       JSON.stringify(this.houseGroup.managers.cuts?.settings);
 
-    if (this.cutKey === cutKey) return;
+    // Skip if we've already cut with these settings
+    if (this.cutKey === newCutKey) return;
 
-    this.cutKey = cutKey;
+    this.cutKey = newCutKey;
 
-    console.log(`cutAlts ${cutKey}`);
-
-    this.initData?.alts.forEach(({ layoutGroup }) => {
-      this.houseGroup.managers.cuts?.createClippedBrushes(layoutGroup);
-      this.houseGroup.managers.cuts?.showAppropriateBrushes(layoutGroup);
+    this.initData.alts.forEach(({ layoutGroup }) => {
+      try {
+        if (!this.houseGroup.managers.cuts) {
+          throw new Error("Cuts manager not available");
+        }
+        this.houseGroup.managers.cuts.createClippedBrushes(layoutGroup);
+        this.houseGroup.managers.cuts.showAppropriateBrushes(layoutGroup);
+      } catch (error) {
+        console.error("Failed to cut layout:", layoutGroup.name, error);
+      }
     });
-
-    console.log(
-      this.initData?.alts,
-      this.houseGroup.children.filter((x) => x instanceof ColumnLayoutGroup)
-    );
   }
 
   gestureStart(side: 1 | -1) {
@@ -268,14 +313,18 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     nextIndex: number
   ) {
     if (this.houseGroup.managers.layouts) {
-      this.houseGroup.managers.layouts.activeLayoutGroup =
-        nextLayout.layoutGroup;
+      // Set as preview during the stretch operation
+      this.houseGroup.managers.layouts.previewLayoutGroup = O.some(
+        nextLayout.layoutGroup
+      );
       this.progressData!.currentLayoutIndex = nextIndex;
     }
   }
 
   gestureEnd() {
-    // If we have a preview layout, make it the active layout
+    this.logColumnLayouts("Before GestureEnd");
+
+    // Now we commit the preview to active (this is already correct in the code)
     if (this.houseGroup.managers.layouts?.previewLayoutGroup._tag === "Some") {
       this.houseGroup.managers.layouts.activeLayoutGroup =
         this.houseGroup.managers.layouts.previewLayoutGroup.value;
@@ -287,9 +336,10 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     // Re-initialize for next potential stretch
     this.init();
 
-    console.log(`ZStretch init from XStretch gestureEnd`);
     this.houseGroup.managers.zStretch?.init();
     this.houseGroup.managers.zStretch?.showHandles();
+
+    this.logColumnLayouts("After GestureEnd");
   }
 
   showHandles() {
@@ -301,25 +351,68 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
-    // Remove all alt layouts except the active one
-    if (this.initData) {
-      const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
-      this.initData.alts.forEach(({ layoutGroup }) => {
-        if (layoutGroup !== activeLayout) {
-          this.houseGroup.remove(layoutGroup);
-        }
-      });
+    this.logColumnLayouts("Before Cleanup");
+
+    // Clear the hover timeout
+    if (this._hoverTimeout) {
+      clearTimeout(this._hoverTimeout);
+      this._hoverTimeout = null;
     }
+
+    // Reset initialization flag
+    this.isInitializing = false;
+
+    // Remove our alt layouts and any preview layouts created during stretch
+    const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
+    this.houseGroup.children
+      .filter(
+        (child) =>
+          child instanceof ColumnLayoutGroup &&
+          child !== activeLayout &&
+          (child.name.startsWith(CopyOfXStretchManager.ALT_LAYOUT_PREFIX) ||
+            child.name.startsWith("PREVIEW_LAYOUT"))
+      )
+      .forEach((layout) => {
+        this.houseGroup.remove(layout);
+      });
 
     // Reset all state data
     this.initData = undefined;
     this.startData = undefined;
     this.progressData = undefined;
     this.cutKey = null;
+
+    // Clear any remaining preview in layouts manager
+    if (this.houseGroup.managers.layouts) {
+      this.houseGroup.managers.layouts.previewLayoutGroup = O.none;
+    }
+
+    this.logColumnLayouts("After Cleanup");
   }
 
   onHandleHover(): void {
-    this.cutAlts();
+    // Debounce the hover handler
+    if (this._hoverTimeout) {
+      clearTimeout(this._hoverTimeout);
+    }
+
+    this._hoverTimeout = setTimeout(() => {
+      if (!this.cutKey) {
+        this.cutAlts();
+      }
+    }, 100);
+  }
+
+  private logColumnLayouts(context: string) {
+    const columnLayouts = this.houseGroup.children.filter(
+      (child) => child instanceof ColumnLayoutGroup
+    );
+
+    console.log(`[${context}] ColumnLayoutGroups:`, {
+      total: columnLayouts.length,
+      names: columnLayouts.map((c) => c.name),
+      tracked: this.initData?.alts?.length ?? 0,
+    });
   }
 }
 
