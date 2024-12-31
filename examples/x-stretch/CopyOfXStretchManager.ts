@@ -34,6 +34,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     currentLayoutIndex: number;
   };
   cutKey: string | null = null;
+  private rawCumulativeDx: number = 0;
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -206,7 +207,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
    *             change since the last dragProgress event.
    */
   gestureProgress(delta: number) {
-    // 1. Safety check
     if (!this.initData || !this.startData || !this.progressData) {
       console.error("Gesture progress called before initialization");
       return;
@@ -215,12 +215,29 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     const { initialLayoutWidth, minWidth, maxWidth } = this.initData;
     const { side } = this.startData;
 
-    // Calculate target width directly from initial width and total accumulated movement
-    const targetWidth =
-      initialLayoutWidth + this.progressData.cumulativeDx + side * delta;
+    // Track raw movement without clamping
+    this.rawCumulativeDx += side * delta;
+
+    console.log("Detailed Gesture Debug:", {
+      delta,
+      side,
+      initialLayoutWidth,
+      rawCumulativeDx: this.rawCumulativeDx,
+      targetWidth: initialLayoutWidth + this.rawCumulativeDx,
+      clampedWidth: Math.max(
+        minWidth,
+        Math.min(maxWidth, initialLayoutWidth + this.rawCumulativeDx)
+      ),
+      minWidth,
+      maxWidth,
+      currentLayoutIndex: this.progressData.currentLayoutIndex,
+    });
+
+    // Calculate target width using raw movement
+    const targetWidth = initialLayoutWidth + this.rawCumulativeDx;
     const newWidth = Math.max(minWidth, Math.min(maxWidth, targetWidth));
 
-    // Update cumulative delta based on actual position relative to initial width
+    // Store clamped difference for display purposes only
     this.progressData.cumulativeDx = newWidth - initialLayoutWidth;
 
     // 5. Handle layout transitions
@@ -251,9 +268,10 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   private checkAndPerformLayoutTransition(currentWidth: number) {
     const { alts } = this.initData!;
     let { currentLayoutIndex } = this.progressData!;
-    const previousIndex = currentLayoutIndex;
+    const previousWidth = alts[currentLayoutIndex].sectionType.width;
 
-    if (currentWidth > this.initData!.initialLayoutWidth) {
+    // Compare with previous width instead of initial width
+    if (currentWidth > previousWidth) {
       // Stretching outwards
       while (
         currentLayoutIndex < alts.length - 1 &&
@@ -271,9 +289,15 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
       }
     }
 
-    if (currentLayoutIndex !== previousIndex) {
+    if (currentLayoutIndex !== this.progressData!.currentLayoutIndex) {
       this.transitionToLayout(alts[currentLayoutIndex], currentLayoutIndex);
     }
+
+    console.log({
+      currentWidth,
+      currentLayoutIndex: this.progressData!.currentLayoutIndex,
+      availableLayouts: this.initData!.alts.map((a) => a.sectionType.width),
+    });
   }
 
   private transitionToLayout(
@@ -342,6 +366,9 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     if (this.houseGroup.managers.layouts) {
       this.houseGroup.managers.layouts.previewLayoutGroup = O.none;
     }
+
+    // Reset raw tracking in cleanup
+    this.rawCumulativeDx = 0;
   }
 
   onHandleHover(): void {
