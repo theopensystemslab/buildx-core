@@ -136,8 +136,8 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
               currentLayoutIndex,
             };
 
-            // Only show handles after successful initialization
-            this.showHandles();
+            // Remove this line since handles are already shown
+            // this.showHandles();
           })
         )
       )
@@ -160,7 +160,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
 
   private performCuts() {
     if (!this.initData) {
-      console.error("No init data available");
+      console.warn("Skipping cuts - no init data available");
       return;
     }
 
@@ -172,6 +172,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
       return;
     }
 
+    console.time("performCuts");
     this.cutKey = newCutKey;
 
     this.initData.alts.forEach(({ layoutGroup }, index) => {
@@ -314,8 +315,8 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
-    // Hide handles first
-    this.hideHandles();
+    // Keep showing handles - only hide them when explicitly requested
+    // this.hideHandles();
 
     // Remove our alt layouts and any preview layouts created during stretch
     const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
@@ -344,6 +345,11 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   onHandleHover(): void {
+    // Only proceed if we have initData
+    if (!this.initData) {
+      return;
+    }
+
     if (!this.cutKey || this.cutKey !== this.generateCutKey()) {
       this.performCuts();
     }
