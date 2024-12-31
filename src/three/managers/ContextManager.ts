@@ -193,10 +193,7 @@ class ContextManager {
               // drill into the row
               (rowIndex) => {
                 const {
-                  managers: {
-                    cuts,
-                    // xStretch
-                  },
+                  managers: { cuts },
                   activeLayoutGroup,
                 } = buildingHouseGroup;
                 pipe(
@@ -208,12 +205,6 @@ class ContextManager {
                     });
                     cuts?.createClippedBrushes(activeLayoutGroup);
                     cuts?.showAppropriateBrushes(activeLayoutGroup);
-
-                    // xStretch?.initData?.alts?.forEach(({ layoutGroup }) => {
-                    //   if (layoutGroup === activeLayoutGroup) return;
-                    //   cuts?.createClippedBrushes(layoutGroup);
-                    //   cuts?.showAppropriateBrushes(layoutGroup);
-                    // });
                   })
                 );
               }
