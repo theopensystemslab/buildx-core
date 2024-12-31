@@ -61,14 +61,9 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
         const { layout, sectionType } = activeLayoutGroup.userData;
-        console.log("Creating alts for:", { systemId, layout, sectionType }); // Debug log
 
         return pipe(
           getAltSectionTypeLayouts({ systemId, layout, sectionType }),
-          TE.mapLeft((error) => {
-            console.error("Failed to get alt layouts:", error);
-            return error;
-          }),
           TE.chain(
             flow(
               A.traverse(TE.ApplicativePar)(({ layout, sectionType }) =>
@@ -83,7 +78,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
                     hideObject(layoutGroup);
-                    console.log("Created alt layout:", sectionType.code); // Debug log
                     return { layoutGroup, sectionType };
                   })
                 )
@@ -98,10 +92,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
                 ].sort((a, b) =>
                   S.Ord.compare(b.sectionType.code, a.sectionType.code)
                 );
-                console.log(
-                  "Final alt layouts:",
-                  sorted.map((x) => x.sectionType.code)
-                ); // Debug log
                 return sorted;
               })
             )
@@ -114,7 +104,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   init() {
-    this.logColumnLayouts("Before Init");
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
@@ -148,8 +137,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
               cumulativeDx: 0,
               currentLayoutIndex,
             };
-
-            this.logColumnLayouts("After Init");
           })
         )
       )
@@ -192,26 +179,33 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     if (!this.houseGroup.unsafeActiveLayoutGroup || !this.initData?.alts)
       return;
 
+    console.time("performCuts");
     const newCutKey =
       this.houseGroup.unsafeActiveLayoutGroup.userData.dnas.toString() +
       JSON.stringify(this.houseGroup.managers.cuts?.settings);
 
     // Skip if we've already cut with these settings
-    if (this.cutKey === newCutKey) return;
+    if (this.cutKey === newCutKey) {
+      console.log("Skipping cuts - same key");
+      return;
+    }
 
     this.cutKey = newCutKey;
 
-    this.initData.alts.forEach(({ layoutGroup }) => {
+    this.initData.alts.forEach(({ layoutGroup }, index) => {
       try {
         if (!this.houseGroup.managers.cuts) {
           throw new Error("Cuts manager not available");
         }
+        console.time(`cut layout ${index}`);
         this.houseGroup.managers.cuts.createClippedBrushes(layoutGroup);
         this.houseGroup.managers.cuts.showAppropriateBrushes(layoutGroup);
+        console.timeEnd(`cut layout ${index}`);
       } catch (error) {
         console.error("Failed to cut layout:", layoutGroup.name, error);
       }
     });
+    console.timeEnd("performCuts");
   }
 
   gestureStart(side: 1 | -1) {
@@ -322,8 +316,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   gestureEnd() {
-    this.logColumnLayouts("Before GestureEnd");
-
     // Now we commit the preview to active (this is already correct in the code)
     if (this.houseGroup.managers.layouts?.previewLayoutGroup._tag === "Some") {
       this.houseGroup.managers.layouts.activeLayoutGroup =
@@ -338,8 +330,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
 
     this.houseGroup.managers.zStretch?.init();
     this.houseGroup.managers.zStretch?.showHandles();
-
-    this.logColumnLayouts("After GestureEnd");
   }
 
   showHandles() {
@@ -351,8 +341,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
-    this.logColumnLayouts("Before Cleanup");
-
     // Clear the hover timeout
     if (this._hoverTimeout) {
       clearTimeout(this._hoverTimeout);
@@ -386,8 +374,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     if (this.houseGroup.managers.layouts) {
       this.houseGroup.managers.layouts.previewLayoutGroup = O.none;
     }
-
-    this.logColumnLayouts("After Cleanup");
   }
 
   onHandleHover(): void {
@@ -397,12 +383,15 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     }
 
     this._hoverTimeout = setTimeout(() => {
+      console.time("cutAlts from hover");
       if (!this.cutKey) {
         this.cutAlts();
       }
+      console.timeEnd("cutAlts from hover");
     }, 100);
   }
 
+  // @ts-ignore
   private logColumnLayouts(context: string) {
     const columnLayouts = this.houseGroup.children.filter(
       (child) => child instanceof ColumnLayoutGroup
