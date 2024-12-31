@@ -182,9 +182,11 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
 
   gestureStart(side: 1 | -1) {
     this.performCuts();
+
     this.startData = {
       side,
     };
+
     this.houseGroup.managers.zStretch?.hideHandles();
   }
 
@@ -329,15 +331,15 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     }
   }
 
+  // somehow this doesn't actually help
+  // the intention was to optimize the performance of the cuts
   onHandleHover(): void {
     // Only proceed if we have initData
     if (!this.initData) {
       return;
     }
 
-    if (!this.cutKey || this.cutKey !== this.generateCutKey()) {
-      this.performCuts();
-    }
+    // this.performCuts();
   }
 }
 
