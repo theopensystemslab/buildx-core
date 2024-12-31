@@ -225,6 +225,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
    *             change since the last dragProgress event.
    */
   gestureProgress(delta: number) {
+    // 1. Safety check
     if (!this.initData || !this.startData || !this.progressData) {
       console.error("Gesture progress called before initialization");
       return;
@@ -233,27 +234,19 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     const { initialLayoutWidth, minWidth, maxWidth } = this.initData;
     const { side } = this.startData;
 
-    // Calculate new width by adding the new delta to our running total
-    let newWidth =
+    // Calculate target width directly from initial width and total accumulated movement
+    const targetWidth =
       initialLayoutWidth + this.progressData.cumulativeDx + side * delta;
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, targetWidth));
 
-    // Ensure we stay within the allowed width range for this section type
-    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+    // Update cumulative delta based on actual position relative to initial width
+    this.progressData.cumulativeDx = newWidth - initialLayoutWidth;
 
-    // Calculate how much we actually moved (important for handle updates)
-    const actualDelta =
-      newWidth - (initialLayoutWidth + this.progressData.cumulativeDx);
-
-    // Keep track of total movement since gesture start
-    this.progressData.cumulativeDx += actualDelta;
-
-    // Store current layout index before potential transition
+    // 5. Handle layout transitions
     const previousLayoutIndex = this.progressData.currentLayoutIndex;
-
-    // Check if we should transition to a different layout
     this.checkAndPerformLayoutTransition(newWidth);
 
-    // Only move handles when layout actually changes
+    // 6. Update handle positions if layout changed
     if (previousLayoutIndex !== this.progressData.currentLayoutIndex) {
       const newLayoutWidth =
         this.initData.alts[this.progressData.currentLayoutIndex].sectionType
@@ -261,7 +254,7 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
       const currentLayoutWidth =
         this.initData.alts[previousLayoutIndex].sectionType.width;
       const widthDelta = newLayoutWidth - currentLayoutWidth;
-      this.updateHandlePositions(widthDelta); // Remove the /2 here since updateHandlePositions already handles it
+      this.updateHandlePositions(widthDelta);
     }
   }
 
