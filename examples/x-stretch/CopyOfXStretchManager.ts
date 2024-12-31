@@ -34,8 +34,6 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
     currentLayoutIndex: number;
   };
   cutKey: string | null = null;
-  private isInitializing = false;
-  private _hoverTimeout: NodeJS.Timeout | null = null;
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
@@ -137,56 +135,40 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
               cumulativeDx: 0,
               currentLayoutIndex,
             };
+
+            // Only show handles after successful initialization
+            this.showHandles();
           })
         )
       )
     )();
   }
 
-  cutAlts() {
-    if (!this.houseGroup.unsafeActiveLayoutGroup) {
-      console.error("No active layout group found");
-      return;
-    }
+  private generateCutKey(): string | null {
+    if (!this.initData || !this.houseGroup.managers.cuts) return null;
 
-    // If we're already initializing, don't start another initialization
-    if (this.isInitializing) {
-      return;
-    }
-
-    // If we don't have alts yet, initialize them
-    if (!this.initData?.alts) {
-      this.isInitializing = true;
-      this.init()
-        .then(() => {
-          if (this.initData?.alts) {
-            this.performCuts();
-          } else {
-            console.error("Failed to initialize alts");
-          }
-        })
-        .catch((error) => console.error("Failed to initialize:", error))
-        .finally(() => {
-          this.isInitializing = false;
-        });
-      return;
-    }
-
-    this.performCuts();
+    // Include both the DNAs and the cuts settings in the key
+    return [
+      // Layout DNAs
+      this.initData.alts
+        .map((alt) => alt.layoutGroup.userData.dnas.toString())
+        .join("|"),
+      // Cuts settings
+      JSON.stringify(this.houseGroup.managers.cuts.settings),
+    ].join("::");
   }
 
   private performCuts() {
-    if (!this.houseGroup.unsafeActiveLayoutGroup || !this.initData?.alts)
+    if (!this.initData) {
+      console.error("No init data available");
       return;
+    }
 
-    console.time("performCuts");
-    const newCutKey =
-      this.houseGroup.unsafeActiveLayoutGroup.userData.dnas.toString() +
-      JSON.stringify(this.houseGroup.managers.cuts?.settings);
+    const newCutKey = this.generateCutKey();
 
-    // Skip if we've already cut with these settings
+    // Skip if we've already cut these layouts
     if (this.cutKey === newCutKey) {
-      console.log("Skipping cuts - same key");
+      console.log("Skipping cuts - layouts already cut");
       return;
     }
 
@@ -209,12 +191,10 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   gestureStart(side: 1 | -1) {
-    this.cutAlts();
-
+    this.performCuts();
     this.startData = {
       side,
     };
-
     this.houseGroup.managers.zStretch?.hideHandles();
   }
 
@@ -334,14 +314,8 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
-    // Clear the hover timeout
-    if (this._hoverTimeout) {
-      clearTimeout(this._hoverTimeout);
-      this._hoverTimeout = null;
-    }
-
-    // Reset initialization flag
-    this.isInitializing = false;
+    // Hide handles first
+    this.hideHandles();
 
     // Remove our alt layouts and any preview layouts created during stretch
     const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
@@ -370,18 +344,9 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   onHandleHover(): void {
-    // Debounce the hover handler
-    if (this._hoverTimeout) {
-      clearTimeout(this._hoverTimeout);
+    if (!this.cutKey || this.cutKey !== this.generateCutKey()) {
+      this.performCuts();
     }
-
-    this._hoverTimeout = setTimeout(() => {
-      console.time("cutAlts from hover");
-      if (!this.cutKey) {
-        this.cutAlts();
-      }
-      console.timeEnd("cutAlts from hover");
-    }, 100);
   }
 
   // @ts-ignore
