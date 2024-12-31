@@ -276,16 +276,15 @@ class CopyOfXStretchManager extends AbstractXStretchManager {
   }
 
   gestureEnd() {
-    // Now we commit the preview to active (this is already correct in the code)
-    if (this.houseGroup.managers.layouts?.previewLayoutGroup._tag === "Some") {
-      this.houseGroup.managers.layouts.activeLayoutGroup =
-        this.houseGroup.managers.layouts.previewLayoutGroup.value;
+    // If there's no preview layout, nothing needs to be done
+    if (O.isNone(this.houseGroup.managers.layouts?.previewLayoutGroup)) {
+      return;
     }
 
-    // Clean up current state
-    this.cleanup();
+    this.houseGroup.managers.layouts.activeLayoutGroup =
+      this.houseGroup.managers.layouts.previewLayoutGroup.value;
 
-    // Re-initialize for next potential stretch
+    this.cleanup();
     this.init();
 
     this.houseGroup.managers.zStretch?.init();
