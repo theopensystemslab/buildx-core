@@ -2,6 +2,7 @@ import {
   BuildXScene,
   cachedHouseTypesTE,
   createHouseGroupTE as defaultHouseGroupTE,
+  HouseGroup,
 } from "@/index";
 import { A, NEA, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
@@ -42,6 +43,14 @@ export const addKeyHelperListeners = (
 
         if (key === "m") {
           scene.contextManager?.contextUp();
+        }
+
+        if (key === "r") {
+          scene.children.forEach((child) => {
+            if (child instanceof HouseGroup) {
+              child.managers.layouts.resetToHouseTypeLayoutGroup();
+            }
+          });
         }
       });
     })

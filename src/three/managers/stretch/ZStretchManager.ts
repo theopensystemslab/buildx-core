@@ -51,7 +51,6 @@ class ZStretchManager extends AbstractZStretchManager {
 
   init() {
     // Hide handles at the start of initialization
-    this.hideHandles();
 
     pipe(
       this.houseGroup.activeLayoutGroup,
