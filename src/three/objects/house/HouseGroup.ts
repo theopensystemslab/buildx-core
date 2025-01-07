@@ -7,8 +7,7 @@ import LevelTypesManager from "@/three/managers/LevelTypesManager";
 import MoveManager from "@/three/managers/MoveManager";
 import OpeningsManager from "@/three/managers/OpeningsManager";
 import RotateManager from "@/three/managers/RotateManager";
-import XStretchManager from "@/three/managers/XStretchManager";
-import ZStretchManager from "@/three/managers/ZStretchManager";
+import ZStretchManager from "@/three/managers/stretch/ZStretchManager";
 import { findFirstGuardUp } from "@/three/utils/sceneQueries";
 import { O } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
@@ -17,6 +16,11 @@ import { OBB } from "three-stdlib";
 import BuildXScene from "../scene/BuildXScene";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
 import { ElementBrush, ElementGroup } from "./ElementGroup";
+import {
+  AbstractXStretchManager,
+  AbstractZStretchManager,
+} from "@/three/managers/stretch/AbstractStretchManagers";
+import XStretchManager from "@/three/managers/stretch/XStretchManager";
 
 type Hooks = {
   onHouseCreate: (house: House) => void;
@@ -29,8 +33,8 @@ type Managers = {
   move?: MoveManager;
   rotate?: RotateManager;
   elements?: ElementsManager;
-  xStretch?: XStretchManager;
-  zStretch?: ZStretchManager;
+  xStretch?: AbstractXStretchManager;
+  zStretch?: AbstractZStretchManager;
   cuts?: CutsManager;
   openings?: OpeningsManager;
   collisions?: CollisionsManager;

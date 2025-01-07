@@ -1,7 +1,7 @@
 import { BuildXScene, defaultCachedHousesOps } from "@/index";
 import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import { TE } from "@/utils/functions";
-import { addNumkeyHouseCreateListeners } from "@@/examples/utils";
+import { addKeyHelperListeners } from "@@/examples/utils";
 import { flow } from "fp-ts/lib/function";
 import ProgressShowHideManager from "./ProgressShowHideManager";
 
@@ -12,7 +12,7 @@ const scene = new BuildXScene({
   },
 });
 
-addNumkeyHouseCreateListeners(
+addKeyHelperListeners(
   scene,
   flow(
     ({ managers, ...rest }) =>

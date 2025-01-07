@@ -4,14 +4,14 @@ import StretchHandleGroup, {
   StretchAxis,
   StretchSide,
 } from "./StretchHandleGroup";
-import StretchManager from "@/three/managers/StretchManager";
+import { AbstractStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 
 class StretchHandleMesh extends HandleMesh {
   constructor(...args: ConstructorParameters<typeof Mesh>) {
     super(...args);
   }
 
-  get manager(): StretchManager {
+  get manager(): AbstractStretchManager {
     if (this.parent instanceof StretchHandleGroup) {
       return this.parent.manager;
     } else {

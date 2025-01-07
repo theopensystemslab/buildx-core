@@ -112,11 +112,15 @@ class ContextManager {
     return this._buildingHouseGroup;
   }
 
+  private getOtherHouses(house?: HouseGroup) {
+    if (!house?.parent) return [];
+    return house.parent.children.filter(
+      (child) => child instanceof HouseGroup && child !== house
+    ) as HouseGroup[];
+  }
+
   set buildingHouseGroup(nextOption: O.Option<HouseGroup>) {
     let prevMode = this.mode;
-
-    // 1. hide other houses
-    // 2. change outlining stuff if activated
 
     pipe(
       this._buildingHouseGroup,
@@ -126,6 +130,11 @@ class ContextManager {
         prev.managers.zStretch?.hideHandles();
         // prev.xStretchManager?.cleanup();
         prev.managers.xStretch?.hideHandles();
+
+        // Show all other houses when leaving current house
+        this.getOtherHouses(prev).forEach((house) => {
+          house.visible = true;
+        });
       })
     );
 
@@ -134,6 +143,11 @@ class ContextManager {
       O.match(
         () => {},
         (next) => {
+          // Hide all other houses
+          this.getOtherHouses(next).forEach((house) => {
+            house.visible = false;
+          });
+
           // hide rotate handles
           next.managers.rotate?.hideHandles();
           // go into next building house
@@ -193,7 +207,7 @@ class ContextManager {
               // drill into the row
               (rowIndex) => {
                 const {
-                  managers: { cuts, xStretch },
+                  managers: { cuts },
                   activeLayoutGroup,
                 } = buildingHouseGroup;
                 pipe(
@@ -205,12 +219,6 @@ class ContextManager {
                     });
                     cuts?.createClippedBrushes(activeLayoutGroup);
                     cuts?.showAppropriateBrushes(activeLayoutGroup);
-
-                    xStretch?.initData?.alts?.forEach(({ layoutGroup }) => {
-                      if (layoutGroup === activeLayoutGroup) return;
-                      cuts?.createClippedBrushes(layoutGroup);
-                      cuts?.showAppropriateBrushes(layoutGroup);
-                    });
                   })
                 );
               }

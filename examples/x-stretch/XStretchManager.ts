@@ -2,23 +2,23 @@ import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { A, O, S, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
-import StretchHandleGroup from "../objects/handles/StretchHandleGroup";
+import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,
-} from "../objects/house/ColumnLayoutGroup";
-import { HouseGroup } from "../objects/house/HouseGroup";
-import { hideObject, showObject } from "../utils/layers";
-import StretchManager from "./StretchManager";
+} from "@/three/objects/house/ColumnLayoutGroup";
+import { HouseGroup } from "@/three/objects/house/HouseGroup";
+import { hideObject, showObject } from "@/three/utils/layers";
 import { SectionType } from "@/data/build-systems";
+import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
   layoutGroup: ColumnLayoutGroup;
 };
 
-class XStretchManager implements StretchManager {
-  houseGroup: HouseGroup;
+class XStretchManager extends AbstractXStretchManager {
+  private static readonly ALT_LAYOUT_PREFIX = "X_STRETCH_ALT";
   handles: [StretchHandleGroup, StretchHandleGroup];
   initData?: {
     alts: Array<AltSectionTypeLayout>;
@@ -33,9 +33,10 @@ class XStretchManager implements StretchManager {
     cumulativeDx: number;
     currentLayoutIndex: number;
   };
+  cutKey: string | null = null;
 
   constructor(houseGroup: HouseGroup) {
-    this.houseGroup = houseGroup;
+    super(houseGroup);
 
     this.handles = [
       new StretchHandleGroup({
@@ -71,21 +72,16 @@ class XStretchManager implements StretchManager {
                     layout,
                   }),
                   TE.map((layoutGroup) => {
+                    layoutGroup.name = `${XStretchManager.ALT_LAYOUT_PREFIX}-${sectionType.code}-${layoutGroup.uuid}`;
                     this.houseGroup.add(layoutGroup);
                     layoutGroup.updateBBs();
-                    this.houseGroup.managers.cuts?.createClippedBrushes(
-                      layoutGroup
-                    );
-                    this.houseGroup.managers.cuts?.showAppropriateBrushes(
-                      layoutGroup
-                    );
                     hideObject(layoutGroup);
                     return { layoutGroup, sectionType };
                   })
                 )
               ),
               TE.map((xs) => {
-                return [
+                const sorted = [
                   ...xs,
                   {
                     layoutGroup: activeLayoutGroup,
@@ -94,12 +90,13 @@ class XStretchManager implements StretchManager {
                 ].sort((a, b) =>
                   S.Ord.compare(b.sectionType.code, a.sectionType.code)
                 );
+                return sorted;
               })
             )
           )
         );
       }),
-      TE.fromOption(() => Error(`eh`)),
+      TE.fromOption(() => new Error("No active layout group found")),
       TE.flatten
     );
   }
@@ -138,19 +135,67 @@ class XStretchManager implements StretchManager {
               cumulativeDx: 0,
               currentLayoutIndex,
             };
+
+            // Remove this line since handles are already shown
+            // this.showHandles();
           })
         )
       )
     )();
   }
 
+  private generateCutKey(): string | null {
+    if (!this.initData || !this.houseGroup.managers.cuts) return null;
+
+    // Include both the DNAs and the cuts settings in the key
+    return [
+      // Layout DNAs
+      this.initData.alts
+        .map((alt) => alt.layoutGroup.userData.dnas.toString())
+        .join("|"),
+      // Cuts settings
+      JSON.stringify(this.houseGroup.managers.cuts.settings),
+    ].join("::");
+  }
+
+  private performCuts() {
+    if (!this.initData) {
+      return;
+    }
+
+    const newCutKey = this.generateCutKey();
+
+    if (this.cutKey === newCutKey) {
+      return;
+    }
+
+    this.cutKey = newCutKey;
+
+    this.initData.alts.forEach(({ layoutGroup }) => {
+      if (!this.houseGroup.managers.cuts) {
+        throw new Error("Cuts manager not available");
+      }
+      this.houseGroup.managers.cuts.createClippedBrushes(layoutGroup);
+      this.houseGroup.managers.cuts.showAppropriateBrushes(layoutGroup);
+    });
+  }
+
   gestureStart(side: 1 | -1) {
+    this.performCuts();
+
     this.startData = {
       side,
     };
+
     this.houseGroup.managers.zStretch?.hideHandles();
   }
 
+  /**
+   * Handles the progress of an X-axis stretch gesture
+   * @param delta The incremental change in X position since the last progress event.
+   *             This is NOT the total offset from gesture start, but rather the
+   *             change since the last dragProgress event.
+   */
   gestureProgress(delta: number) {
     if (!this.initData || !this.startData || !this.progressData) {
       console.error("Gesture progress called before initialization");
@@ -160,25 +205,28 @@ class XStretchManager implements StretchManager {
     const { initialLayoutWidth, minWidth, maxWidth } = this.initData;
     const { side } = this.startData;
 
-    // Calculate new width directly
-    let newWidth =
+    // Calculate target width directly from cumulative delta
+    const targetWidth =
       initialLayoutWidth + this.progressData.cumulativeDx + side * delta;
-
-    // Clamp new width
-    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
-
-    // Calculate actual delta
-    const actualDelta =
-      newWidth - (initialLayoutWidth + this.progressData.cumulativeDx);
+    const newWidth = Math.max(minWidth, Math.min(maxWidth, targetWidth));
 
     // Update cumulative delta
-    this.progressData.cumulativeDx += actualDelta;
+    this.progressData.cumulativeDx = newWidth - initialLayoutWidth;
 
-    // Update handle positions
-    this.updateHandlePositions(actualDelta);
-
-    // Check for layout transitions
+    // Check for layout transitions using the new comparison logic
+    const previousLayoutIndex = this.progressData.currentLayoutIndex;
     this.checkAndPerformLayoutTransition(newWidth);
+
+    // Update handle positions if layout changed
+    if (previousLayoutIndex !== this.progressData.currentLayoutIndex) {
+      const newLayoutWidth =
+        this.initData.alts[this.progressData.currentLayoutIndex].sectionType
+          .width;
+      const currentLayoutWidth =
+        this.initData.alts[previousLayoutIndex].sectionType.width;
+      const widthDelta = newLayoutWidth - currentLayoutWidth;
+      this.updateHandlePositions(widthDelta);
+    }
   }
 
   private updateHandlePositions(delta: number) {
@@ -193,10 +241,9 @@ class XStretchManager implements StretchManager {
   private checkAndPerformLayoutTransition(currentWidth: number) {
     const { alts } = this.initData!;
     let { currentLayoutIndex } = this.progressData!;
-    const previousIndex = currentLayoutIndex;
+    const previousWidth = alts[currentLayoutIndex].sectionType.width;
 
-    if (currentWidth > this.initData!.initialLayoutWidth) {
-      // Stretching outwards
+    if (currentWidth > previousWidth) {
       while (
         currentLayoutIndex < alts.length - 1 &&
         currentWidth >= alts[currentLayoutIndex + 1].sectionType.width
@@ -204,7 +251,6 @@ class XStretchManager implements StretchManager {
         currentLayoutIndex++;
       }
     } else {
-      // Stretching inwards
       while (
         currentLayoutIndex > 0 &&
         currentWidth <= alts[currentLayoutIndex - 1].sectionType.width
@@ -213,7 +259,7 @@ class XStretchManager implements StretchManager {
       }
     }
 
-    if (currentLayoutIndex !== previousIndex) {
+    if (currentLayoutIndex !== this.progressData!.currentLayoutIndex) {
       this.transitionToLayout(alts[currentLayoutIndex], currentLayoutIndex);
     }
   }
@@ -222,20 +268,27 @@ class XStretchManager implements StretchManager {
     nextLayout: AltSectionTypeLayout,
     nextIndex: number
   ) {
-    if (this.houseGroup.managers.layouts && this.houseGroup.managers.cuts) {
-      // this.houseGroup.managers.cuts.createClippedBrushes(
-      //   nextLayout.layoutGroup
-      // );
-      // this.houseGroup.managers.cuts.showAppropriateBrushes(
-      //   nextLayout.layoutGroup
-      // );
-      this.houseGroup.managers.layouts.activeLayoutGroup =
-        nextLayout.layoutGroup;
+    if (this.houseGroup.managers.layouts) {
+      // Set as preview during the stretch operation
+      this.houseGroup.managers.layouts.previewLayoutGroup = O.some(
+        nextLayout.layoutGroup
+      );
       this.progressData!.currentLayoutIndex = nextIndex;
     }
   }
 
   gestureEnd() {
+    // If there's no preview layout, nothing needs to be done
+    if (O.isNone(this.houseGroup.managers.layouts?.previewLayoutGroup)) {
+      return;
+    }
+
+    this.houseGroup.managers.layouts.activeLayoutGroup =
+      this.houseGroup.managers.layouts.previewLayoutGroup.value;
+
+    this.cleanup();
+    this.init();
+
     this.houseGroup.managers.zStretch?.init();
     this.houseGroup.managers.zStretch?.showHandles();
   }
@@ -246,6 +299,44 @@ class XStretchManager implements StretchManager {
 
   hideHandles() {
     this.handles.forEach(hideObject);
+  }
+
+  cleanup(): void {
+    // Remove our alt layouts and any preview layouts created during stretch
+    const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
+    this.houseGroup.children
+      .filter(
+        (child) =>
+          child instanceof ColumnLayoutGroup &&
+          child !== activeLayout &&
+          (child.name.startsWith(XStretchManager.ALT_LAYOUT_PREFIX) ||
+            child.name.startsWith("PREVIEW_LAYOUT"))
+      )
+      .forEach((layout) => {
+        this.houseGroup.remove(layout);
+      });
+
+    // Reset all state data
+    this.initData = undefined;
+    this.startData = undefined;
+    this.progressData = undefined;
+    this.cutKey = null;
+
+    // Clear any remaining preview in layouts manager
+    if (this.houseGroup.managers.layouts) {
+      this.houseGroup.managers.layouts.previewLayoutGroup = O.none;
+    }
+  }
+
+  // somehow this doesn't actually help
+  // the intention was to optimize the performance of the cuts
+  onHandleHover(): void {
+    // Only proceed if we have initData
+    if (!this.initData) {
+      return;
+    }
+
+    // this.performCuts();
   }
 }
 
