@@ -8,10 +8,12 @@ import {
   ElementNotFoundError,
   MaterialNotFoundError,
   CachedBlock,
+  LabourType,
 } from "@/data/build-systems";
 import buildSystemsCache from "@/data/build-systems/cache";
 import outputsCache, { FILES_DOCUMENT_KEY } from "@/data/outputs/cache";
 import {
+  LabourListRow,
   MaterialsListRow,
   OrderListRow,
   getBlockCountsByHouse,
@@ -455,6 +457,19 @@ const materialsListToCSV = (materialsListRows: MaterialsListRow[]) => {
   });
 };
 
+const labourListToCSV = (labourListRows: LabourListRow[]) => {
+  const headers = Object.keys(labourListRows[0]) as Array<keyof LabourListRow>;
+
+  const rows = labourListRows.map((row) =>
+    headers.map((header) => row[header]?.toString() ?? "")
+  );
+  const csvData = [headers, ...rows];
+  const csvContent = csvFormatRows(csvData);
+  return new File([new Blob([csvContent])], "labour-list.csv", {
+    type: "text/csv;charset=utf-8;",
+  });
+};
+
 const updateAllFiles = async () => {
   const [currentFiles, currentPngs, currentModels] = await Promise.all([
     outputsCache.files.get(FILES_DOCUMENT_KEY),
@@ -491,6 +506,106 @@ const updateAllFiles = async () => {
   }
 };
 
+const labourProc = ({
+  houses,
+  modules,
+  labourTypes,
+}: {
+  houses: House[];
+  modules: BuildModule[];
+  labourTypes: LabourType[];
+}) => {
+  outputsCache.labourListRows.clear();
+
+  const getLabourCost = (hours: number, type: string) => {
+    const labourType = labourTypes.find(
+      (lt) => lt.name === type + " install" || lt.name === type + " labour"
+    );
+    if (!labourType) return 0;
+    // Use average of min and max cost
+    const avgCost = (labourType.minLabourCost + labourType.maxLabourCost) / 2;
+    return hours * avgCost;
+  };
+
+  const labourListRows = houses.flatMap(
+    ({ houseId, dnas, friendlyName: buildingName }) => {
+      const houseModules = pipe(
+        dnas,
+        A.traverse(O.Applicative)((dna) =>
+          pipe(
+            modules,
+            A.findFirst((x) => x.dna === dna)
+          )
+        ),
+        O.getOrElse(() => [] as BuildModule[])
+      );
+
+      // Calculate hours for each type
+      const foundationHours = houseModules.reduce(
+        (acc, m) => acc + m.foundationLabourHours,
+        0
+      );
+      const chassisHours = houseModules.reduce(
+        (acc, m) => acc + m.chassisLabourHours,
+        0
+      );
+      const exteriorHours = houseModules.reduce(
+        (acc, m) => acc + m.exteriorLabourHours,
+        0
+      );
+      const interiorHours = houseModules.reduce(
+        (acc, m) => acc + m.interiorLabourHours,
+        0
+      );
+
+      // Create a row for each labour type
+      return [
+        {
+          houseId,
+          buildingName,
+          labourType: "Foundation",
+          hours: foundationHours,
+          cost: getLabourCost(foundationHours, "Foundation"),
+        },
+        {
+          houseId,
+          buildingName,
+          labourType: "Chassis",
+          hours: chassisHours,
+          cost: getLabourCost(chassisHours, "Chassis"),
+        },
+        {
+          houseId,
+          buildingName,
+          labourType: "Exterior",
+          hours: exteriorHours,
+          cost: getLabourCost(exteriorHours, "Exterior"),
+        },
+        {
+          houseId,
+          buildingName,
+          labourType: "Interior",
+          hours: interiorHours,
+          cost: getLabourCost(interiorHours, "Interior"),
+        },
+      ];
+    }
+  );
+
+  outputsCache.labourListRows.bulkPut(labourListRows);
+
+  return labourListRows;
+};
+// const [
+//   houses,
+//   modules,
+//   blocks,
+//   blockModulesEntries,
+//   elements,
+//   materials,
+//   windowTypes,
+//   labourTypes,
+// ] = await
 const housesAndSystemsQuerier = () =>
   Promise.all([
     userCache.houses.toArray(),
@@ -500,6 +615,7 @@ const housesAndSystemsQuerier = () =>
     buildSystemsCache.elements.toArray(),
     buildSystemsCache.materials.toArray(),
     buildSystemsCache.windowTypes.toArray(),
+    buildSystemsCache.labourTypes.toArray(),
   ]);
 
 const housesAndSystemsSubscriber = async ([
@@ -510,38 +626,58 @@ const housesAndSystemsSubscriber = async ([
   elements,
   materials,
   windowTypes,
+  labourTypes,
 ]: Awaited<ReturnType<typeof housesAndSystemsQuerier>>) => {
+  // Add null checks and ensure arrays are initialized
+  if (!houses?.length || !modules?.length || !blocks?.length) {
+    console.warn("Required data arrays are empty or undefined");
+    return;
+  }
+
   const orderListRows = orderListProc({
     houses,
     modules,
     blocks,
-    blockModulesEntries,
+    blockModulesEntries: blockModulesEntries || [],
   });
-
-  if (orderListRows.length === 0) return;
 
   const materialsListRows = materialsProc({
     houses,
     modules,
-    blocks,
-    blockModulesEntries,
+    elements: elements || [],
+    materials: materials || [],
+    windowTypes: windowTypes || [],
     orderListRows,
-    elements,
-    materials,
-    windowTypes,
+    blockModulesEntries: blockModulesEntries || [],
+    blocks,
   });
 
-  const orderListCsv = orderListToCSV(orderListRows);
-  const materialsListCsv = materialsListToCSV(materialsListRows);
+  const labourListRows = labourProc({
+    houses,
+    modules,
+    labourTypes: labourTypes || [],
+  });
 
-  outputsCache.files
-    .update(FILES_DOCUMENT_KEY, {
-      materialsListCsv,
-      orderListCsv,
-    })
-    .then(() => {
-      updateAllFiles();
-    });
+  // Only proceed if we have valid data
+  if (
+    orderListRows?.length &&
+    materialsListRows?.length &&
+    labourListRows?.length
+  ) {
+    const orderListCsv = orderListToCSV(orderListRows);
+    const materialsListCsv = materialsListToCSV(materialsListRows);
+    const labourListCsv = labourListToCSV(labourListRows);
+
+    await outputsCache.files
+      .update(FILES_DOCUMENT_KEY, {
+        materialsListCsv,
+        orderListCsv,
+        labourListCsv,
+      })
+      .then(() => {
+        updateAllFiles();
+      });
+  }
 };
 
 // if update houses then update order list

@@ -13,6 +13,7 @@ import { SystemSettings } from "./settings";
 import { SpaceType } from "./spaceTypes";
 import { StairType } from "./stairTypes";
 import { CachedWindowType } from "./windowTypes";
+import { LabourType } from "./labourTypes";
 
 export type BlobbedImage<T> = Omit<T, "imageUrl"> & {
   imageBlob?: Blob;
@@ -33,6 +34,7 @@ class BuildSystemsCache extends Dexie {
   stairTypes: Dexie.Table<StairType, string>;
   energyInfos: Dexie.Table<EnergyInfo, string>;
   settings: Dexie.Table<SystemSettings, string>;
+  labourTypes: Dexie.Table<LabourType, string>;
 
   constructor() {
     super("BuildSystemsCache");
@@ -52,6 +54,7 @@ class BuildSystemsCache extends Dexie {
       stairTypes: "id",
       energyInfos: "id",
       settings: "systemId",
+      labourTypes: "[systemId+name]",
     });
     this.modules = this.table("modules");
     this.houseTypes = this.table("houseTypes");
@@ -67,6 +70,7 @@ class BuildSystemsCache extends Dexie {
     this.stairTypes = this.table("stairTypes");
     this.energyInfos = this.table("energyInfos");
     this.settings = this.table("settings");
+    this.labourTypes = this.table("labourTypes");
   }
 }
 
