@@ -109,6 +109,7 @@ type BuildXSceneConfig = {
   container?: HTMLElement;
   orbitMode?: boolean;
   orbitSpeed?: number;
+  createGestureManager?: (scene: BuildXScene) => GestureManager;
 };
 
 class BuildXScene extends Scene {
@@ -162,6 +163,7 @@ class BuildXScene extends Scene {
       cameraOpts = {},
       orbitMode = false,
       orbitSpeed = 0.05,
+      createGestureManager,
     } = config;
 
     this.container = container;
@@ -220,119 +222,125 @@ class BuildXScene extends Scene {
         undefined,
       dragEnd: (() => void) | undefined = undefined;
 
-    if (enableGestures)
-      this.gestureManager = new GestureManager({
-        domElement: this.renderer.domElement,
-        camera,
-        scene: this,
-        enableOutlining,
-        onGestureStart: () => {
-          this.cameraControls.enabled = false;
-        },
-        onGestureEnd: () => {
-          this.cameraControls.enabled = true;
-        },
-        onDoubleTap: ({ object }) => {
-          if (object instanceof ElementBrush) {
-            this.contextManager?.contextDown(object.elementGroup);
-          }
-        },
-        onSingleTap: ({ object }) => {
-          if (object instanceof ElementBrush) {
-            this.contextManager?.setSelectedHouse(
-              object.elementGroup.houseGroup
-            );
-          }
-        },
-        onLongTap: ({ object }, pointer) => {
-          if (object instanceof ElementBrush) {
-            onLongTapBuildElement?.(object.scopeElement, pointer);
-          }
-        },
-        onRightClick: ({ object }, pointer) => {
-          if (object instanceof ElementBrush) {
-            onRightClickBuildElement?.(object.scopeElement, pointer);
-          }
-        },
-        onDragStart: ({ object, point: currentPoint }) => {
-          switch (true) {
-            case object instanceof StretchHandleMesh: {
-              const stretchManager = object.manager;
-              stretchManager.gestureStart(object.side);
-
-              const yAxis = new Vector3(0, 1, 0);
-
-              dragProgress = ({ delta }: DragDetail) => {
-                // REVIEW: whether to normalize here or in the manager
-                const normalizedDelta = delta
-                  .clone()
-                  .applyAxisAngle(yAxis, -stretchManager.houseGroup.rotation.y);
-
-                if (stretchManager instanceof AbstractZStretchManager) {
-                  stretchManager.gestureProgress(normalizedDelta.z);
-                }
-
-                if (stretchManager instanceof AbstractXStretchManager) {
-                  stretchManager.gestureProgress(normalizedDelta.x);
-                }
-              };
-
-              dragEnd = () => {
-                stretchManager.gestureEnd();
-                dragProgress = undefined;
-              };
-              return;
+    if (enableGestures) {
+      this.gestureManager =
+        createGestureManager?.(this) ??
+        new GestureManager({
+          domElement: this.renderer.domElement,
+          camera,
+          scene: this,
+          enableOutlining,
+          onGestureStart: () => {
+            this.cameraControls.enabled = false;
+          },
+          onGestureEnd: () => {
+            this.cameraControls.enabled = true;
+          },
+          onDoubleTap: ({ object }) => {
+            if (object instanceof ElementBrush) {
+              this.contextManager?.contextDown(object.elementGroup);
             }
+          },
+          onSingleTap: ({ object }) => {
+            if (object instanceof ElementBrush) {
+              this.contextManager?.setSelectedHouse(
+                object.elementGroup.houseGroup
+              );
+            }
+          },
+          onLongTap: ({ object }, pointer) => {
+            if (object instanceof ElementBrush) {
+              onLongTapBuildElement?.(object.scopeElement, pointer);
+            }
+          },
+          onRightClick: ({ object }, pointer) => {
+            if (object instanceof ElementBrush) {
+              onRightClickBuildElement?.(object.scopeElement, pointer);
+            }
+          },
+          onDragStart: ({ object, point: currentPoint }) => {
+            switch (true) {
+              case object instanceof StretchHandleMesh: {
+                const stretchManager = object.manager;
+                stretchManager.gestureStart(object.side);
 
-            case object instanceof ElementBrush: {
-              if (this.contextManager?.siteMode) {
-                const houseGroup = object.houseGroup;
-
-                this.contextManager.setSelectedHouse(houseGroup);
-
-                houseGroup.managers.move?.gestureStart();
+                const yAxis = new Vector3(0, 1, 0);
 
                 dragProgress = ({ delta }: DragDetail) => {
-                  houseGroup.managers.move?.gestureProgress(delta);
+                  // REVIEW: whether to normalize here or in the manager
+                  const normalizedDelta = delta
+                    .clone()
+                    .applyAxisAngle(
+                      yAxis,
+                      -stretchManager.houseGroup.rotation.y
+                    );
+
+                  if (stretchManager instanceof AbstractZStretchManager) {
+                    stretchManager.gestureProgress(normalizedDelta.z);
+                  }
+
+                  if (stretchManager instanceof AbstractXStretchManager) {
+                    stretchManager.gestureProgress(normalizedDelta.x);
+                  }
                 };
 
                 dragEnd = () => {
+                  stretchManager.gestureEnd();
                   dragProgress = undefined;
-
-                  const {
-                    userData: { houseId },
-                    position,
-                  } = houseGroup;
-
-                  houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
-                  houseGroup.updateBBs();
                 };
+                return;
               }
-              return;
+
+              case object instanceof ElementBrush: {
+                if (this.contextManager?.siteMode) {
+                  const houseGroup = object.houseGroup;
+
+                  this.contextManager.setSelectedHouse(houseGroup);
+
+                  houseGroup.managers.move?.gestureStart();
+
+                  dragProgress = ({ delta }: DragDetail) => {
+                    houseGroup.managers.move?.gestureProgress(delta);
+                  };
+
+                  dragEnd = () => {
+                    dragProgress = undefined;
+
+                    const {
+                      userData: { houseId },
+                      position,
+                    } = houseGroup;
+
+                    houseGroup.hooks?.onHouseUpdate?.(houseId, { position });
+                    houseGroup.updateBBs();
+                  };
+                }
+                return;
+              }
+
+              case object instanceof RotateHandleMesh: {
+                const rotateManager = object.houseGroup.managers.rotate;
+                if (!rotateManager) return;
+
+                rotateManager.initGesture(currentPoint);
+
+                dragProgress = ({ currentPoint }: DragDetail) => {
+                  rotateManager.gestureProgress(currentPoint);
+                };
+
+                dragEnd = () => {
+                  rotateManager.gestureEnd();
+                  dragProgress = undefined;
+                };
+                return;
+              }
             }
-
-            case object instanceof RotateHandleMesh: {
-              const rotateManager = object.houseGroup.managers.rotate;
-              if (!rotateManager) return;
-
-              rotateManager.initGesture(currentPoint);
-
-              dragProgress = ({ currentPoint }: DragDetail) => {
-                rotateManager.gestureProgress(currentPoint);
-              };
-
-              dragEnd = () => {
-                rotateManager.gestureEnd();
-                dragProgress = undefined;
-              };
-              return;
-            }
-          }
-        },
-        onDragProgress: (v) => dragProgress?.(v),
-        onDragEnd: () => dragEnd?.(),
-        onTapMissed,
-      });
+          },
+          onDragProgress: (v) => dragProgress?.(v),
+          onDragEnd: () => dragEnd?.(),
+          onTapMissed,
+        });
+    }
 
     this.composer = new EffectComposer(this.renderer);
 
