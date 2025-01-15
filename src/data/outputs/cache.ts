@@ -70,4 +70,8 @@ export const upsertHousePng = (houseId: string, pngBlob: Blob) => {
   outputsCache.housePngs.put({ houseId, pngBlob });
 };
 
+export const deleteHousePng = (houseId: string) => {
+  outputsCache.housePngs.delete(houseId);
+};
+
 export default outputsCache;

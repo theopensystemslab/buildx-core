@@ -1,4 +1,4 @@
-import { upsertHousePng } from "@/data/outputs/cache";
+import { deleteHousePng, upsertHousePng } from "@/data/outputs/cache";
 import {
   AmbientLight,
   Group,
@@ -49,13 +49,15 @@ const positionCamera = (camera: OrthographicCamera, maxDim: number) => {
   camera.updateProjectionMatrix();
 };
 
-const onHouseUpdate = ({
-  data: { houseId, objectJson, halfSize },
-}: MessageEvent<{
+const upsertSnapshot = ({
+  houseId,
+  objectJson,
+  halfSize,
+}: {
   houseId: string;
   objectJson: any;
   halfSize: number[];
-}>) => {
+}) => {
   const object = objectLoader.parse(objectJson);
   object.position.set(0, 0, 0);
   object.setRotationFromMatrix(new Matrix4());
@@ -75,8 +77,13 @@ const onHouseUpdate = ({
   });
 };
 
+const deleteSnapshot = ({ houseId }: { houseId: string }) => {
+  deleteHousePng(houseId);
+};
+
 const PngSnapshotsWorkerUtils = {
-  onHouseUpdate,
+  upsertSnapshot,
+  deleteSnapshot,
 };
 
 export default PngSnapshotsWorkerUtils;

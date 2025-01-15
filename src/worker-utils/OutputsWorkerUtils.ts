@@ -628,12 +628,6 @@ const housesAndSystemsSubscriber = async ([
   windowTypes,
   labourTypes,
 ]: Awaited<ReturnType<typeof housesAndSystemsQuerier>>) => {
-  // Add null checks and ensure arrays are initialized
-  if (!houses?.length || !modules?.length || !blocks?.length) {
-    console.warn("Required data arrays are empty or undefined");
-    return;
-  }
-
   const orderListRows = orderListProc({
     houses,
     modules,
@@ -658,26 +652,25 @@ const housesAndSystemsSubscriber = async ([
     labourTypes: labourTypes || [],
   });
 
-  // Only proceed if we have valid data
-  if (
-    orderListRows?.length &&
-    materialsListRows?.length &&
-    labourListRows?.length
-  ) {
-    const orderListCsv = orderListToCSV(orderListRows);
-    const materialsListCsv = materialsListToCSV(materialsListRows);
-    const labourListCsv = labourListToCSV(labourListRows);
+  console.log({
+    orderListRows,
+    materialsListRows,
+    labourListRows,
+  });
 
-    await outputsCache.files
-      .update(FILES_DOCUMENT_KEY, {
-        materialsListCsv,
-        orderListCsv,
-        labourListCsv,
-      })
-      .then(() => {
-        updateAllFiles();
-      });
-  }
+  const orderListCsv = orderListToCSV(orderListRows);
+  const materialsListCsv = materialsListToCSV(materialsListRows);
+  const labourListCsv = labourListToCSV(labourListRows);
+
+  await outputsCache.files
+    .update(FILES_DOCUMENT_KEY, {
+      materialsListCsv,
+      orderListCsv,
+      labourListCsv,
+    })
+    .then(() => {
+      updateAllFiles();
+    });
 };
 
 // if update houses then update order list

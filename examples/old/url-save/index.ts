@@ -16,7 +16,7 @@ import SharingWorker from "./sharing.worker?worker";
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
   onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.delete();
+    x.elementGroup.houseGroup.removeFromParent();
   },
 });
 

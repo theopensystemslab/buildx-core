@@ -171,8 +171,12 @@ window.addEventListener("keydown", (event) => {
     cameraFrameOBB2(orthoCamera, obbMesh.userData.obb);
 
     snapshotWorker.postMessage({
-      objectJson: obbMesh.toJSON(),
-      halfSize: obbMesh.userData.obb.halfSize.toArray(),
+      type: "upsert",
+      payload: {
+        houseId: "123",
+        objectJson: obbMesh.toJSON(),
+        halfSize: obbMesh.userData.obb.halfSize.toArray(),
+      },
     });
   }
 });

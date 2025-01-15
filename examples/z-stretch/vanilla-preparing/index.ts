@@ -8,7 +8,7 @@ import VanillaPreparingManager from "./VanillaPreparingManager";
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
   onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.delete();
+    x.elementGroup.houseGroup.removeFromParent();
   },
 });
 

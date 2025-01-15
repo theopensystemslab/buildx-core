@@ -525,8 +525,6 @@ class BuildXScene extends Scene {
       onHouseDelete: onHouseDelete,
     };
 
-    houseGroup.hooks.onHouseCreate?.(houseGroup.house);
-
     this.add(houseGroup);
 
     if (houseGroup.managers.collisions) {
@@ -552,6 +550,8 @@ class BuildXScene extends Scene {
         if (t >= MAX_T) throw new Error(`Infinite collision!`);
       }
     }
+
+    houseGroup.hooks.onHouseCreate?.(houseGroup.house);
   }
 
   addHouseType() {}

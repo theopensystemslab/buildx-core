@@ -47,7 +47,7 @@ function flattenObject(root: Object3D): Group {
   return flatGroup;
 }
 
-const updateModels = async ({
+const upsertModels = async ({
   houseId,
   objectJson,
 }: {
@@ -80,8 +80,13 @@ const updateModels = async ({
   }
 };
 
+const deleteModels = async ({ houseId }: { houseId: string }) => {
+  outputsCache.houseModels.delete(houseId);
+};
+
 const ExportersWorkerUtils = {
-  updateModels,
+  upsertModels,
+  deleteModels,
 };
 
 export default ExportersWorkerUtils;

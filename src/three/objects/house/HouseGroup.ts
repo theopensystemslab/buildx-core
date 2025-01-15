@@ -170,12 +170,6 @@ export class HouseGroup extends Group {
     );
   }
 
-  delete() {
-    this.removeFromParent();
-    this.hooks?.onHouseDelete?.(this.house.houseId);
-    // how is the housesDB managed?
-  }
-
   get house(): House {
     const {
       userData: { systemId, houseId, friendlyName, houseTypeId },

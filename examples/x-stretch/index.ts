@@ -13,7 +13,7 @@ import { addKeyHelperListeners } from "../utils";
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
   onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.delete();
+    x.elementGroup.houseGroup.removeFromParent();
   },
 });
 
