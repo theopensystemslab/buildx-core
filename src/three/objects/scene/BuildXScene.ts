@@ -514,7 +514,9 @@ class BuildXScene extends Scene {
     }
   }
 
-  addHouseGroup(houseGroup: HouseGroup) {
+  addHouseGroup(houseGroup: HouseGroup, options?: { collisions: boolean }) {
+    const { collisions = false } = options ?? {};
+
     this.gestureManager?.enableGesturesOnObject(houseGroup);
 
     const { onHouseCreate, onHouseUpdate, onHouseDelete } = this;
@@ -527,7 +529,7 @@ class BuildXScene extends Scene {
 
     this.add(houseGroup);
 
-    if (houseGroup.managers.collisions) {
+    if (collisions && houseGroup.managers.collisions) {
       houseGroup.managers.collisions.updateNearNeighbours();
 
       if (houseGroup.managers.collisions.checkCollisions()) {
@@ -549,6 +551,7 @@ class BuildXScene extends Scene {
 
         if (t >= MAX_T) throw new Error(`Infinite collision!`);
       }
+      houseGroup.updateDB();
     }
 
     houseGroup.hooks.onHouseCreate?.(houseGroup.house);

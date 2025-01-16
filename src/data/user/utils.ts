@@ -28,10 +28,23 @@ export const useProjectCurrency = () => {
   const symbol = region === "UK" ? "£" : "€";
   const code = region === "UK" ? "GBP" : "EUR";
 
+  function formatNumberWithK(number: number): string {
+    if (number >= 1000) {
+      return (number / 1000).toFixed(1) + "k";
+    } else {
+      return number.toString();
+    }
+  }
+
+  function kformat(number: number): string {
+    return `${symbol}${formatNumberWithK(number)}`;
+  }
+
   return {
     symbol,
     code,
     format: (x: number) => formatCurrency(x, code),
+    kformat,
   };
 };
 

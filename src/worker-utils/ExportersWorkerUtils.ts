@@ -1,6 +1,7 @@
 import outputsCache from "@/data/outputs/cache";
 import { Group, Matrix4, Mesh, Object3D, ObjectLoader } from "three";
 import { GLTFExporter, OBJExporter } from "three-stdlib";
+import userCache from "@/data/user/cache";
 
 function flattenObject(root: Object3D): Group {
   const flatGroup = new Group();
@@ -84,9 +85,29 @@ const deleteModels = async ({ houseId }: { houseId: string }) => {
   outputsCache.houseModels.delete(houseId);
 };
 
+const deleteRedundantModels = async () => {
+  // Get all existing house IDs from the user cache
+  const existingHouseIds = (await userCache.houses.toArray()).map(
+    (x) => x.houseId
+  );
+
+  // Get all model keys
+  const modelKeys = (await outputsCache.houseModels.toArray()).map(
+    (x) => x.houseId
+  );
+
+  // Delete models that don't have a corresponding house
+  for (const modelKey of modelKeys) {
+    if (!existingHouseIds.includes(modelKey)) {
+      await deleteModels({ houseId: modelKey });
+    }
+  }
+};
+
 const ExportersWorkerUtils = {
   upsertModels,
   deleteModels,
+  deleteRedundantModels,
 };
 
 export default ExportersWorkerUtils;

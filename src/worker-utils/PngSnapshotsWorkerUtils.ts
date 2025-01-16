@@ -1,4 +1,7 @@
-import { deleteHousePng, upsertHousePng } from "@/data/outputs/cache";
+import outputsCache, {
+  deleteHousePng,
+  upsertHousePng,
+} from "@/data/outputs/cache";
 import {
   AmbientLight,
   Group,
@@ -8,6 +11,7 @@ import {
   Scene,
   WebGLRenderer,
 } from "three";
+import userCache from "@/data/user/cache";
 
 const SIZE = 512,
   width = SIZE,
@@ -81,9 +85,29 @@ const deleteSnapshot = ({ houseId }: { houseId: string }) => {
   deleteHousePng(houseId);
 };
 
+const deleteRedundantSnapshots = async () => {
+  // Get all existing house IDs from the user cache
+  const existingHouseIds = (await userCache.houses.toArray()).map(
+    (x) => x.houseId
+  );
+
+  // Get all snapshot keys
+  const snapshotKeys = (await outputsCache.housePngs.toArray()).map(
+    (x) => x.houseId
+  );
+
+  // Delete snapshots that don't have a corresponding house
+  for (const snapshotKey of snapshotKeys) {
+    if (!existingHouseIds.includes(snapshotKey)) {
+      await deleteHousePng(snapshotKey);
+    }
+  }
+};
+
 const PngSnapshotsWorkerUtils = {
   upsertSnapshot,
   deleteSnapshot,
+  deleteRedundantSnapshots,
 };
 
 export default PngSnapshotsWorkerUtils;

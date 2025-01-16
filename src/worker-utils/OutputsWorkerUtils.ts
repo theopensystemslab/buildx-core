@@ -27,6 +27,8 @@ import { values } from "fp-ts-std/Record";
 import { identity, pipe } from "fp-ts/lib/function";
 import { produce } from "immer";
 import JSZip from "jszip";
+import { PngSnapshotsWorkerUtils } from ".";
+import { ExportersWorkerUtils } from ".";
 
 const materialsProc = ({
   modules,
@@ -415,9 +417,12 @@ const orderListProc = ({
 
 const orderListToCSV = (orderListRows: OrderListRow[]) => {
   // Create a header row
-  const headers = Object.keys(orderListRows[0]).filter(
-    (x) => !["houseId"].includes(x)
-  ) as Array<keyof OrderListRow>;
+  const headers =
+    orderListRows.length > 0
+      ? (Object.keys(orderListRows[0]).filter(
+          (x) => !["houseId"].includes(x)
+        ) as Array<keyof OrderListRow>)
+      : [];
 
   // Map each object to an array of its values
   const rows = orderListRows.map((row) =>
@@ -437,9 +442,12 @@ const orderListToCSV = (orderListRows: OrderListRow[]) => {
 
 const materialsListToCSV = (materialsListRows: MaterialsListRow[]) => {
   // Create a header row
-  const headers = Object.keys(materialsListRows[0]).filter(
-    (x) => !["houseId", "colorClass", "linkUrl"].includes(x)
-  ) as Array<keyof (typeof materialsListRows)[0]>;
+  const headers =
+    materialsListRows.length > 0
+      ? (Object.keys(materialsListRows[0]).filter(
+          (x) => !["houseId", "colorClass", "linkUrl"].includes(x)
+        ) as Array<keyof (typeof materialsListRows)[0]>)
+      : [];
 
   // Map each object to an array of its values
   const rows = materialsListRows.map((row) =>
@@ -458,7 +466,10 @@ const materialsListToCSV = (materialsListRows: MaterialsListRow[]) => {
 };
 
 const labourListToCSV = (labourListRows: LabourListRow[]) => {
-  const headers = Object.keys(labourListRows[0]) as Array<keyof LabourListRow>;
+  const headers =
+    labourListRows.length > 0
+      ? (Object.keys(labourListRows[0]) as Array<keyof LabourListRow>)
+      : [];
 
   const rows = labourListRows.map((row) =>
     headers.map((header) => row[header]?.toString() ?? "")
@@ -652,15 +663,12 @@ const housesAndSystemsSubscriber = async ([
     labourTypes: labourTypes || [],
   });
 
-  console.log({
-    orderListRows,
-    materialsListRows,
-    labourListRows,
-  });
-
   const orderListCsv = orderListToCSV(orderListRows);
   const materialsListCsv = materialsListToCSV(materialsListRows);
   const labourListCsv = labourListToCSV(labourListRows);
+
+  await ExportersWorkerUtils.deleteRedundantModels();
+  await PngSnapshotsWorkerUtils.deleteRedundantSnapshots();
 
   await outputsCache.files
     .update(FILES_DOCUMENT_KEY, {
