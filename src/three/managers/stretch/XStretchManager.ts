@@ -107,6 +107,7 @@ class XStretchManager extends AbstractXStretchManager {
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
       TE.map((activeLayoutGroup) => {
         this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
+        this.hideHandles();
 
         const [handleDown, handleUp] = this.handles;
         this.houseGroup.add(handleDown);
@@ -124,6 +125,10 @@ class XStretchManager extends AbstractXStretchManager {
             if (currentLayoutIndex === -1)
               throw new Error(`currentLayoutIndex === -1`);
 
+            // Only show handles if there are actual alternatives
+            // (more than just the current layout)
+            const hasAlternatives = alts.length > 1;
+
             this.initData = {
               alts,
               minWidth: alts[0].sectionType.width,
@@ -136,8 +141,12 @@ class XStretchManager extends AbstractXStretchManager {
               currentLayoutIndex,
             };
 
-            // Remove this line since handles are already shown
-            // this.showHandles();
+            // Show handles only if there are alternatives
+            if (hasAlternatives) {
+              this.showHandles();
+            } else {
+              this.hideHandles();
+            }
           })
         )
       )

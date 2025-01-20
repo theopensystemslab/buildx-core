@@ -390,7 +390,6 @@ class ZStretchManager extends AbstractZStretchManager {
     );
 
     this.houseGroup.managers.xStretch?.init();
-    this.houseGroup.managers.xStretch?.showHandles();
 
     // this.cleanup();
 
