@@ -427,6 +427,12 @@ class GestureManager {
     this.currentGestureObject = null;
     this.cleanup();
   }
+
+  removeGestureEnabledObject(object: Object3D) {
+    this.gestureEnabledObjects = this.gestureEnabledObjects.filter(
+      (obj) => obj !== object
+    );
+  }
 }
 
 export default GestureManager;

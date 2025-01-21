@@ -8,6 +8,7 @@ import { flow, pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 import OutputsWorker from "./outputs.worker?worker";
 import SharingWorker from "./sharing.worker?worker";
+import { defaultExamplesSceneConf } from "@@/examples/utils";
 
 // right-click delete house
 
@@ -15,9 +16,7 @@ import SharingWorker from "./sharing.worker?worker";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
-  onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.removeFromParent();
-  },
+  ...defaultExamplesSceneConf,
 });
 
 pipe(

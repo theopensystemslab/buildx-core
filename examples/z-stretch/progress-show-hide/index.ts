@@ -1,15 +1,16 @@
 import { BuildXScene, defaultCachedHousesOps } from "@/index";
 import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import { TE } from "@/utils/functions";
-import { addKeyHelperListeners } from "@@/examples/utils";
+import {
+  addKeyHelperListeners,
+  defaultExamplesSceneConf,
+} from "@@/examples/utils";
 import { flow } from "fp-ts/lib/function";
 import ProgressShowHideManager from "./ProgressShowHideManager";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
-  onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.removeFromParent();
-  },
+  ...defaultExamplesSceneConf,
 });
 
 addKeyHelperListeners(

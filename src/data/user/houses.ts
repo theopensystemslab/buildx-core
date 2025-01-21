@@ -1,8 +1,8 @@
 import { A, E, R, TE } from "@/utils/functions";
+import { useLiveQuery } from "dexie-react-hooks";
 import { pipe } from "fp-ts/lib/function";
 import { z } from "zod";
 import userCache, { updateProjectData } from "./cache";
-import { useLiveQuery } from "dexie-react-hooks";
 
 export const houseParser = z.object({
   houseId: z.string().min(1),

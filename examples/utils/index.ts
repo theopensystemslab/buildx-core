@@ -3,10 +3,12 @@ import {
   cachedHouseTypesTE,
   createHouseGroupTE as defaultHouseGroupTE,
   HouseGroup,
+  ScopeElement,
 } from "@/index";
 import { A, NEA, TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
+import { Vector2 } from "three";
 
 export const addKeyHelperListeners = (
   scene: BuildXScene,
@@ -75,4 +77,10 @@ export const addHouseTypeByIndex = (scene: BuildXScene, index: number) => {
       scene.addHouseGroup(houseGroup);
     })
   )();
+};
+
+export const defaultExamplesSceneConf = {
+  onRightClickBuildElement: (scopeElement: ScopeElement, _xy: Vector2) => {
+    scopeElement.elementGroup.houseGroup.dispose();
+  },
 };

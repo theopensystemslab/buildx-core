@@ -249,6 +249,11 @@ export class HouseGroup extends Group {
       friendlyName: this.friendlyName,
     });
   }
+
+  dispose() {
+    this.scene?.gestureManager?.removeGestureEnabledObject(this);
+    this.removeFromParent();
+  }
 }
 
 export type { Hooks as HouseGroupHooks, Managers as HouseGroupManagers };

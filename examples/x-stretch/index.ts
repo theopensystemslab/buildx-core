@@ -8,13 +8,11 @@ import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
 import XStretchManager from "./XStretchManager";
-import { addKeyHelperListeners } from "../utils";
+import { addKeyHelperListeners, defaultExamplesSceneConf } from "../utils";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
-  onRightClickBuildElement: (x) => {
-    x.elementGroup.houseGroup.removeFromParent();
-  },
+  ...defaultExamplesSceneConf,
 });
 
 addKeyHelperListeners(
