@@ -1,5 +1,5 @@
 // import tailwindConfig from "@/tailwind.config"
-import { DoubleSide, MeshStandardMaterial } from "three";
+import { AdditiveBlending, DoubleSide, MeshStandardMaterial } from "three";
 
 const colors = {
   default: "white",
@@ -13,5 +13,16 @@ const handleMaterial = new MeshStandardMaterial({
   emissive: color,
   side: DoubleSide,
 });
+
+export const createHandleMaterial = () =>
+  new MeshStandardMaterial({
+    color,
+    emissive: color,
+    side: DoubleSide,
+    transparent: true,
+    opacity: 1,
+    depthWrite: false,
+    blending: AdditiveBlending,
+  });
 
 export default handleMaterial;

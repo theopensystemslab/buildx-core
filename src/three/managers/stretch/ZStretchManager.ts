@@ -13,6 +13,7 @@ import { Matrix3, Matrix4, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import OBBMesh from "../../objects/OBBMesh";
 import { AbstractZStretchManager } from "./AbstractStretchManagers";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
 
 const DEFAULT_MAX_DEPTH = 8;
 
@@ -43,9 +44,20 @@ class ZStretchManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
+    const handleMaterial = createHandleMaterial();
     this.handles = [
-      new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
-      new StretchHandleGroup({ axis: "z", side: 1, manager: this }),
+      new StretchHandleGroup({
+        axis: "z",
+        side: -1,
+        manager: this,
+        material: handleMaterial,
+      }),
+      new StretchHandleGroup({
+        axis: "z",
+        side: 1,
+        manager: this,
+        material: handleMaterial,
+      }),
     ];
   }
 
