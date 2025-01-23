@@ -1,6 +1,5 @@
 // ZStretchManager.ts
 import { HouseGroup } from "@/index";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
@@ -9,17 +8,22 @@ import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { Matrix3, Matrix4, Vector3 } from "three";
+import { Matrix3, Matrix4, MeshStandardMaterial, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import OBBMesh from "../../objects/OBBMesh";
 import { AbstractZStretchManager } from "./AbstractStretchManagers";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
+import StretchHandleMesh, {
+  DEFAULT_HANDLE_SIZE,
+} from "@/three/objects/handles/StretchHandleMesh";
 
 const DEFAULT_MAX_DEPTH = 8;
 
 const GRACE = 0.001;
 
 class ZStretchManager extends AbstractZStretchManager {
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  private handleMaterial: MeshStandardMaterial;
+  handles?: [StretchHandleMesh, StretchHandleMesh];
 
   initData?: {
     startColumn: ColumnGroup;
@@ -43,14 +47,49 @@ class ZStretchManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handles = [
-      new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
-      new StretchHandleGroup({ axis: "z", side: 1, manager: this }),
-    ];
+    this.handleMaterial = createHandleMaterial();
+  }
+
+  clearHandles() {
+    this.handles?.forEach((handle) => {
+      handle.removeFromParent();
+    });
+    this.handles = undefined;
+  }
+
+  createHandles() {
+    if (!this.initData) return;
+
+    const { startColumn, endColumn } = this.initData;
+
+    const { width } = this.houseGroup.unsafeActiveLayoutGroup.userData;
+
+    const handle0 = new StretchHandleMesh({
+      width,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: -1,
+    });
+    handle0.position.z = -DEFAULT_HANDLE_SIZE;
+    startColumn.add(handle0);
+
+    const handle1 = new StretchHandleMesh({
+      width,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: 1,
+    });
+    handle1.position.z = DEFAULT_HANDLE_SIZE + endColumn.userData.depth;
+    endColumn.add(handle1);
+
+    this.handles = [handle0, handle1];
+    this.showHandles();
   }
 
   init() {
-    // Hide handles at the start of initialization
+    this.cleanup();
 
     pipe(
       this.houseGroup.activeLayoutGroup,
@@ -60,13 +99,6 @@ class ZStretchManager extends AbstractZStretchManager {
 
         const { startColumnGroup, midColumnGroups, endColumnGroup } =
           activeLayoutGroup.getPartitionedColumnGroups();
-
-        this.handles.forEach((x) => {
-          x.syncDimensions(activeLayoutGroup);
-        });
-        const [handleDown, handleUp] = this.handles;
-        endColumnGroup.add(handleUp);
-        startColumnGroup.add(handleDown);
 
         const maxDepth = DEFAULT_MAX_DEPTH;
 
@@ -107,8 +139,7 @@ class ZStretchManager extends AbstractZStretchManager {
               lengthWiseNeighbours,
             };
 
-            // Show handles only after everything is prepared
-            this.showHandles();
+            this.createHandles();
           })
         )();
       })
@@ -391,8 +422,6 @@ class ZStretchManager extends AbstractZStretchManager {
 
     this.houseGroup.managers.xStretch?.init();
 
-    // this.cleanup();
-
     this.init();
   }
 
@@ -414,7 +443,10 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   cleanup() {
+    this.clearHandles();
+
     if (!this.scratchData) return;
+
     const { orderedColumns } = this.scratchData;
 
     pipe(
@@ -431,11 +463,11 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles?.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles?.forEach(hideObject);
   }
 
   // Add method to toggle debug mode

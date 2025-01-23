@@ -1,7 +1,10 @@
 // VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
 import { AbstractZStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
+import StretchHandleMesh, {
+  DEFAULT_HANDLE_SIZE,
+} from "@/three/objects/handles/StretchHandleMesh";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
@@ -24,17 +27,19 @@ import {
   SpriteMaterial,
   Texture,
   Vector3,
+  MeshStandardMaterial,
 } from "three";
 
 const DEFAULT_MAX_DEPTH = 5;
 
 class ProgressShowHideManager extends AbstractZStretchManager {
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  private handleMaterial: MeshStandardMaterial;
+  handles?: [StretchHandleMesh, StretchHandleMesh];
 
   initData?: {
-    startColumn: ColumnGroup;
-    endColumn: ColumnGroup;
-    midColumns: ColumnGroup[];
+    startColumnGroup: ColumnGroup;
+    endColumnGroup: ColumnGroup;
+    midColumnGroups: ColumnGroup[];
     vanillaColumns: ColumnGroup[];
     maxDepth: number;
   };
@@ -51,13 +56,48 @@ class ProgressShowHideManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handles = [
-      new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
-      new StretchHandleGroup({ axis: "z", side: 1, manager: this }),
-    ];
+    this.handleMaterial = createHandleMaterial();
+  }
+
+  clearHandles() {
+    this.handles?.forEach((handle) => {
+      handle.removeFromParent();
+    });
+    this.handles = undefined;
+  }
+
+  createHandles() {
+    if (!this.initData) return;
+
+    const { startColumnGroup, endColumnGroup } = this.initData;
+    const { width } = this.houseGroup.unsafeActiveLayoutGroup.userData;
+
+    const handle0 = new StretchHandleMesh({
+      width,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: -1,
+    });
+    handle0.position.z = -DEFAULT_HANDLE_SIZE;
+    startColumnGroup.add(handle0);
+
+    const handle1 = new StretchHandleMesh({
+      width,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: 1,
+    });
+    handle1.position.z = DEFAULT_HANDLE_SIZE + endColumnGroup.userData.depth;
+    endColumnGroup.add(handle1);
+
+    this.handles = [handle0, handle1];
   }
 
   init() {
+    this.cleanup();
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -66,13 +106,6 @@ class ProgressShowHideManager extends AbstractZStretchManager {
 
         const { startColumnGroup, midColumnGroups, endColumnGroup } =
           activeLayoutGroup.getPartitionedColumnGroups();
-
-        this.handles.forEach((x) => {
-          x.syncDimensions(activeLayoutGroup);
-        });
-        const [handleDown, handleUp] = this.handles;
-        endColumnGroup.add(handleUp);
-        startColumnGroup.add(handleDown);
 
         const maxDepth = DEFAULT_MAX_DEPTH;
 
@@ -101,12 +134,13 @@ class ProgressShowHideManager extends AbstractZStretchManager {
             activeLayoutGroup.add(...vanillaColumns);
 
             this.initData = {
-              startColumn: startColumnGroup,
-              midColumns: midColumnGroups,
-              endColumn: endColumnGroup,
+              startColumnGroup,
+              midColumnGroups,
+              endColumnGroup,
               vanillaColumns,
               maxDepth,
             };
+            this.createHandles();
           })
         )();
       })
@@ -117,10 +151,10 @@ class ProgressShowHideManager extends AbstractZStretchManager {
     if (!this.initData) return;
 
     const {
-      startColumn: startColumnGroup,
-      endColumn: endColumnGroup,
+      startColumnGroup,
+      endColumnGroup,
       vanillaColumns: vanillaColumnGroups,
-      midColumns: midColumnGroups,
+      midColumnGroups,
     } = this.initData;
 
     let orderedColumns: ColumnGroup[] = [],
@@ -174,7 +208,7 @@ class ProgressShowHideManager extends AbstractZStretchManager {
   }
 
   gestureProgress(delta: number) {
-    if (!this.startData) return;
+    if (!this.startData || !this.initData) return;
     const { side, bookendColumn, orderedColumns, lastVisibleIndex } =
       this.startData!;
 
@@ -295,41 +329,32 @@ class ProgressShowHideManager extends AbstractZStretchManager {
 
   reindexColumns() {
     if (!this.startData || !this.initData) return;
-    const { endColumn } = this.initData;
+    const { endColumnGroup } = this.initData;
     const { orderedColumns } = this.startData;
 
-    [...orderedColumns, endColumn]
+    [...orderedColumns, endColumnGroup]
       .filter((x) => x.visible)
       .forEach((v, i) => {
         v.userData.columnIndex = i + 1;
       });
   }
 
-  cleanup() {
-    if (!this.startData) return;
-    const { orderedColumns } = this.startData;
-
-    pipe(
-      this.houseGroup.activeLayoutGroup,
-      O.map((layoutGroup) => {
-        const invisibleColumnGroups = orderedColumns.filter((x) => !x.visible);
-        if (invisibleColumnGroups.length > 0)
-          layoutGroup.remove(...invisibleColumnGroups);
-      })
-    );
-
-    delete this.initData;
-    delete this.startData;
+  cleanup(): void {
+    this.clearHandles();
+    this.initData = undefined;
+    this.startData = undefined;
   }
+
   isVanillaColumn(column: ColumnGroup): boolean {
     return column.userData.columnIndex === -1;
   }
+
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles?.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles?.forEach(hideObject);
   }
 
   private drawLines(targetZ: number, bookendZ: number) {

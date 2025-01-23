@@ -4,7 +4,6 @@ import { ElementBrush } from "../objects/house/ElementGroup";
 import BuildXScene from "../objects/scene/BuildXScene";
 import { SceneContextModeLabel } from "./ContextManager";
 import StretchHandleMesh from "../objects/handles/StretchHandleMesh";
-
 class OutlineManager {
   // private hoveredObject: Object3D | null = null;
   // private selectedObject: Object3D | null = null;

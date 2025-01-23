@@ -51,11 +51,11 @@ import {
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
 import { createOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
-import StretchHandleMesh from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
 import SiteBoundary from "./SiteBoundary";
+import StretchHandleMesh from "../handles/StretchHandleMesh";
 
 const subsetOfTHREE = {
   Vector2,

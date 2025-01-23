@@ -16,8 +16,8 @@ import {
   RAYCAST_ONLY_LAYER,
 } from "../utils/layers";
 import { ElementBrush } from "../objects/house/ElementGroup";
-import StretchHandleMesh from "../objects/handles/StretchHandleMesh";
 import RotateHandleMesh from "../objects/handles/RotateHandleMesh";
+import StretchHandleMesh from "../objects/handles/StretchHandleMesh";
 
 type TapHandler = (intersection: Intersection, pointer: Vector2) => void;
 

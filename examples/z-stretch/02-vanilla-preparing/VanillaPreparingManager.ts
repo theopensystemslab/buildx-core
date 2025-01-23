@@ -1,6 +1,6 @@
 // VanillaPreparingManager.ts
 import { HouseGroup } from "@/index";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
+import StretchHandleMesh from "@/three/objects/handles/StretchHandleMesh";
 import { AbstractZStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 import {
   ColumnGroup,
@@ -16,16 +16,20 @@ import {
   CanvasTexture,
   Line,
   LineBasicMaterial,
+  MeshStandardMaterial,
   Sprite,
   SpriteMaterial,
   Texture,
   Vector3,
 } from "three";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
 
 const DEFAULT_MAX_DEPTH = 5;
+const DEFAULT_HANDLE_SIZE = 1;
 
 class VanillaPreparingManager extends AbstractZStretchManager {
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  private handleMaterial: MeshStandardMaterial;
+  handles?: [StretchHandleMesh, StretchHandleMesh];
 
   initData?: {
     startColumnGroup: ColumnGroup;
@@ -41,13 +45,48 @@ class VanillaPreparingManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handles = [
-      new StretchHandleGroup({ axis: "z", side: -1, manager: this }),
-      new StretchHandleGroup({ axis: "z", side: 1, manager: this }),
-    ];
+    this.handleMaterial = createHandleMaterial();
+  }
+
+  clearHandles() {
+    this.handles?.forEach((handle) => {
+      handle.removeFromParent();
+    });
+    this.handles = undefined;
+  }
+
+  createHandles() {
+    if (!this.initData) return;
+
+    const { startColumnGroup, endColumnGroup } = this.initData;
+    const { width } = this.houseGroup.unsafeActiveLayoutGroup.userData;
+
+    const handle0 = new StretchHandleMesh({
+      width,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: -1,
+    });
+    handle0.position.z = -DEFAULT_HANDLE_SIZE;
+    startColumnGroup.add(handle0);
+
+    const handle1 = new StretchHandleMesh({
+      width,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: 1,
+    });
+    handle1.position.z = DEFAULT_HANDLE_SIZE + endColumnGroup.userData.depth;
+    endColumnGroup.add(handle1);
+
+    this.handles = [handle0, handle1];
   }
 
   init() {
+    this.cleanup();
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -67,13 +106,6 @@ class VanillaPreparingManager extends AbstractZStretchManager {
             `c:${column.userData.columnIndex} i:${i}`
           );
         });
-
-        this.handles.forEach((x) => {
-          x.syncDimensions(activeLayoutGroup);
-        });
-        const [handleDown, handleUp] = this.handles;
-        endColumnGroup.add(handleUp);
-        startColumnGroup.add(handleDown);
 
         const maxDepth = DEFAULT_MAX_DEPTH;
 
@@ -113,6 +145,8 @@ class VanillaPreparingManager extends AbstractZStretchManager {
               vanillaColumnGroups,
               maxDepth,
             };
+
+            this.createHandles();
           })
         )();
       })
@@ -181,11 +215,11 @@ class VanillaPreparingManager extends AbstractZStretchManager {
   gestureEnd() {}
 
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles?.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles?.forEach(hideObject);
   }
 
   annotateColumn(column: ColumnGroup, label: string, color = 0xffffff) {
@@ -266,7 +300,11 @@ class VanillaPreparingManager extends AbstractZStretchManager {
     return new CanvasTexture(canvas);
   }
 
-  cleanup(): void {}
+  cleanup(): void {
+    this.clearHandles();
+    this.initData = undefined;
+    this.startData = undefined;
+  }
 }
 
 export default VanillaPreparingManager;
