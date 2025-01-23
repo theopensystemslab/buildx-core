@@ -51,7 +51,7 @@ import {
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
 import { createOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
-import StretchHandleMesh from "../handles/StretchHandleMesh";
+import StretchHandleBrush from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
@@ -256,7 +256,7 @@ class BuildXScene extends Scene {
         },
         onDragStart: ({ object, point: currentPoint }) => {
           switch (true) {
-            case object instanceof StretchHandleMesh: {
+            case object instanceof StretchHandleBrush: {
               const stretchManager = object.manager;
               stretchManager.gestureStart(object.side);
 

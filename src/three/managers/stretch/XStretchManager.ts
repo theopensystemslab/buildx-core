@@ -11,6 +11,7 @@ import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { SectionType } from "@/data/build-systems";
 import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
@@ -38,16 +39,20 @@ class XStretchManager extends AbstractXStretchManager {
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
 
+    const handleMaterial = createHandleMaterial();
+
     this.handles = [
       new StretchHandleGroup({
         axis: "x",
         side: -1,
         manager: this,
+        material: handleMaterial,
       }),
       new StretchHandleGroup({
         axis: "x",
         side: 1,
         manager: this,
+        material: handleMaterial,
       }),
     ];
   }
@@ -106,8 +111,10 @@ class XStretchManager extends AbstractXStretchManager {
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
       TE.map((activeLayoutGroup) => {
-        this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
-        this.hideHandles();
+        this.handles.forEach((x) => {
+          x.syncDimensions(activeLayoutGroup);
+          x.fade();
+        });
 
         const [handleDown, handleUp] = this.handles;
         this.houseGroup.add(handleDown);
@@ -143,14 +150,20 @@ class XStretchManager extends AbstractXStretchManager {
 
             // Show handles only if there are alternatives
             if (hasAlternatives) {
-              this.showHandles();
-            } else {
-              this.hideHandles();
+              this.unfadeHandles();
             }
           })
         )
       )
     )();
+  }
+
+  fadeHandles() {
+    this.handles.forEach((x) => x.fade());
+  }
+
+  unfadeHandles() {
+    this.handles.forEach((x) => x.unfade());
   }
 
   private generateCutKey(): string | null {
