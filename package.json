@@ -81,7 +81,7 @@
     "rimraf": "^6.0.1",
     "terser": "^5.31.3",
     "typescript": "^5.5.3",
-    "vite": "^5.3.6",
+    "vite": "^5.4.12",
     "vite-plugin-dts": "4.0.0-beta.1",
     "vitest": "^2.0.4"
   },
