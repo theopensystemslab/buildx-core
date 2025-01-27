@@ -44,7 +44,7 @@ class XStretchManager extends AbstractXStretchManager {
     super(houseGroup);
 
     this.handleMaterial = createHandleMaterial({
-      opacity: 0.5,
+      opacity: 0.3,
       // wireframe: true,
     });
   }
@@ -127,6 +127,8 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   init() {
+    this.handleMaterial.opacity = 0.3;
+
     return pipe(
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),

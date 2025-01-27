@@ -12,7 +12,6 @@ export interface StretchHandleOptions {
   manager: AbstractStretchManager;
   width?: number;
   depth?: number;
-  cornerRadius?: number;
   material?: Material;
   // Keep color and opacity for default material creation
   color?: number;
@@ -42,7 +41,7 @@ class StretchHandleMesh extends Mesh {
     const geometry = new RectangleRoundedGeometry2(
       width * 0.8 * 10,
       depth * 0.8 * 10,
-      1,
+      1.5,
       // min(width, depth) * 0.5 * 10,
       12
     );

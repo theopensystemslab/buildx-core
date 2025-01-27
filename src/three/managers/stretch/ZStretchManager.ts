@@ -47,7 +47,7 @@ class ZStretchManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handleMaterial = createHandleMaterial({ wireframe: true });
+    this.handleMaterial = createHandleMaterial();
   }
 
   createHandles() {
@@ -57,8 +57,11 @@ class ZStretchManager extends AbstractZStretchManager {
     // const [handleDown, handleUp] = this.handles;
     // endColumnGroup.add(handleUp);
     // startColumnGroup.add(handleDown);
+    if (!this.initData) return;
 
-    const { width, depth } = this.houseGroup.unsafeActiveLayoutGroup.userData;
+    const { startColumn, endColumn } = this.initData;
+
+    const { width } = this.houseGroup.unsafeActiveLayoutGroup.userData;
 
     const handle0 = new StretchHandleMesh({
       width,
@@ -67,8 +70,8 @@ class ZStretchManager extends AbstractZStretchManager {
       axis: "z",
       side: -1,
     });
-
-    handle0.position.z = -depth / 2 - DEFAULT_HANDLE_SIZE;
+    handle0.position.z = -DEFAULT_HANDLE_SIZE;
+    startColumn.add(handle0);
 
     const handle1 = new StretchHandleMesh({
       width,
@@ -77,13 +80,11 @@ class ZStretchManager extends AbstractZStretchManager {
       axis: "z",
       side: 1,
     });
-
-    handle1.position.z = depth / 2 + DEFAULT_HANDLE_SIZE;
+    handle1.position.z = DEFAULT_HANDLE_SIZE + endColumn.userData.depth;
+    endColumn.add(handle1);
 
     this.handles = [handle0, handle1];
-
-    // this.houseGroup.add(handle0);
-    // this.houseGroup.add(handle1);
+    this.showHandles();
   }
 
   init() {
@@ -94,8 +95,6 @@ class ZStretchManager extends AbstractZStretchManager {
       O.map((activeLayoutGroup) => {
         const { depth: layoutDepth, vanillaColumn } =
           activeLayoutGroup.userData;
-
-        this.createHandles();
 
         const { startColumnGroup, midColumnGroups, endColumnGroup } =
           activeLayoutGroup.getPartitionedColumnGroups();
@@ -139,8 +138,7 @@ class ZStretchManager extends AbstractZStretchManager {
               lengthWiseNeighbours,
             };
 
-            // Show handles only after everything is prepared
-            this.showHandles();
+            this.createHandles();
           })
         )();
       })
