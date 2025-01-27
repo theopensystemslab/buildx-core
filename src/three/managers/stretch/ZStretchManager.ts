@@ -1,6 +1,5 @@
 // ZStretchManager.ts
 import { HouseGroup } from "@/index";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
 import {
   ColumnGroup,
   defaultColumnGroupCreator,
@@ -9,18 +8,20 @@ import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, TE } from "@/utils/functions";
 import { floor } from "@/utils/math";
 import { pipe } from "fp-ts/lib/function";
-import { Matrix3, Matrix4, Vector3 } from "three";
+import { Matrix3, Matrix4, MeshStandardMaterial, Vector3 } from "three";
 import { OBB } from "three-stdlib";
 import OBBMesh from "../../objects/OBBMesh";
 import { AbstractZStretchManager } from "./AbstractStretchManagers";
 import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
+import StretchHandleMesh from "@/three/objects/handles/StretchHandleMesh";
 
 const DEFAULT_MAX_DEPTH = 8;
 
 const GRACE = 0.001;
 
 class ZStretchManager extends AbstractZStretchManager {
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  private handleMaterial: MeshStandardMaterial;
+  handles?: [StretchHandleMesh, StretchHandleMesh];
 
   initData?: {
     startColumn: ColumnGroup;
@@ -44,21 +45,38 @@ class ZStretchManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    const handleMaterial = createHandleMaterial();
-    this.handles = [
-      new StretchHandleGroup({
-        axis: "z",
-        side: -1,
-        manager: this,
-        material: handleMaterial,
-      }),
-      new StretchHandleGroup({
-        axis: "z",
-        side: 1,
-        manager: this,
-        material: handleMaterial,
-      }),
-    ];
+    this.handleMaterial = createHandleMaterial();
+  }
+
+  createHandles() {
+    // this.handles.forEach((x) => {
+    //   x.syncDimensions(activeLayoutGroup);
+    // });
+    // const [handleDown, handleUp] = this.handles;
+    // endColumnGroup.add(handleUp);
+    // startColumnGroup.add(handleDown);
+
+    const { width, height } = this.houseGroup.unsafeActiveLayoutGroup.userData;
+
+    const handle0 = new StretchHandleMesh({
+      width,
+      height,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: -1,
+    });
+
+    const handle1 = new StretchHandleMesh({
+      width,
+      height,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "z",
+      side: 1,
+    });
+
+    this.handles = [handle0, handle1];
   }
 
   init() {
@@ -72,13 +90,6 @@ class ZStretchManager extends AbstractZStretchManager {
 
         const { startColumnGroup, midColumnGroups, endColumnGroup } =
           activeLayoutGroup.getPartitionedColumnGroups();
-
-        this.handles.forEach((x) => {
-          x.syncDimensions(activeLayoutGroup);
-        });
-        const [handleDown, handleUp] = this.handles;
-        endColumnGroup.add(handleUp);
-        startColumnGroup.add(handleDown);
 
         const maxDepth = DEFAULT_MAX_DEPTH;
 
@@ -443,11 +454,11 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles?.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles?.forEach(hideObject);
   }
 
   // Add method to toggle debug mode

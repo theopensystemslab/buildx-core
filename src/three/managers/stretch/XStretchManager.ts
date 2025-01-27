@@ -1,17 +1,18 @@
+import { SectionType } from "@/data/build-systems";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
-import { A, O, S, TE } from "@/utils/functions";
-import { flow, pipe } from "fp-ts/lib/function";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
+import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
+import StretchHandleMesh from "@/three/objects/handles/StretchHandleMesh";
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,
 } from "@/three/objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "@/three/objects/house/HouseGroup";
-import { hideObject, showObject } from "@/three/utils/layers";
-import { SectionType } from "@/data/build-systems";
-import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
-import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
+import { hideObject } from "@/three/utils/layers";
+import { A, O, S, TE } from "@/utils/functions";
+import { flow, pipe } from "fp-ts/lib/function";
+import { MeshStandardMaterial } from "three";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
@@ -20,7 +21,8 @@ type AltSectionTypeLayout = {
 
 class XStretchManager extends AbstractXStretchManager {
   private static readonly ALT_LAYOUT_PREFIX = "X_STRETCH_ALT";
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  private handleMaterial: MeshStandardMaterial;
+  handles?: [StretchHandleMesh, StretchHandleMesh];
   initData?: {
     alts: Array<AltSectionTypeLayout>;
     minWidth: number;
@@ -39,22 +41,36 @@ class XStretchManager extends AbstractXStretchManager {
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
 
-    const handleMaterial = createHandleMaterial();
+    this.handleMaterial = createHandleMaterial();
+  }
 
-    this.handles = [
-      new StretchHandleGroup({
-        axis: "x",
-        side: -1,
-        manager: this,
-        material: handleMaterial,
-      }),
-      new StretchHandleGroup({
-        axis: "x",
-        side: 1,
-        manager: this,
-        material: handleMaterial,
-      }),
-    ];
+  createHandles() {
+    const activeLayoutGroup = this.houseGroup.unsafeActiveLayoutGroup;
+
+    const { width, height } = activeLayoutGroup.userData;
+
+    const handle0 = new StretchHandleMesh({
+      width,
+      height,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "x",
+      side: -1,
+    });
+
+    const handle1 = new StretchHandleMesh({
+      width,
+      height,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "x",
+      side: 1,
+    });
+
+    this.handles = [handle0, handle1];
+
+    this.houseGroup.add(handle0);
+    this.houseGroup.add(handle1);
   }
 
   createAlts(): TE.TaskEither<Error, Array<AltSectionTypeLayout>> {
@@ -111,14 +127,7 @@ class XStretchManager extends AbstractXStretchManager {
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
       TE.map((activeLayoutGroup) => {
-        this.handles.forEach((x) => {
-          x.syncDimensions(activeLayoutGroup);
-          x.fade();
-        });
-
-        const [handleDown, handleUp] = this.handles;
-        this.houseGroup.add(handleDown);
-        this.houseGroup.add(handleUp);
+        this.createHandles();
 
         return activeLayoutGroup;
       }),
@@ -150,7 +159,7 @@ class XStretchManager extends AbstractXStretchManager {
 
             // Show handles only if there are alternatives
             if (hasAlternatives) {
-              this.unfadeHandles();
+              // this.unfadeHandles();
             }
           })
         )
@@ -158,13 +167,13 @@ class XStretchManager extends AbstractXStretchManager {
     )();
   }
 
-  fadeHandles() {
-    this.handles.forEach((x) => x.fade());
-  }
+  // fadeHandles() {
+  //   this.handles?.forEach((x) => x.fade());
+  // }
 
-  unfadeHandles() {
-    this.handles.forEach((x) => x.unfade());
-  }
+  // unfadeHandles() {
+  //   this.handles?.forEach((x) => x.unfade());
+  // }
 
   private generateCutKey(): string | null {
     if (!this.initData || !this.houseGroup.managers.cuts) return null;
@@ -252,12 +261,11 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   private updateHandlePositions(delta: number) {
-    const [handleDown, handleUp] = this.handles;
-
+    // const [handleDown, handleUp] = this.handles;
     // Move both handles symmetrically
-    const halfDelta = delta / 2;
-    handleDown.position.x -= halfDelta;
-    handleUp.position.x += halfDelta;
+    // const halfDelta = delta / 2;
+    // handleDown.position.x -= halfDelta;
+    // handleUp.position.x += halfDelta;
   }
 
   private checkAndPerformLayoutTransition(currentWidth: number) {
@@ -316,11 +324,11 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   showHandles() {
-    this.handles.forEach(showObject);
+    // this.handles.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    // this.handles.forEach(hideObject);
   }
 
   cleanup(): void {

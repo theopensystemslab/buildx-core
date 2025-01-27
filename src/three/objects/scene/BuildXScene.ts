@@ -51,11 +51,11 @@ import {
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass";
 import { createOutlinePass } from "../../effects/outline";
 import RotateHandleMesh from "../handles/RotateHandleMesh";
-import StretchHandleBrush from "../handles/StretchHandleMesh";
 import { ElementBrush } from "../house/ElementGroup";
 import { HouseGroup } from "../house/HouseGroup";
 import { ScopeElement } from "../types";
 import SiteBoundary from "./SiteBoundary";
+import StretchHandleMesh from "../handles/StretchHandleMesh";
 
 const subsetOfTHREE = {
   Vector2,
@@ -256,7 +256,7 @@ class BuildXScene extends Scene {
         },
         onDragStart: ({ object, point: currentPoint }) => {
           switch (true) {
-            case object instanceof StretchHandleBrush: {
+            case object instanceof StretchHandleMesh: {
               const stretchManager = object.manager;
               stretchManager.gestureStart(object.side);
 

@@ -1,32 +1,65 @@
-import { Mesh } from "three";
-import HandleMesh from "./HandleMesh";
-import StretchHandleGroup, {
-  StretchAxis,
-  StretchSide,
-} from "./StretchHandleGroup";
+import RectangleRoundedGeometry from "@/three/geometries/RectangleRoundedGeometry";
 import { AbstractStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
+import { Material, Mesh, MeshBasicMaterial } from "three";
 
-class StretchHandleMesh extends HandleMesh {
-  constructor(...args: ConstructorParameters<typeof Mesh>) {
-    super(...args);
+export type StretchAxis = "x" | "z";
+export type StretchSide = 1 | -1;
+
+export interface StretchHandleOptions {
+  axis: StretchAxis;
+  side: StretchSide;
+  manager: AbstractStretchManager;
+  width?: number;
+  height?: number;
+  cornerRadius?: number;
+  material?: Material;
+  // Keep color and opacity for default material creation
+  color?: number;
+  opacity?: number;
+}
+
+class StretchHandleMesh extends Mesh {
+  axis: StretchAxis;
+  side: StretchSide;
+  manager: AbstractStretchManager;
+
+  constructor(options: StretchHandleOptions) {
+    const {
+      axis,
+      side,
+      manager,
+      width = 1,
+      height = 1,
+      material,
+      color = 0xffffff,
+      opacity = 0.7,
+    } = options;
+
+    const geometry = new RectangleRoundedGeometry({
+      width,
+      height,
+    });
+
+    // Use provided material or create default
+    const meshMaterial =
+      material ||
+      new MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        depthTest: false,
+      });
+
+    super(geometry, meshMaterial);
+
+    this.axis = axis;
+    this.side = side;
+    this.manager = manager;
   }
 
-  get manager(): AbstractStretchManager {
-    if (this.parent instanceof StretchHandleGroup) {
-      return this.parent.manager;
-    } else {
-      throw new Error(`no stretch manager for handle mesh`);
-    }
-  }
-
-  get side(): StretchSide {
-    if (!(this.parent instanceof StretchHandleGroup)) throw Error(`bad parent`);
-    return this.parent.userData.side;
-  }
-
-  get axis(): StretchAxis {
-    if (!(this.parent instanceof StretchHandleGroup)) throw Error(`bad parent`);
-    return this.parent.userData.axis;
+  dispose(): void {
+    this.geometry.dispose();
+    (this.material as Material).dispose();
   }
 }
 

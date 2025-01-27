@@ -3,8 +3,7 @@ import { OutlinePass } from "three-stdlib";
 import { ElementBrush } from "../objects/house/ElementGroup";
 import BuildXScene from "../objects/scene/BuildXScene";
 import { SceneContextModeLabel } from "./ContextManager";
-import StretchHandleBrush from "../objects/handles/StretchHandleMesh";
-
+import StretchHandleMesh from "../objects/handles/StretchHandleMesh";
 class OutlineManager {
   // private hoveredObject: Object3D | null = null;
   // private selectedObject: Object3D | null = null;
@@ -48,7 +47,7 @@ class OutlineManager {
           this.outlinePass.selectedObjects = this.getOutlineObjects(object);
         }
         break;
-      case object instanceof StretchHandleBrush:
+      case object instanceof StretchHandleMesh:
         object.manager.onHandleHover?.(object.side);
         break;
       default:
