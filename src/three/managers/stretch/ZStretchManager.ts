@@ -13,7 +13,9 @@ import { OBB } from "three-stdlib";
 import OBBMesh from "../../objects/OBBMesh";
 import { AbstractZStretchManager } from "./AbstractStretchManagers";
 import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
-import StretchHandleMesh from "@/three/objects/handles/StretchHandleMesh";
+import StretchHandleMesh, {
+  DEFAULT_HANDLE_SIZE,
+} from "@/three/objects/handles/StretchHandleMesh";
 
 const DEFAULT_MAX_DEPTH = 8;
 
@@ -45,7 +47,7 @@ class ZStretchManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handleMaterial = createHandleMaterial();
+    this.handleMaterial = createHandleMaterial({ wireframe: true });
   }
 
   createHandles() {
@@ -56,27 +58,32 @@ class ZStretchManager extends AbstractZStretchManager {
     // endColumnGroup.add(handleUp);
     // startColumnGroup.add(handleDown);
 
-    const { width, height } = this.houseGroup.unsafeActiveLayoutGroup.userData;
+    const { width, depth } = this.houseGroup.unsafeActiveLayoutGroup.userData;
 
     const handle0 = new StretchHandleMesh({
       width,
-      height,
       manager: this,
       material: this.handleMaterial,
       axis: "z",
       side: -1,
     });
 
+    handle0.position.z = -depth / 2 - DEFAULT_HANDLE_SIZE;
+
     const handle1 = new StretchHandleMesh({
       width,
-      height,
       manager: this,
       material: this.handleMaterial,
       axis: "z",
       side: 1,
     });
 
+    handle1.position.z = depth / 2 + DEFAULT_HANDLE_SIZE;
+
     this.handles = [handle0, handle1];
+
+    // this.houseGroup.add(handle0);
+    // this.houseGroup.add(handle1);
   }
 
   init() {
@@ -87,6 +94,8 @@ class ZStretchManager extends AbstractZStretchManager {
       O.map((activeLayoutGroup) => {
         const { depth: layoutDepth, vanillaColumn } =
           activeLayoutGroup.userData;
+
+        this.createHandles();
 
         const { startColumnGroup, midColumnGroups, endColumnGroup } =
           activeLayoutGroup.getPartitionedColumnGroups();

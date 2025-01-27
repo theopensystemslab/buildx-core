@@ -3,7 +3,9 @@ import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
-import StretchHandleMesh from "@/three/objects/handles/StretchHandleMesh";
+import StretchHandleMesh, {
+  DEFAULT_HANDLE_SIZE,
+} from "@/three/objects/handles/StretchHandleMesh";
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,
@@ -41,32 +43,34 @@ class XStretchManager extends AbstractXStretchManager {
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
 
-    this.handleMaterial = createHandleMaterial();
+    this.handleMaterial = createHandleMaterial({
+      opacity: 0.5,
+      // wireframe: true,
+    });
   }
 
   createHandles() {
     const activeLayoutGroup = this.houseGroup.unsafeActiveLayoutGroup;
 
-    const { width, height } = activeLayoutGroup.userData;
+    const { width, depth } = activeLayoutGroup.userData;
 
     const handle0 = new StretchHandleMesh({
-      width,
-      height,
+      depth,
       manager: this,
       material: this.handleMaterial,
       axis: "x",
       side: -1,
     });
+    handle0.position.x = -width / 2 - DEFAULT_HANDLE_SIZE;
 
     const handle1 = new StretchHandleMesh({
-      width,
-      height,
+      depth,
       manager: this,
       material: this.handleMaterial,
       axis: "x",
       side: 1,
     });
-
+    handle1.position.x = width / 2 + DEFAULT_HANDLE_SIZE;
     this.handles = [handle0, handle1];
 
     this.houseGroup.add(handle0);
@@ -159,6 +163,7 @@ class XStretchManager extends AbstractXStretchManager {
 
             // Show handles only if there are alternatives
             if (hasAlternatives) {
+              this.handleMaterial.opacity = 1;
               // this.unfadeHandles();
             }
           })

@@ -1,4 +1,5 @@
-import RectangleRoundedGeometry from "@/three/geometries/RectangleRoundedGeometry";
+import { Y_LAYER_1 } from "@/constants";
+import RectangleRoundedGeometry2 from "@/three/geometries/RectangleRoundedGeometry2";
 import { AbstractStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 import { Material, Mesh, MeshBasicMaterial } from "three";
 
@@ -10,13 +11,16 @@ export interface StretchHandleOptions {
   side: StretchSide;
   manager: AbstractStretchManager;
   width?: number;
-  height?: number;
+  depth?: number;
   cornerRadius?: number;
   material?: Material;
   // Keep color and opacity for default material creation
   color?: number;
   opacity?: number;
 }
+
+// we're going to scale by 0.1 ultimately
+export const DEFAULT_HANDLE_SIZE = 0.5;
 
 class StretchHandleMesh extends Mesh {
   axis: StretchAxis;
@@ -28,17 +32,20 @@ class StretchHandleMesh extends Mesh {
       axis,
       side,
       manager,
-      width = 1,
-      height = 1,
+      width = DEFAULT_HANDLE_SIZE,
+      depth = DEFAULT_HANDLE_SIZE,
       material,
       color = 0xffffff,
-      opacity = 0.7,
+      opacity = 1,
     } = options;
 
-    const geometry = new RectangleRoundedGeometry({
-      width,
-      height,
-    });
+    const geometry = new RectangleRoundedGeometry2(
+      width * 0.8 * 10,
+      depth * 0.8 * 10,
+      1,
+      // min(width, depth) * 0.5 * 10,
+      12
+    );
 
     // Use provided material or create default
     const meshMaterial =
@@ -51,6 +58,10 @@ class StretchHandleMesh extends Mesh {
       });
 
     super(geometry, meshMaterial);
+
+    this.scale.set(0.1, 0.1, 1);
+    this.rotation.x = Math.PI / 2;
+    this.position.y = Y_LAYER_1;
 
     this.axis = axis;
     this.side = side;
