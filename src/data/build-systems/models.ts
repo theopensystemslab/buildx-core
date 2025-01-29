@@ -27,32 +27,54 @@ export type CachedBuildModel = {
   geometries: any;
 };
 
-const parseSpeckleModelUrl = (urlString: string) => {
+type SpeckleUrlFormat =
+  | { type: "stream"; streamId: string }
+  | { type: "project"; projectId: string; modelId: string };
+
+const parseSpeckleUrl = (urlString: string): SpeckleUrlFormat => {
   const url = new URL(urlString);
   const pathParts = url.pathname.split("/");
+
+  // Check for streams format
+  const streamIdIndex = pathParts.indexOf("streams") + 1;
+  if (streamIdIndex > 0 && pathParts[streamIdIndex]) {
+    return { type: "stream", streamId: pathParts[streamIdIndex] };
+  }
+
+  // Check for projects/models format
   const projectIdIndex = pathParts.indexOf("projects") + 1;
   const modelIdIndex = pathParts.indexOf("models") + 1;
-  return {
-    projectId: pathParts[projectIdIndex],
-    modelId: pathParts[modelIdIndex],
-  };
+  if (projectIdIndex > 0 && modelIdIndex > 0) {
+    return {
+      type: "project",
+      projectId: pathParts[projectIdIndex],
+      modelId: pathParts[modelIdIndex],
+    };
+  }
+
+  throw new Error("Invalid Speckle URL format");
 };
 
-// TEST DATA
-// https://speckle.xyz/streams/7eed2cc71a/branches/main
-// https://app.speckle.systems/projects/171f6792e9/models/fb85d3871b
+const streamDocument = gql`
+  query Stream($streamId: String!) {
+    stream(id: $streamId) {
+      branch(name: "main") {
+        commits(limit: 1) {
+          items {
+            referencedObject
+          }
+        }
+      }
+    }
+  }
+`;
 
-// streamId: 7eed2cc71a
-// modelId: fb85d3871b
-// projectId: 171f6792e9
-
-const document = gql`
+const modelDocument = gql`
   query Model($modelId: String!, $projectId: String!) {
     project(id: $projectId) {
       model(id: $modelId) {
         versions(limit: 1) {
           items {
-            id
             referencedObject
           }
         }
@@ -64,15 +86,26 @@ const document = gql`
 export const speckleObjectTE = (
   speckleBranchUrl: string
 ): TE.TaskEither<Error, SpeckleObject> => {
-  const { projectId, modelId } = parseSpeckleModelUrl(speckleBranchUrl);
+  const urlInfo = parseSpeckleUrl(speckleBranchUrl);
 
   return pipe(
     TE.tryCatch(
-      () =>
-        request("https://app.speckle.systems/graphql", document, {
-          projectId,
-          modelId,
-        }),
+      () => {
+        if (urlInfo.type === "stream") {
+          return request(
+            "https://app.speckle.systems/graphql",
+            streamDocument,
+            {
+              streamId: urlInfo.streamId,
+            }
+          );
+        } else {
+          return request("https://app.speckle.systems/graphql", modelDocument, {
+            projectId: urlInfo.projectId,
+            modelId: urlInfo.modelId,
+          });
+        }
+      },
       (error) =>
         new Error(
           `Failed to fetch stream data: ${
@@ -81,11 +114,17 @@ export const speckleObjectTE = (
         )
     ),
     TE.chain((data: any) => {
-      const objectId = data.project.model.versions.items[0].referencedObject;
+      const objectId =
+        urlInfo.type === "stream"
+          ? data.stream.branch.commits.items[0].referencedObject
+          : data.project.model.versions.items[0].referencedObject;
+
+      const streamId =
+        urlInfo.type === "stream" ? urlInfo.streamId : urlInfo.projectId;
 
       const loader = new ObjectLoader({
         serverUrl: "https://app.speckle.systems",
-        streamId: projectId,
+        streamId,
         objectId,
         options: {
           enableCaching: false,
@@ -97,7 +136,6 @@ export const speckleObjectTE = (
       });
 
       return TE.tryCatch<Error, SpeckleObject | SpeckleObject[]>(
-        // Error here:
         T.of(loader.getAndConstructObject(() => {})),
         (error) =>
           new Error(
