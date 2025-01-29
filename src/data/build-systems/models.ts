@@ -27,20 +27,32 @@ export type CachedBuildModel = {
   geometries: any;
 };
 
-const extractStreamId = (urlString: string) => {
+const parseSpeckleModelUrl = (urlString: string) => {
   const url = new URL(urlString);
   const pathParts = url.pathname.split("/");
-  const streamIdIndex = pathParts.indexOf("streams") + 1;
-  return pathParts[streamIdIndex];
+  const projectIdIndex = pathParts.indexOf("projects") + 1;
+  const modelIdIndex = pathParts.indexOf("models") + 1;
+  return {
+    projectId: pathParts[projectIdIndex],
+    modelId: pathParts[modelIdIndex],
+  };
 };
 
+// TEST DATA
+// https://speckle.xyz/streams/7eed2cc71a/branches/main
+// https://app.speckle.systems/projects/171f6792e9/models/fb85d3871b
+
+// streamId: 7eed2cc71a
+// modelId: fb85d3871b
+// projectId: 171f6792e9
+
 const document = gql`
-  query Stream($streamId: String!) {
-    stream(id: $streamId) {
-      branch(name: "main") {
-        commits(limit: 1) {
-          totalCount
+  query Model($modelId: String!, $projectId: String!) {
+    project(id: $projectId) {
+      model(id: $modelId) {
+        versions(limit: 1) {
           items {
+            id
             referencedObject
           }
         }
@@ -52,12 +64,15 @@ const document = gql`
 export const speckleObjectTE = (
   speckleBranchUrl: string
 ): TE.TaskEither<Error, SpeckleObject> => {
-  const streamId = extractStreamId(speckleBranchUrl);
+  const { projectId, modelId } = parseSpeckleModelUrl(speckleBranchUrl);
 
   return pipe(
     TE.tryCatch(
       () =>
-        request("https://app.speckle.systems/graphql", document, { streamId }),
+        request("https://app.speckle.systems/graphql", document, {
+          projectId,
+          modelId,
+        }),
       (error) =>
         new Error(
           `Failed to fetch stream data: ${
@@ -66,11 +81,11 @@ export const speckleObjectTE = (
         )
     ),
     TE.chain((data: any) => {
-      const objectId = data.stream.branch.commits.items[0].referencedObject;
+      const objectId = data.project.model.versions.items[0].referencedObject;
 
       const loader = new ObjectLoader({
         serverUrl: "https://app.speckle.systems",
-        streamId,
+        streamId: projectId,
         objectId,
         options: {
           enableCaching: false,
