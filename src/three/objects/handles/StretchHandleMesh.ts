@@ -21,6 +21,8 @@ export interface StretchHandleOptions {
 // we're going to scale by 0.1 ultimately
 export const DEFAULT_HANDLE_SIZE = 0.5;
 
+export const MULTIPLIER = 0.6;
+
 class StretchHandleMesh extends Mesh {
   axis: StretchAxis;
   side: StretchSide;
@@ -39,8 +41,8 @@ class StretchHandleMesh extends Mesh {
     } = options;
 
     const geometry = new RectangleRoundedGeometry2(
-      width * 0.8 * 10,
-      depth * 0.8 * 10,
+      width * MULTIPLIER * 10,
+      depth * MULTIPLIER * 10,
       1.5,
       // min(width, depth) * 0.5 * 10,
       12
