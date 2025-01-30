@@ -1,19 +1,12 @@
-import { BufferAttribute, BufferGeometry } from "three";
-
-interface RectangleRoundedParams {
-  width?: number;
-  height?: number;
-  radiusCorner?: number;
-  smoothness?: number;
-}
+import { BufferGeometry, BufferAttribute } from "three";
 
 class RectangleRoundedGeometry extends BufferGeometry {
-  constructor({
-    width = 1,
-    height = 1,
-    radiusCorner = 0.2,
-    smoothness = 10,
-  }: RectangleRoundedParams = {}) {
+  constructor(
+    width: number,
+    height: number,
+    radius: number,
+    smoothness: number
+  ) {
     super();
 
     const pi2 = Math.PI * 2;
@@ -22,17 +15,17 @@ class RectangleRoundedGeometry extends BufferGeometry {
     const positions: number[] = [];
     const uvs: number[] = [];
 
-    // Create center vertex
-    positions.push(0, 0, 0);
-    uvs.push(0.5, 0.5);
-
-    // Create triangles from center
+    // Create indices for triangles
     for (let j = 1; j < n + 1; j++) {
-      indices.push(0, j, j + 1);
+      indices.push(0, j, j + 1); // 0 is center
     }
     indices.push(0, n, 1);
 
-    // Create contour vertices
+    // Add center point
+    positions.push(0, 0, 0);
+    uvs.push(0.5, 0.5);
+
+    // Generate contour points
     for (let j = 0; j < n; j++) {
       const qu = Math.trunc((4 * j) / n) + 1; // quadrant  qu: 1..4
       const sgx = qu === 1 || qu === 4 ? 1 : -1; // signum left/right
@@ -40,16 +33,17 @@ class RectangleRoundedGeometry extends BufferGeometry {
 
       // corner center + circle
       const x =
-        sgx * (width / 2 - radiusCorner) +
-        radiusCorner * Math.cos((pi2 * (j - qu + 1)) / (n - 4));
+        sgx * (width / 2 - radius) +
+        radius * Math.cos((pi2 * (j - qu + 1)) / (n - 4));
       const y =
-        sgy * (height / 2 - radiusCorner) +
-        radiusCorner * Math.sin((pi2 * (j - qu + 1)) / (n - 4));
+        sgy * (height / 2 - radius) +
+        radius * Math.sin((pi2 * (j - qu + 1)) / (n - 4));
 
       positions.push(x, y, 0);
       uvs.push(0.5 + x / width, 0.5 + y / height);
     }
 
+    // Set attributes
     this.setIndex(new BufferAttribute(new Uint32Array(indices), 1));
     this.setAttribute(
       "position",

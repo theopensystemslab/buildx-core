@@ -50,14 +50,17 @@ class ZStretchManager extends AbstractZStretchManager {
     this.handleMaterial = createHandleMaterial();
   }
 
+  clearHandles() {
+    this.handles?.forEach((handle) => {
+      handle.removeFromParent();
+    });
+    this.handles = undefined;
+  }
+
   createHandles() {
-    // this.handles.forEach((x) => {
-    //   x.syncDimensions(activeLayoutGroup);
-    // });
-    // const [handleDown, handleUp] = this.handles;
-    // endColumnGroup.add(handleUp);
-    // startColumnGroup.add(handleDown);
     if (!this.initData) return;
+
+    this.clearHandles();
 
     const { startColumn, endColumn } = this.initData;
 
@@ -88,8 +91,6 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   init() {
-    // Hide handles at the start of initialization
-
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {

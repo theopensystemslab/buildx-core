@@ -49,7 +49,15 @@ class XStretchManager extends AbstractXStretchManager {
     });
   }
 
+  clearHandles() {
+    this.handles?.forEach((handle) => {
+      handle.removeFromParent();
+    });
+    this.handles = undefined;
+  }
+
   createHandles() {
+    this.clearHandles();
     const activeLayoutGroup = this.houseGroup.unsafeActiveLayoutGroup;
 
     const { width, depth } = activeLayoutGroup.userData;
@@ -71,6 +79,7 @@ class XStretchManager extends AbstractXStretchManager {
       side: 1,
     });
     handle1.position.x = width / 2 + DEFAULT_HANDLE_SIZE;
+
     this.handles = [handle0, handle1];
 
     this.houseGroup.add(handle0);
@@ -268,11 +277,16 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   private updateHandlePositions(delta: number) {
-    // const [handleDown, handleUp] = this.handles;
+    if (this.handles?.length !== 2) {
+      return;
+    }
+
+    const halfDelta = delta / 2;
+
+    const [handleDown, handleUp] = this.handles;
     // Move both handles symmetrically
-    // const halfDelta = delta / 2;
-    // handleDown.position.x -= halfDelta;
-    // handleUp.position.x += halfDelta;
+    handleDown.position.x -= halfDelta;
+    handleUp.position.x += halfDelta;
   }
 
   private checkAndPerformLayoutTransition(currentWidth: number) {

@@ -1,5 +1,5 @@
 import { Y_LAYER_1 } from "@/constants";
-import RectangleRoundedGeometry2 from "@/three/geometries/RectangleRoundedGeometry2";
+import RectangleRoundedGeometry from "@/three/geometries/RectangleRoundedGeometry";
 import { AbstractStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
 import { Material, Mesh, MeshBasicMaterial } from "three";
 
@@ -40,7 +40,7 @@ class StretchHandleMesh extends Mesh {
       opacity = 1,
     } = options;
 
-    const geometry = new RectangleRoundedGeometry2(
+    const geometry = new RectangleRoundedGeometry(
       width * MULTIPLIER * 10,
       depth * MULTIPLIER * 10,
       1.5,
