@@ -33,6 +33,7 @@ export const houseTypeParser = z
       .object({
         // id: z.string().min(1),
         house_type_code: z.string().min(1),
+        published: z.boolean().default(false),
         modules: z.array(z.string().min(1)),
         image: z
           .array(
@@ -70,6 +71,7 @@ export const houseTypeParser = z
         cost,
         embodied_carbon,
         last_modified,
+        published,
       },
     }) => ({
       id,
@@ -80,6 +82,7 @@ export const houseTypeParser = z
       cost,
       carbon: embodied_carbon,
       lastModified: new Date(last_modified).getTime(),
+      published,
     })
   );
 
@@ -144,7 +147,18 @@ export const validateRows = (rows: BuildModule[][]): boolean => {
 export const validateHouseType = (modules: BuildModule[]): boolean => {
   const rows = modulesToRows(modules);
   const columns = modulesToColumns(modules);
-  return validateRows(rows) && validateColumns(columns);
+  const rowsValid = validateRows(rows);
+  const columnsValid = validateColumns(columns);
+  if (!rowsValid || !columnsValid) {
+    console.log("House type validation failed:", {
+      rowsValid,
+      columnsValid,
+      moduleCount: modules.length,
+      rowCount: rows.length,
+      columnCount: columns.length,
+    });
+  }
+  return rowsValid && columnsValid;
 };
 
 export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
@@ -202,11 +216,21 @@ export const houseTypesQuery = async (input?: { systemIds: string[] }) => {
       return pipe(
         systemHouseTypes,
         A.filter((systemHouseType) => {
-          const { dnas } = systemHouseType;
+          const { dnas, published } = systemHouseType;
+
+          if (!published) return false;
 
           const modules = dnasToModules({ systemId, buildModules })(dnas);
 
-          return validateHouseType(modules);
+          const isValid = validateHouseType(modules);
+          if (!isValid) {
+            console.log("House type validation failed:", {
+              system: system.name,
+              dnas,
+            });
+          }
+
+          return isValid;
         })
       );
     }),
