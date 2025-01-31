@@ -1,8 +1,8 @@
 import { Mesh } from "three";
-import HandleBrush from "./HandleBrush";
+import HandleMesh from "./HandleMesh";
 import { HouseGroup } from "../house/HouseGroup";
 
-class RotateHandleMesh extends HandleBrush {
+class RotateHandleMesh extends HandleMesh {
   constructor(...args: ConstructorParameters<typeof Mesh>) {
     super(...args);
   }
