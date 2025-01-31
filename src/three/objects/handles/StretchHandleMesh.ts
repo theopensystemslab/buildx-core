@@ -1,7 +1,8 @@
 import { Y_LAYER_1 } from "@/constants";
 import RectangleRoundedGeometry from "@/three/geometries/RectangleRoundedGeometry";
 import { AbstractStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
-import { Material, Mesh, MeshBasicMaterial } from "three";
+import { Material, MeshBasicMaterial } from "three";
+import HandleMesh from "./HandleMesh";
 
 export type StretchAxis = "x" | "z";
 export type StretchSide = 1 | -1;
@@ -23,7 +24,7 @@ export const DEFAULT_HANDLE_SIZE = 0.5;
 
 export const MULTIPLIER = 0.6;
 
-class StretchHandleMesh extends Mesh {
+class StretchHandleMesh extends HandleMesh {
   axis: StretchAxis;
   side: StretchSide;
   manager: AbstractStretchManager;
