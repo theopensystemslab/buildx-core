@@ -7,8 +7,11 @@ import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import XStretchManager from "./XStretchManager";
-import { addKeyHelperListeners, defaultExamplesSceneConf } from "../utils";
+import DebugAltsManager from "./DebugAltsManager";
+import {
+  addKeyHelperListeners,
+  defaultExamplesSceneConf,
+} from "@@/examples/utils";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
@@ -48,7 +51,7 @@ pipe(
     })
   ),
   TE.map((houseGroup) => {
-    houseGroup.managers.xStretch = new XStretchManager(houseGroup);
+    houseGroup.managers.xStretch = new DebugAltsManager(houseGroup);
     scene.addHouseGroup(houseGroup);
   })
 )();

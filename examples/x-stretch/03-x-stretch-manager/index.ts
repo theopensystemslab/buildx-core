@@ -7,8 +7,11 @@ import createHouseGroupTE from "@/tasks/createHouseGroupTE";
 import { TE } from "@/utils/functions";
 import { pipe } from "fp-ts/lib/function";
 import { nanoid } from "nanoid";
-import XStretchManager from "./XStretchManager";
-import { addKeyHelperListeners, defaultExamplesSceneConf } from "../utils";
+import {
+  addKeyHelperListeners,
+  defaultExamplesSceneConf,
+} from "@@/examples/utils";
+import XStretchManager from "@/three/managers/stretch/XStretchManager";
 
 const scene = new BuildXScene({
   ...defaultCachedHousesOps,
