@@ -127,9 +127,7 @@ class ContextManager {
       O.map((prev) => {
         // come out of prev building house
         prev.managers.zStretch?.cleanup();
-        prev.managers.zStretch?.hideHandles();
-        // prev.xStretchManager?.cleanup();
-        prev.managers.xStretch?.hideHandles();
+        prev.managers.xStretch?.cleanup();
 
         // Show all other houses when leaving current house
         this.getOtherHouses(prev).forEach((house) => {

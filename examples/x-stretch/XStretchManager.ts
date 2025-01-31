@@ -1,8 +1,9 @@
+// TODO: UPDATE THIS EXAMPLE TO USE THE NEW STRETCH HANDLE MESH
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
 import { A, O, S, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
+
 import {
   ColumnLayoutGroup,
   createColumnLayoutGroup,
@@ -11,6 +12,7 @@ import { HouseGroup } from "@/three/objects/house/HouseGroup";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { SectionType } from "@/data/build-systems";
 import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
+import StretchHandleMesh from "@/three/objects/handles/StretchHandleMesh";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
@@ -19,7 +21,7 @@ type AltSectionTypeLayout = {
 
 class XStretchManager extends AbstractXStretchManager {
   private static readonly ALT_LAYOUT_PREFIX = "X_STRETCH_ALT";
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  handles: [StretchHandleMesh, StretchHandleMesh];
   initData?: {
     alts: Array<AltSectionTypeLayout>;
     minWidth: number;
@@ -39,12 +41,12 @@ class XStretchManager extends AbstractXStretchManager {
     super(houseGroup);
 
     this.handles = [
-      new StretchHandleGroup({
+      new StretchHandleMesh({
         axis: "x",
         side: -1,
         manager: this,
       }),
-      new StretchHandleGroup({
+      new StretchHandleMesh({
         axis: "x",
         side: 1,
         manager: this,
@@ -106,7 +108,7 @@ class XStretchManager extends AbstractXStretchManager {
       this.houseGroup.activeLayoutGroup,
       TE.fromOption(() => Error(`no activeLayoutGroup`)),
       TE.map((activeLayoutGroup) => {
-        this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
+        // this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
 
         const [handleDown, handleUp] = this.handles;
         this.houseGroup.add(handleDown);
@@ -286,7 +288,6 @@ class XStretchManager extends AbstractXStretchManager {
     this.houseGroup.managers.layouts.activeLayoutGroup =
       this.houseGroup.managers.layouts.previewLayoutGroup.value;
 
-    this.cleanup();
     this.init();
 
     this.houseGroup.managers.zStretch?.init();

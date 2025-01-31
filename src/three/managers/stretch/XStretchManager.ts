@@ -57,7 +57,6 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   createHandles() {
-    this.clearHandles();
     const activeLayoutGroup = this.houseGroup.unsafeActiveLayoutGroup;
 
     const { width, depth } = activeLayoutGroup.userData;
@@ -136,6 +135,8 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   init() {
+    this.cleanup();
+
     this.handleMaterial.opacity = 0.3;
 
     return pipe(
@@ -337,7 +338,6 @@ class XStretchManager extends AbstractXStretchManager {
     this.houseGroup.managers.layouts.activeLayoutGroup =
       this.houseGroup.managers.layouts.previewLayoutGroup.value;
 
-    this.cleanup();
     this.init();
 
     this.houseGroup.managers.zStretch?.init();
@@ -353,6 +353,8 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   cleanup(): void {
+    this.clearHandles();
+
     // Remove our alt layouts and any preview layouts created during stretch
     const activeLayout = this.houseGroup.unsafeActiveLayoutGroup;
     this.houseGroup.children

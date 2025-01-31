@@ -60,8 +60,6 @@ class ZStretchManager extends AbstractZStretchManager {
   createHandles() {
     if (!this.initData) return;
 
-    this.clearHandles();
-
     const { startColumn, endColumn } = this.initData;
 
     const { width } = this.houseGroup.unsafeActiveLayoutGroup.userData;
@@ -91,6 +89,8 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   init() {
+    this.cleanup();
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -422,8 +422,6 @@ class ZStretchManager extends AbstractZStretchManager {
 
     this.houseGroup.managers.xStretch?.init();
 
-    // this.cleanup();
-
     this.init();
   }
 
@@ -445,7 +443,10 @@ class ZStretchManager extends AbstractZStretchManager {
   }
 
   cleanup() {
+    this.clearHandles();
+
     if (!this.scratchData) return;
+
     const { orderedColumns } = this.scratchData;
 
     pipe(
