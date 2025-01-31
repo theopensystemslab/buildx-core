@@ -11,7 +11,7 @@ import {
   createColumnLayoutGroup,
 } from "@/three/objects/house/ColumnLayoutGroup";
 import { HouseGroup } from "@/three/objects/house/HouseGroup";
-import { hideObject } from "@/three/utils/layers";
+import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, S, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
 import { MeshStandardMaterial } from "three";
@@ -345,11 +345,11 @@ class XStretchManager extends AbstractXStretchManager {
   }
 
   showHandles() {
-    // this.handles.forEach(showObject);
+    this.handles?.forEach(showObject);
   }
 
   hideHandles() {
-    // this.handles.forEach(hideObject);
+    this.handles?.forEach(hideObject);
   }
 
   cleanup(): void {
