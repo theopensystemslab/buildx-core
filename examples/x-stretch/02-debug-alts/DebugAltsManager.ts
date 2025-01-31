@@ -1,5 +1,7 @@
 import { HouseGroup, SectionType } from "@/index";
-import StretchHandleGroup from "@/three/objects/handles/StretchHandleGroup";
+import StretchHandleMesh, {
+  DEFAULT_HANDLE_SIZE,
+} from "@/three/objects/handles/StretchHandleMesh";
 import { hideObject, showObject } from "@/three/utils/layers";
 import { A, O, S, TE } from "@/utils/functions";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -10,6 +12,8 @@ import {
 } from "@/three/objects/house/ColumnLayoutGroup";
 import { getAltSectionTypeLayouts } from "@/layouts/changeSectionType";
 import { columnLayoutToDnas } from "@/layouts/init";
+import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
+import { MeshStandardMaterial } from "three";
 
 type AltSectionTypeLayout = {
   sectionType: SectionType;
@@ -17,7 +21,8 @@ type AltSectionTypeLayout = {
 };
 
 class DebugAltsManager extends AbstractXStretchManager {
-  handles: [StretchHandleGroup, StretchHandleGroup];
+  private handleMaterial: MeshStandardMaterial;
+  handles?: [StretchHandleMesh, StretchHandleMesh];
 
   initData?: {
     initialWidth: number;
@@ -31,21 +36,50 @@ class DebugAltsManager extends AbstractXStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handles = [
-      new StretchHandleGroup({ axis: "x", side: -1, manager: this }),
-      new StretchHandleGroup({ axis: "x", side: 1, manager: this }),
-    ];
+    this.handleMaterial = createHandleMaterial();
+  }
+
+  clearHandles() {
+    this.handles?.forEach((handle) => {
+      handle.removeFromParent();
+    });
+    this.handles = undefined;
+  }
+
+  createHandles() {
+    const activeLayoutGroup = this.houseGroup.unsafeActiveLayoutGroup;
+    const { width, depth } = activeLayoutGroup.userData;
+
+    const handle0 = new StretchHandleMesh({
+      depth,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "x",
+      side: -1,
+    });
+    handle0.position.x = -width / 2 - DEFAULT_HANDLE_SIZE;
+
+    const handle1 = new StretchHandleMesh({
+      depth,
+      manager: this,
+      material: this.handleMaterial,
+      axis: "x",
+      side: 1,
+    });
+    handle1.position.x = width / 2 + DEFAULT_HANDLE_SIZE;
+
+    this.handles = [handle0, handle1];
+    this.houseGroup.add(handle0);
+    this.houseGroup.add(handle1);
   }
 
   init() {
+    this.cleanup();
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
-        this.handles.forEach((x) => x.syncDimensions(activeLayoutGroup));
-
-        const [handleLeft, handleRight] = this.handles;
-        this.houseGroup.add(handleLeft);
-        this.houseGroup.add(handleRight);
+        this.createHandles();
 
         // For now, just set some basic width constraints
         this.initData = {
@@ -124,6 +158,8 @@ class DebugAltsManager extends AbstractXStretchManager {
   gestureProgress(delta: number) {
     if (!this.initData || !this.startData) return;
 
+    if (this.handles?.length !== 2) return;
+
     // Calculate potential new width
     const halfDelta = delta / 2;
     const [handleLeft, handleRight] = this.handles;
@@ -138,14 +174,18 @@ class DebugAltsManager extends AbstractXStretchManager {
   }
 
   showHandles() {
-    this.handles.forEach(showObject);
+    this.handles?.forEach(showObject);
   }
 
   hideHandles() {
-    this.handles.forEach(hideObject);
+    this.handles?.forEach(hideObject);
   }
 
-  cleanup(): void {}
+  cleanup(): void {
+    this.clearHandles();
+    this.initData = undefined;
+    this.startData = undefined;
+  }
 }
 
 export default DebugAltsManager;
