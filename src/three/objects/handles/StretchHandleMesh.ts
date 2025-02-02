@@ -61,6 +61,8 @@ class StretchHandleMesh extends HandleMesh {
 
     super(geometry, meshMaterial);
 
+    this.renderOrder = 999;
+
     this.scale.set(0.1, 0.1, 1);
     this.rotation.x = Math.PI / 2;
     this.position.y = Y_LAYER_1;
