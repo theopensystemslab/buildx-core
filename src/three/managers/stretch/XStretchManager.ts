@@ -176,21 +176,12 @@ class XStretchManager extends AbstractXStretchManager {
             // Show handles only if there are alternatives
             if (hasAlternatives) {
               this.handleMaterial.opacity = 1;
-              // this.unfadeHandles();
             }
           })
         )
       )
     )();
   }
-
-  // fadeHandles() {
-  //   this.handles?.forEach((x) => x.fade());
-  // }
-
-  // unfadeHandles() {
-  //   this.handles?.forEach((x) => x.unfade());
-  // }
 
   private generateCutKey(): string | null {
     if (!this.initData || !this.houseGroup.managers.cuts) return null;
