@@ -329,6 +329,8 @@ class XStretchManager extends AbstractXStretchManager {
     this.houseGroup.managers.layouts.activeLayoutGroup =
       this.houseGroup.managers.layouts.previewLayoutGroup.value;
 
+    this.houseGroup.updateElementBrushes();
+
     this.init();
 
     this.houseGroup.managers.zStretch?.init();
