@@ -47,7 +47,9 @@ class ZStretchManager extends AbstractZStretchManager {
 
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
-    this.handleMaterial = createHandleMaterial();
+    this.handleMaterial = createHandleMaterial({
+      opacity: 0.3,
+    });
   }
 
   clearHandles() {
@@ -57,11 +59,7 @@ class ZStretchManager extends AbstractZStretchManager {
     this.handles = undefined;
   }
 
-  createHandles() {
-    if (!this.initData) return;
-
-    const { startColumn, endColumn } = this.initData;
-
+  createHandles(startColumn: ColumnGroup, endColumn: ColumnGroup) {
     const { width } = this.houseGroup.unsafeActiveLayoutGroup.userData;
 
     const handle0 = new StretchHandleMesh({
@@ -91,6 +89,8 @@ class ZStretchManager extends AbstractZStretchManager {
   init() {
     this.cleanup();
 
+    this.handleMaterial.opacity = 0.3;
+
     pipe(
       this.houseGroup.activeLayoutGroup,
       O.map((activeLayoutGroup) => {
@@ -99,6 +99,8 @@ class ZStretchManager extends AbstractZStretchManager {
 
         const { startColumnGroup, midColumnGroups, endColumnGroup } =
           activeLayoutGroup.getPartitionedColumnGroups();
+
+        this.createHandles(startColumnGroup, endColumnGroup);
 
         const maxDepth = DEFAULT_MAX_DEPTH;
 
@@ -139,7 +141,7 @@ class ZStretchManager extends AbstractZStretchManager {
               lengthWiseNeighbours,
             };
 
-            this.createHandles();
+            this.handleMaterial.opacity = 1;
           })
         )();
       })

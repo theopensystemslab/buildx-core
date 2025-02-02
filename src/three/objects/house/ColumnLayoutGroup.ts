@@ -142,6 +142,8 @@ export class ColumnLayoutGroup extends Group {
 
   private updateDnas() {
     this.userData.dnas = columnLayoutToDnas(this.userData.layout);
+
+    this.houseGroup.updateElementBrushes();
   }
 
   updateDepth() {
