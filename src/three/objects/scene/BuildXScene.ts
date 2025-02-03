@@ -365,6 +365,18 @@ class BuildXScene extends Scene {
     this.handleResize();
     window.addEventListener("resize", () => this.handleResize());
 
+    // Add context lost/restored event listeners
+    this.renderer.domElement.addEventListener(
+      "webglcontextlost",
+      this.handleContextLost.bind(this),
+      false
+    );
+    this.renderer.domElement.addEventListener(
+      "webglcontextrestored",
+      this.handleContextRestored.bind(this),
+      false
+    );
+
     this.animate();
   }
 
@@ -566,6 +578,16 @@ class BuildXScene extends Scene {
   }
 
   dispose() {
+    // Remove context event listeners
+    this.renderer.domElement.removeEventListener(
+      "webglcontextlost",
+      this.handleContextLost
+    );
+    this.renderer.domElement.removeEventListener(
+      "webglcontextrestored",
+      this.handleContextRestored
+    );
+
     // Cancel animation frame first
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
@@ -624,6 +646,33 @@ class BuildXScene extends Scene {
       0,
       true // Force immediate update
     );
+  }
+
+  private handleContextLost = (event: Event) => {
+    event.preventDefault();
+    this.stopAnimation();
+    console.warn("WebGL context lost. Stopping animation loop.");
+  };
+
+  private handleContextRestored = () => {
+    console.log("WebGL context restored. Restarting animation loop.");
+    // Reinitialize necessary WebGL resources
+    this.renderer.setSize(
+      this.container.clientWidth,
+      this.container.clientHeight
+    );
+    this.composer.setSize(
+      this.container.clientWidth,
+      this.container.clientHeight
+    );
+    this.animate();
+  };
+
+  private stopAnimation() {
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
   }
 }
 
