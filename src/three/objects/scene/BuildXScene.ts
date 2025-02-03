@@ -184,6 +184,14 @@ class BuildXScene extends Scene {
     );
 
     this.renderer = new WebGLRenderer({ canvas, antialias });
+
+    // Check for WebGL 2 support and enable fallback extensions if needed
+    if (!this.renderer.capabilities.isWebGL2) {
+      const gl = this.renderer.getContext();
+      gl.getExtension("OES_standard_derivatives");
+      gl.getExtension("WEBGL_depth_texture");
+    }
+
     if (enableShadows) this.renderer.shadowMap.enabled = true;
 
     if (!canvas) {
