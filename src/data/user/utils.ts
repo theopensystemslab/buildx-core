@@ -1,4 +1,3 @@
-import { formatCurrency } from "@/utils/format";
 import { O, TE } from "@/utils/functions";
 import { Buffer } from "buffer";
 import { PromiseExtended } from "dexie";
@@ -40,11 +39,24 @@ export const useProjectCurrency = () => {
     return `${symbol}${formatNumberWithK(number)}`;
   }
 
+  function formatWhole(number: number): string {
+    return `${symbol}${Math.round(number).toLocaleString()}`;
+  }
+
+  function formatDecimal(number: number): string {
+    return `${symbol}${number.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
   return {
     symbol,
     code,
-    format: (x: number) => formatCurrency(x, code),
+    format: formatWhole,
     kformat,
+    formatWhole,
+    formatDecimal,
   };
 };
 
