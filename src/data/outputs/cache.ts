@@ -38,7 +38,7 @@ class OutputsCache extends Dexie {
     this.version(1).stores({
       orderListRows: "[houseId+blockName]",
       materialsListRows: "[houseId+item]",
-      labourListRows: "[houseId+buildingName]",
+      labourListRows: "[houseId+labourType]",
       houseModels: "houseId",
       housePngs: "houseId",
       files: "key",
