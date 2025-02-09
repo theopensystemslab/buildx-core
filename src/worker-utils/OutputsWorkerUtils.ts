@@ -132,8 +132,10 @@ const materialsProc = ({
         return (acc, { lengthDims }) => acc + lengthDims;
 
       case "External breather membrane":
-        return (acc, { claddingArea, roofingArea, floorArea }) =>
-          acc + claddingArea + roofingArea + floorArea;
+        return (acc, { membraneArea }) => acc + membraneArea;
+
+      case "Internal vapour barrier":
+        return (acc, { vclArea }) => acc + vclArea;
 
       case "Cladding":
       case "Battens":
@@ -204,8 +206,6 @@ const materialsProc = ({
       elements,
       A.filterMap(({ category, name: item }) => {
         if (["Insulation"].includes(item)) return O.none;
-
-        // if (!categories.includes(category)) categories.push(category)
 
         const reducer = getQuantityReducer(item);
 
