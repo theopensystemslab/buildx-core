@@ -10,14 +10,17 @@ import { getThreeMaterial } from "@/three/materials/getThreeMaterial";
 import { ThreeMaterial } from "@/three/materials/types";
 import { A, E, O, TE } from "@/utils/functions";
 import { sequenceT } from "fp-ts/lib/Apply";
-import { flow, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import { Group, Object3D } from "three";
+import { Brush } from "three-bvh-csg";
 import { ColumnLayoutGroup } from "./ColumnLayoutGroup";
-import { defaultElementGroupCreator } from "./ElementGroup";
+import {
+  defaultElementGroupCreator,
+  ElementBrush,
+  ElementGroup,
+} from "./ElementGroup";
 import { HouseGroup } from "./HouseGroup";
 import { RowGroup } from "./RowGroup";
-import { ElementBrush, ElementGroup } from "./ElementGroup";
-import { Brush } from "three-bvh-csg";
 
 export const isModuleGroup = (node: Object3D): node is ModuleGroup =>
   node instanceof ModuleGroup;
@@ -108,7 +111,8 @@ type MaterialGetters = {
   ) => E.Either<Error, CachedBuildMaterial>;
   getInitialThreeMaterial: (
     systemId: string,
-    ifcTag: string
+    ifcTag: string,
+    materialOverrides?: Record<string, string>
   ) => E.Either<Error, ThreeMaterial>;
 };
 
@@ -135,16 +139,21 @@ const defaultMaterialGettersTE: TE.TaskEither<Error, MaterialGetters> = pipe(
         )
       );
 
-    const getInitialThreeMaterial = flow(
-      getElement,
-      E.chain(({ systemId, defaultMaterial: specification }) =>
-        pipe(
-          getMaterial(systemId, specification),
-          (x) => x,
-          E.map((x) => getThreeMaterial(x))
-        )
-      )
-    );
+    const getInitialThreeMaterial = (
+      systemId: string,
+      ifcTag: string,
+      materialOverrides?: Record<string, string>
+    ) =>
+      pipe(
+        getElement(systemId, ifcTag),
+        E.chain(({ systemId, defaultMaterial: specification }) => {
+          const overriddenSpec = materialOverrides?.[ifcTag] ?? specification;
+          return pipe(
+            getMaterial(systemId, overriddenSpec),
+            E.map((x) => getThreeMaterial(x))
+          );
+        })
+      );
 
     return {
       getElement,
@@ -161,6 +170,7 @@ export const defaultModuleGroupCreator = ({
   flip = false,
   getBuildModelTE = getCachedModelTE,
   materialGettersTE = defaultMaterialGettersTE,
+  materialOverrides = {},
 }: {
   moduleIndex?: number;
   buildModule: BuildModule;
@@ -168,6 +178,7 @@ export const defaultModuleGroupCreator = ({
   flip?: boolean;
   getBuildModelTE?: typeof getCachedModelTE;
   materialGettersTE?: typeof defaultMaterialGettersTE;
+  materialOverrides?: Record<string, string>;
 }): TE.TaskEither<Error, ModuleGroup> => {
   const { systemId, speckleBranchUrl, length: moduleLength } = buildModule;
 
@@ -198,7 +209,11 @@ export const defaultModuleGroupCreator = ({
                 getElement(systemId, ifcTag),
                 E.chain((element) =>
                   pipe(
-                    getInitialThreeMaterial(systemId, ifcTag),
+                    getInitialThreeMaterial(
+                      systemId,
+                      ifcTag,
+                      materialOverrides
+                    ),
                     E.map((threeMaterial) => ({ element, threeMaterial }))
                   )
                 ),

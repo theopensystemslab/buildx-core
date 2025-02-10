@@ -13,6 +13,7 @@ import {
 } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { clippingMaterial } from "./CutsManager";
+import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
 
 class ElementsManager {
   houseGroup: HouseGroup;
@@ -207,6 +208,28 @@ class ElementsManager {
       }
     });
     return elementsByCategory;
+  }
+
+  applyOverridesToColumnLayout(columnLayoutGroup: ColumnLayoutGroup) {
+    columnLayoutGroup.traverse((node) => {
+      if (node instanceof ElementGroup) {
+        const ifcTag = node.userData.element.ifcTag;
+        const overrideMaterialSpec = this.overrides[ifcTag];
+
+        if (overrideMaterialSpec) {
+          const material = unsafeGetMaterialBySpec(overrideMaterialSpec);
+          const threeMaterial = getThreeMaterial(material);
+
+          node.traverse((child) => {
+            if (child instanceof FullElementBrush) {
+              child.material = threeMaterial;
+            } else if (child instanceof ClippedElementBrush) {
+              child.material = [threeMaterial, clippingMaterial];
+            }
+          });
+        }
+      }
+    });
   }
 }
 

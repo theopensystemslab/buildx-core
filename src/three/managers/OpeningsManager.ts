@@ -66,6 +66,10 @@ class OpeningsManager {
                     TE.map((layoutGroup) => {
                       this.houseGroup.add(layoutGroup);
 
+                      this.houseGroup.managers.elements?.applyOverridesToColumnLayout(
+                        layoutGroup
+                      );
+
                       layoutGroup.updateBBs();
 
                       this.houseGroup.managers.cuts?.createClippedBrushes(
