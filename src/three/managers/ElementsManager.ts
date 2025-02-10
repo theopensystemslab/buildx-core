@@ -13,7 +13,7 @@ import {
 } from "../objects/house/ElementGroup";
 import { HouseGroup } from "../objects/house/HouseGroup";
 import { clippingMaterial } from "./CutsManager";
-import { ColumnLayoutGroup } from "../objects/house/ColumnLayoutGroup";
+import { Object3D } from "three";
 
 class ElementsManager {
   houseGroup: HouseGroup;
@@ -210,8 +210,8 @@ class ElementsManager {
     return elementsByCategory;
   }
 
-  applyOverridesToColumnLayout(columnLayoutGroup: ColumnLayoutGroup) {
-    columnLayoutGroup.traverse((node) => {
+  applyOverridesToObject(object: Object3D) {
+    object.traverse((node) => {
       if (node instanceof ElementGroup) {
         const ifcTag = node.userData.element.ifcTag;
         const overrideMaterialSpec = this.overrides[ifcTag];

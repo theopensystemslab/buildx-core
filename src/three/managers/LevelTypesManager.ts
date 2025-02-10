@@ -60,6 +60,9 @@ class LevelTypesManager {
               TE.map((layoutGroup) => {
                 // Add and update the new layout group
                 this.houseGroup.add(layoutGroup);
+                this.houseGroup.managers.elements?.applyOverridesToObject(
+                  layoutGroup
+                );
                 layoutGroup.updateBBs();
 
                 // Apply cuts and brushes

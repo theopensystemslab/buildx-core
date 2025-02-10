@@ -66,7 +66,7 @@ class OpeningsManager {
                     TE.map((layoutGroup) => {
                       this.houseGroup.add(layoutGroup);
 
-                      this.houseGroup.managers.elements?.applyOverridesToColumnLayout(
+                      this.houseGroup.managers.elements?.applyOverridesToObject(
                         layoutGroup
                       );
 

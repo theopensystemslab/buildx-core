@@ -124,6 +124,7 @@ class ZStretchManager extends AbstractZStretchManager {
             if (vanillaColumns.length > 0) {
               vanillaColumns.forEach((x) => {
                 hideObject(x);
+                this.houseGroup.managers.elements?.applyOverridesToObject(x);
               });
               activeLayoutGroup.add(...vanillaColumns);
             }
