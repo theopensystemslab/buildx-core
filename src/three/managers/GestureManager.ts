@@ -71,7 +71,6 @@ class GestureManager {
   private originalPosition = new Vector3(); // Original position of the object being dragged
 
   private enableOutlining: boolean;
-  private isGrabbing = false;
 
   constructor(params: {
     domElement: HTMLElement;
@@ -194,18 +193,9 @@ class GestureManager {
       });
 
     if (intersects.length > 0) {
-      const object = intersects[0].object;
-      if (
-        object instanceof ElementBrush ||
-        object instanceof StretchHandleMesh ||
-        object instanceof RotateHandleMesh
-      ) {
-        this.isGrabbing = true;
-        document.body.style.cursor = "grabbing";
-      }
       this.isDraggingGestureEnabledObject = true;
       this.isLongTapOnGestureObject = true;
-      this.currentGestureObject = object;
+      this.currentGestureObject = intersects[0].object;
       this.gestureStarted = true; // Set the gesture started flag
       const intersectionPoint = intersects[0].point;
       this.movementPlaneXZ.setFromNormalAndCoplanarPoint(
@@ -257,8 +247,6 @@ class GestureManager {
     this.initialPointerPosition = new Vector2();
     this.initialPoint = new Vector3();
     this.lastPoint = new Vector3();
-    this.isGrabbing = false;
-    document.body.style.cursor = "";
   }
 
   private onPointerUp(_event: PointerEvent) {
@@ -329,26 +317,6 @@ class GestureManager {
     // Update raycaster
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
-    // Handle cursor style based on hovered objects
-    const intersects = this.raycaster.intersectObjects(
-      this.gestureEnabledObjects,
-      true
-    );
-
-    const hoveredObject = intersects.length > 0 ? intersects[0].object : null;
-    if (!this.isGrabbing) {
-      // Only update cursor if not currently grabbing
-      if (
-        hoveredObject instanceof ElementBrush ||
-        hoveredObject instanceof StretchHandleMesh ||
-        hoveredObject instanceof RotateHandleMesh
-      ) {
-        document.body.style.cursor = "grab";
-      } else {
-        document.body.style.cursor = "";
-      }
-    }
-
     if (this.pointerIsDown) {
       const moveDistance = this.initialPointerPosition.distanceTo(
         new Vector2(event.clientX, event.clientY)
@@ -401,7 +369,14 @@ class GestureManager {
     }
 
     if (this.enableOutlining) {
-      this.scene.outlineManager?.setHoveredObject(hoveredObject);
+      const intersects = this.raycaster.intersectObjects(
+        this.gestureEnabledObjects,
+        true
+      );
+
+      this.scene.outlineManager?.setHoveredObject(
+        intersects.length > 0 ? intersects[0].object : null
+      );
     }
   }
 
