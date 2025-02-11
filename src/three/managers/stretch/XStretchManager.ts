@@ -5,6 +5,7 @@ import { AbstractXStretchManager } from "@/three/managers/stretch/AbstractStretc
 import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
 import StretchHandleMesh, {
   DEFAULT_HANDLE_SIZE,
+  FADED_OPACITY,
 } from "@/three/objects/handles/StretchHandleMesh";
 import {
   ColumnLayoutGroup,
@@ -44,7 +45,7 @@ class XStretchManager extends AbstractXStretchManager {
     super(houseGroup);
 
     this.handleMaterial = createHandleMaterial({
-      opacity: 0.3,
+      opacity: FADED_OPACITY,
       // wireframe: true,
     });
   }
@@ -137,7 +138,7 @@ class XStretchManager extends AbstractXStretchManager {
   init() {
     this.cleanup();
 
-    this.handleMaterial.opacity = 0.3;
+    this.handleMaterial.opacity = FADED_OPACITY;
 
     return pipe(
       this.houseGroup.activeLayoutGroup,

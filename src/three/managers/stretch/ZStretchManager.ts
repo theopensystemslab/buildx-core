@@ -15,6 +15,7 @@ import { AbstractZStretchManager } from "./AbstractStretchManagers";
 import { createHandleMaterial } from "@/three/objects/handles/handleMaterial";
 import StretchHandleMesh, {
   DEFAULT_HANDLE_SIZE,
+  FADED_OPACITY,
 } from "@/three/objects/handles/StretchHandleMesh";
 
 const DEFAULT_MAX_DEPTH = 8;
@@ -48,7 +49,7 @@ class ZStretchManager extends AbstractZStretchManager {
   constructor(houseGroup: HouseGroup) {
     super(houseGroup);
     this.handleMaterial = createHandleMaterial({
-      opacity: 0.3,
+      opacity: FADED_OPACITY,
     });
   }
 
@@ -89,7 +90,7 @@ class ZStretchManager extends AbstractZStretchManager {
   init() {
     this.cleanup();
 
-    this.handleMaterial.opacity = 0.3;
+    this.handleMaterial.opacity = FADED_OPACITY;
 
     pipe(
       this.houseGroup.activeLayoutGroup,

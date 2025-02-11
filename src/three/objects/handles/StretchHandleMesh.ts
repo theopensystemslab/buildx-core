@@ -1,8 +1,10 @@
 import { Y_LAYER_1 } from "@/constants";
 import RectangleRoundedGeometry from "@/three/geometries/RectangleRoundedGeometry";
 import { AbstractStretchManager } from "@/three/managers/stretch/AbstractStretchManagers";
-import { Material, MeshBasicMaterial } from "three";
+import { Material } from "three";
 import HandleMesh from "./HandleMesh";
+
+export const FADED_OPACITY = 0.15;
 
 export type StretchAxis = "x" | "z";
 export type StretchSide = 1 | -1;
@@ -37,33 +39,22 @@ class StretchHandleMesh extends HandleMesh {
       width = DEFAULT_HANDLE_SIZE,
       depth = DEFAULT_HANDLE_SIZE,
       material,
-      color = 0xffffff,
-      opacity = 1,
     } = options;
 
     const geometry = new RectangleRoundedGeometry(
       width * MULTIPLIER * 10,
       depth * MULTIPLIER * 10,
+      1,
       1.5,
       // min(width, depth) * 0.5 * 10,
       12
     );
 
-    // Use provided material or create default
-    const meshMaterial =
-      material ||
-      new MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        depthTest: false,
-      });
-
-    super(geometry, meshMaterial);
+    super(geometry, material);
 
     this.renderOrder = 999;
 
-    this.scale.set(0.1, 0.1, 1);
+    this.scale.set(0.1, 0.1, 0.01);
     this.rotation.x = Math.PI / 2;
     this.position.y = Y_LAYER_1;
 
