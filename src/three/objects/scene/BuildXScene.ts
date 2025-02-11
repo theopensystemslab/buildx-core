@@ -111,6 +111,18 @@ type BuildXSceneConfig = {
   orbitSpeed?: number;
 };
 
+// Camera orbit constants
+const ORBIT_CAMERA = {
+  // Base distance when no houses present
+  DEFAULT_ORBIT_DISTANCE: 10,
+  // Minimum distance from center when houses are present
+  MIN_ORBIT_DISTANCE: 7,
+  // Scale factor for additional distance based on site size
+  SITE_SIZE_SCALE_FACTOR: 3,
+  // Relative height of camera (as fraction of distance)
+  HEIGHT_RATIO: 0.75,
+} as const;
+
 class BuildXScene extends Scene {
   renderer: WebGLRenderer;
   cameraControls: CameraControls;
@@ -134,6 +146,9 @@ class BuildXScene extends Scene {
 
   private orbitMode: boolean;
   private orbitSpeed: number;
+
+  // Add new property for cached bounding box
+  private siteAABB: Box3 | null = null;
 
   constructor(config: BuildXSceneConfig = {}) {
     super();
@@ -161,7 +176,7 @@ class BuildXScene extends Scene {
       onModeChange,
       cameraOpts = {},
       orbitMode = false,
-      orbitSpeed = 0.05,
+      orbitSpeed = 0.15,
     } = config;
 
     this.container = container;
@@ -490,22 +505,40 @@ class BuildXScene extends Scene {
     const delta = this.clock.getDelta();
 
     if (this.orbitMode) {
-      // Calculate new position using CAMERA_DISTANCE to maintain fixed radius
-      const [x0, y, z0] = defaultCamPos;
       const angle = this.clock.getElapsedTime() * this.orbitSpeed;
-      const x = Math.cos(angle) * x0 * 2;
-      const z = Math.sin(angle) * z0 * 2;
 
-      // Update camera position, maintaining the same height
-      this.cameraControls.setLookAt(
-        x,
-        y, // Use fixed height instead of pos.y
-        z,
-        0,
-        0,
-        0,
-        true // Force immediate update
-      );
+      if (this.siteAABB && this.houses.length > 0) {
+        const center = new Vector3();
+        const size = new Vector3();
+        this.siteAABB.getCenter(center);
+        this.siteAABB.getSize(size);
+
+        const maxDim = Math.max(size.x, size.z);
+        const distance =
+          ORBIT_CAMERA.MIN_ORBIT_DISTANCE +
+          Math.sqrt(maxDim) * ORBIT_CAMERA.SITE_SIZE_SCALE_FACTOR;
+
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        const y = distance * ORBIT_CAMERA.HEIGHT_RATIO;
+
+        this.cameraControls.setLookAt(
+          x,
+          y,
+          z,
+          center.x,
+          center.y,
+          center.z,
+          true
+        );
+      } else {
+        const distance = ORBIT_CAMERA.DEFAULT_ORBIT_DISTANCE;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        const y = distance * ORBIT_CAMERA.HEIGHT_RATIO;
+
+        this.cameraControls.setLookAt(x, y, z, 0, 0, 0, true);
+      }
     }
 
     this.cameraControls.update(delta);
@@ -575,6 +608,9 @@ class BuildXScene extends Scene {
     }
 
     houseGroup.hooks.onHouseCreate?.(houseGroup.house);
+
+    // After adding the house, update the bounding box
+    this.updateSiteAABB();
   }
 
   addHouseType() {}
@@ -586,6 +622,7 @@ class BuildXScene extends Scene {
   }
 
   dispose() {
+    this.siteAABB = null;
     // Remove context event listeners
     this.renderer.domElement.removeEventListener(
       "webglcontextlost",
@@ -681,6 +718,19 @@ class BuildXScene extends Scene {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
+  }
+
+  private updateSiteAABB() {
+    if (this.houses.length === 0) {
+      this.siteAABB = null;
+      return;
+    }
+
+    const box = new Box3();
+    this.houses.forEach((house) => {
+      box.expandByObject(house);
+    });
+    this.siteAABB = box;
   }
 }
 
