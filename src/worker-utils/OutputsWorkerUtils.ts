@@ -122,7 +122,10 @@ const materialsProc = ({
     item: string
   ): ((acc: number, module: BuildModule) => number) => {
     switch (item) {
-      case "Pile footings":
+      case "Screw piles":
+        return (acc, module) => acc + module.screwpilesCount;
+
+      case "Footings":
         return (acc, module) => acc + module.footingsCount;
 
       case "In-situ concrete":
