@@ -109,6 +109,8 @@ type BuildXSceneConfig = {
   container?: HTMLElement;
   orbitMode?: boolean;
   orbitSpeed?: number;
+  onHouseSelect?: (houseId: string) => void;
+  onHouseDeselect?: (houseId: string) => void;
 };
 
 // Camera orbit constants
@@ -133,6 +135,8 @@ class BuildXScene extends Scene {
   onHouseCreate?: BuildXSceneConfig["onHouseCreate"];
   onHouseUpdate?: BuildXSceneConfig["onHouseUpdate"];
   onHouseDelete?: BuildXSceneConfig["onHouseDelete"];
+  private onHouseSelect?: BuildXSceneConfig["onHouseSelect"];
+  private onHouseDeselect?: BuildXSceneConfig["onHouseDeselect"];
 
   gestureManager?: GestureManager;
   contextManager?: ContextManager;
@@ -177,6 +181,8 @@ class BuildXScene extends Scene {
       cameraOpts = {},
       orbitMode = false,
       orbitSpeed = 0.15,
+      onHouseSelect,
+      onHouseDeselect,
     } = config;
 
     this.container = container;
@@ -184,6 +190,8 @@ class BuildXScene extends Scene {
     this.onHouseCreate = onHouseCreate;
     this.onHouseUpdate = onHouseUpdate;
     this.onHouseDelete = onHouseDelete;
+    this.onHouseSelect = onHouseSelect;
+    this.onHouseDeselect = onHouseDeselect;
 
     this.clock = new Clock();
 
@@ -261,10 +269,18 @@ class BuildXScene extends Scene {
           }
         },
         onSingleTap: ({ object }) => {
+          const previousHouse = this.contextManager?.selectedHouse;
+
           if (object instanceof ElementBrush) {
-            this.contextManager?.setSelectedHouse(
-              object.elementGroup.houseGroup
-            );
+            const houseGroup = object.elementGroup.houseGroup;
+
+            // If selecting a different house, trigger deselect on the previous one
+            if (previousHouse && previousHouse !== houseGroup) {
+              this.onHouseDeselect?.(previousHouse.userData.houseId);
+            }
+
+            this.contextManager?.setSelectedHouse(houseGroup);
+            this.onHouseSelect?.(houseGroup.userData.houseId);
           }
         },
         onLongTap: ({ object }, pointer) => {
@@ -311,7 +327,15 @@ class BuildXScene extends Scene {
               if (this.contextManager?.siteMode) {
                 const houseGroup = object.houseGroup;
 
+                // First trigger deselect on previous house if different
+                const previousHouse = this.contextManager.selectedHouse;
+                if (previousHouse && previousHouse !== houseGroup) {
+                  this.onHouseDeselect?.(previousHouse.userData.houseId);
+                }
+
+                // Set selected house and trigger select event
                 this.contextManager.setSelectedHouse(houseGroup);
+                this.onHouseSelect?.(houseGroup.userData.houseId);
 
                 houseGroup.managers.move?.gestureStart();
 
@@ -354,7 +378,15 @@ class BuildXScene extends Scene {
         },
         onDragProgress: (v) => dragProgress?.(v),
         onDragEnd: () => dragEnd?.(),
-        onTapMissed,
+        onTapMissed: () => {
+          // When tapping empty space, deselect current house
+          const previousHouse = this.contextManager?.selectedHouse;
+          if (previousHouse) {
+            this.contextManager?.clearSelectedHouses();
+            this.onHouseDeselect?.(previousHouse.userData.houseId);
+          }
+          onTapMissed?.();
+        },
       });
 
     this.composer = new EffectComposer(this.renderer);
