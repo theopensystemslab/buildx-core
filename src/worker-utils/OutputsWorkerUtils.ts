@@ -1,14 +1,14 @@
 import {
-  BuildModule,
   Block,
   BlockModulesEntry,
   BuildElement,
+  BuildModule,
+  CachedBlock,
   CachedBuildMaterial,
   CachedWindowType,
   ElementNotFoundError,
-  MaterialNotFoundError,
-  CachedBlock,
   LabourType,
+  MaterialNotFoundError,
 } from "@/data/build-systems";
 import buildSystemsCache from "@/data/build-systems/cache";
 import outputsCache, { FILES_DOCUMENT_KEY } from "@/data/outputs/cache";
@@ -16,7 +16,7 @@ import {
   LabourListRow,
   MaterialsListRow,
   OrderListRow,
-  getBlockCountsByHouse,
+  getBlocksByHouse,
 } from "@/data/outputs/metrics";
 import userCache from "@/data/user/cache";
 import { House, housesToRecord } from "@/data/user/houses";
@@ -27,8 +27,7 @@ import { values } from "fp-ts-std/Record";
 import { identity, pipe } from "fp-ts/lib/function";
 import { produce } from "immer";
 import JSZip from "jszip";
-import { PngSnapshotsWorkerUtils } from ".";
-import { ExportersWorkerUtils } from ".";
+import { ExportersWorkerUtils, PngSnapshotsWorkerUtils } from ".";
 
 const materialsProc = ({
   modules,
@@ -191,6 +190,9 @@ const materialsProc = ({
       case "Sole plate":
         return (acc, module) => acc + module.soleplateLength;
 
+      case "Rodent-protection mesh":
+        return (acc, module) => acc + module.floorArea;
+
       case "Space heating":
       case "Mechanical ventilation":
       case "Electrical and lighting":
@@ -199,10 +201,17 @@ const materialsProc = ({
     }
   };
 
-  const blockCountsByHouse = getBlockCountsByHouse(orderListRows);
+  const blocksByHouse = getBlocksByHouse(orderListRows);
+
+  console.log("=== Debug blocksByHouse ===");
+  console.log("orderListRows:", orderListRows);
+  console.log("blocksByHouse result:", blocksByHouse);
 
   const houseMaterialCalculator = (house: House): MaterialsListRow[] => {
     const { houseId } = house;
+    console.log(`\n=== Processing house ${houseId} ===`);
+    console.log("Blocks for this house:", blocksByHouse[houseId]);
+
     const houseModules = getHouseModules(houseId);
 
     const elementRows: MaterialsListRow[] = pipe(
@@ -267,6 +276,14 @@ const materialsProc = ({
       })
     );
 
+    const totalBlockCount = pipe(
+      blocksByHouse[houseId],
+      A.reduce(0, (acc, v) => {
+        console.log("Adding to quantity:", v.count);
+        return acc + v.count;
+      })
+    );
+
     const augmentedRows: MaterialsListRow[] = [
       {
         houseId,
@@ -274,15 +291,25 @@ const materialsProc = ({
         item: "WikiHouse blocks",
         category: "Structure",
         unit: null,
-        quantity: blockCountsByHouse[houseId],
+        quantity: totalBlockCount,
         specification: "Insulated WikiHouse blocks",
         costPerUnit: { min: 0, max: 0 },
         cost: { min: orderListRowsTotal, max: orderListRowsTotal },
         embodiedCarbonPerUnit: { min: 0, max: 0 },
-        embodiedCarbonCost: { min: 0, max: 0 },
+        embodiedCarbonCost: pipe(
+          blocksByHouse[houseId],
+          A.reduce({ min: 0, max: 0 }, (acc, v) => {
+            return {
+              min: acc.min + v.embodiedCarbonGwp,
+              max: acc.max + v.embodiedCarbonGwp,
+            };
+          })
+        ),
         linkUrl: "",
       },
     ];
+
+    console.log(`total blocks for ${houseId}: ${totalBlockCount}`);
 
     return [...elementRows, ...augmentedRows].sort((a, b) =>
       a.category.localeCompare(b.category)
@@ -307,6 +334,9 @@ const orderListProc = ({
   blocks: CachedBlock[];
   blockModulesEntries: BlockModulesEntry[];
 }) => {
+  console.log("=== Debug orderListProc ===");
+  console.log("Initial blockModulesEntries:", blockModulesEntries);
+
   outputsCache.orderListRows.clear();
 
   const accum: Record<string, number> = {};
@@ -408,6 +438,7 @@ const orderListProc = ({
               cuttingFileUrl: block.cuttingFileUrl,
               totalCost: block.totalCost * count,
               thumbnailBlob: block.imageBlob ?? null,
+              embodiedCarbonGwp: block.embodiedCarbonGwp,
             })
           : O.none
     )
@@ -469,15 +500,29 @@ const materialsListToCSV = (materialsListRows: MaterialsListRow[]) => {
 };
 
 const labourListToCSV = (labourListRows: LabourListRow[]) => {
-  const headers =
-    labourListRows.length > 0
-      ? (Object.keys(labourListRows[0]) as Array<keyof LabourListRow>)
-      : [];
+  const flattenedHeaders = [
+    "houseId",
+    "buildingName",
+    "labourType",
+    "hours",
+    "rateMin",
+    "rateMax",
+    "costMin",
+    "costMax",
+  ];
 
-  const rows = labourListRows.map((row) =>
-    headers.map((header) => row[header]?.toString() ?? "")
-  );
-  const csvData = [headers, ...rows];
+  const rows = labourListRows.map((row) => [
+    row.houseId,
+    row.buildingName,
+    row.labourType,
+    row.hours.toString(),
+    row.rate.min.toString(),
+    row.rate.max.toString(),
+    row.cost.min.toString(),
+    row.cost.max.toString(),
+  ]);
+
+  const csvData = [flattenedHeaders, ...rows];
   const csvContent = csvFormatRows(csvData);
   return new File([new Blob([csvContent])], "labour-list.csv", {
     type: "text/csv;charset=utf-8;",
@@ -535,10 +580,22 @@ const labourProc = ({
     const labourType = labourTypes.find(
       (lt) => lt.name === type + " install" || lt.name === type + " labour"
     );
-    if (!labourType) return 0;
-    // Use average of min and max cost
-    const avgCost = (labourType.minLabourCost + labourType.maxLabourCost) / 2;
-    return hours * avgCost;
+    if (!labourType)
+      return {
+        rate: { min: 0, max: 0 },
+        cost: { min: 0, max: 0 },
+      };
+
+    return {
+      rate: {
+        min: labourType.minLabourCost,
+        max: labourType.maxLabourCost,
+      },
+      cost: {
+        min: hours * labourType.minLabourCost,
+        max: hours * labourType.maxLabourCost,
+      },
+    };
   };
 
   const labourListRows = houses.flatMap(
@@ -579,28 +636,28 @@ const labourProc = ({
           buildingName,
           labourType: "Foundation",
           hours: foundationHours,
-          cost: getLabourCost(foundationHours, "Foundation"),
+          ...getLabourCost(foundationHours, "Foundation"),
         },
         {
           houseId,
           buildingName,
           labourType: "Chassis",
           hours: chassisHours,
-          cost: getLabourCost(chassisHours, "Chassis"),
+          ...getLabourCost(chassisHours, "Chassis"),
         },
         {
           houseId,
           buildingName,
           labourType: "Exterior",
           hours: exteriorHours,
-          cost: getLabourCost(exteriorHours, "Exterior"),
+          ...getLabourCost(exteriorHours, "Exterior"),
         },
         {
           houseId,
           buildingName,
           labourType: "Interior",
           hours: interiorHours,
-          cost: getLabourCost(interiorHours, "Interior"),
+          ...getLabourCost(interiorHours, "Interior"),
         },
       ];
     }

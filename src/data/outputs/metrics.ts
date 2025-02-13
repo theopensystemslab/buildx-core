@@ -1,9 +1,9 @@
-import { A } from "@/utils/functions";
+import { A, NEA, R } from "@/utils/functions";
+import { Range } from "@/utils/types";
 import { useLiveQuery } from "dexie-react-hooks";
-import outputsCache from "./cache";
 import { pipe } from "fp-ts/lib/function";
 import { useProjectCurrency } from "../user/utils";
-import { Range } from "@/utils/types";
+import outputsCache from "./cache";
 
 export type OrderListRow = {
   houseId: string;
@@ -16,6 +16,7 @@ export type OrderListRow = {
   costPerBlock: number;
   cuttingFileUrl: string;
   totalCost: number;
+  embodiedCarbonGwp: number;
   thumbnailBlob: Blob | null;
 };
 
@@ -39,7 +40,14 @@ export type LabourListRow = {
   buildingName: string;
   labourType: string;
   hours: number;
-  cost: number;
+  rate: {
+    min: number;
+    max: number;
+  };
+  cost: {
+    min: number;
+    max: number;
+  };
 };
 
 export const useAllOrderListRows = (): OrderListRow[] =>
@@ -105,17 +113,11 @@ export const useAllMaterialsListRows = (): MaterialsListRow[] =>
 //   }
 // }
 
-export const getBlockCountsByHouse = A.reduce(
-  {},
-  (acc: Record<string, number>, row: OrderListRow) => {
-    if (row.houseId in acc) {
-      acc[row.houseId] += row.count;
-    } else {
-      acc[row.houseId] = row.count;
-    }
-    return acc;
-  }
-);
+export const getBlocksByHouse = (orderListRows: OrderListRow[]) =>
+  pipe(
+    orderListRows,
+    NEA.groupBy((row) => row.houseId)
+  ) as Record<string, OrderListRow[]>;
 
 // export const useOrderListData = () => {
 //   const orderListRows = useSelectedHouseOrderListRows()
@@ -185,12 +187,18 @@ export const useOrderListData = (selectedHouseIds?: string[]) => {
     // R.map(fmt)
   );
 
+  const blocksByHouse = getBlocksByHouse(orderListRows);
+
   return {
     totalMaterialCost,
     totalManufacturingCost,
     totalTotalCost,
     orderListRows,
-    blockCountsByHouse: getBlockCountsByHouse(orderListRows),
+    blocksByHouse,
+    blockCountsByHouse: pipe(
+      blocksByHouse,
+      R.map(A.reduce(0, (acc, v) => acc + v.count))
+    ),
     fmt,
   };
 };
@@ -225,4 +233,46 @@ export const useLabourListRows = (
     [selectedHouseIds],
     []
   );
+};
+
+export const useTotalCosts = (selectedHouseIds?: string[]) => {
+  const materialsListRows = useMaterialsListRows(selectedHouseIds);
+
+  const labourListRows = useLabourListRows(selectedHouseIds);
+
+  const materialsTotals = pipe(
+    materialsListRows,
+    A.reduce(
+      {
+        totalEstimatedCost: {
+          min: 0,
+          max: 0,
+        },
+        totalCarbonCost: {
+          min: 0,
+          max: 0,
+        },
+      },
+      ({ totalEstimatedCost, totalCarbonCost }, row) => ({
+        totalEstimatedCost: {
+          min: totalEstimatedCost.min + row.cost.min,
+          max: totalEstimatedCost.max + row.cost.max,
+        },
+        totalCarbonCost: {
+          min: totalCarbonCost.min + row.embodiedCarbonCost.min,
+          max: totalCarbonCost.max + row.embodiedCarbonCost.max,
+        },
+      })
+    )
+  );
+
+  const labourTotal = pipe(
+    labourListRows,
+    A.reduce(0, (acc, row) => acc + row.cost.min)
+  );
+
+  return {
+    materialsTotals,
+    labourTotal,
+  };
 };

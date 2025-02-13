@@ -14,6 +14,7 @@ import {
   useMaterialsListRows,
   useOrderListData,
   useLabourListRows,
+  useTotalCosts,
 } from "./data/outputs/metrics";
 import { updateProjectData } from "./data/user/cache";
 import { deleteProject } from "./data/user/utils";
@@ -52,6 +53,7 @@ export {
   useMaterialsListRows,
   useOrderListData,
   useLabourListRows,
+  useTotalCosts,
   useOutputsFiles,
 };
 

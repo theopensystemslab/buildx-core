@@ -16,6 +16,7 @@ export type Block = {
   totalCost: number;
   cuttingFileUrl: string;
   lastModified: number;
+  embodiedCarbonGwp: number;
   imageUrl?: string;
 };
 
@@ -44,6 +45,7 @@ export const blockTypeParser = z.object({
       .array(z.object({ url: z.string().min(1) }))
       .optional()
       .default([]),
+    "Embodied carbon GWP (kgCO2 eq.)": z.number().default(0),
   }),
 });
 
@@ -73,6 +75,7 @@ export const blocksQuery = async (input?: { systemIds: string[] }) => {
                     Github_cutting_file,
                     "Last Modified": lastModified,
                     "Main image": image,
+                    "Embodied carbon GWP (kgCO2 eq.)": embodiedCarbonGwp,
                   },
                 }): Block => ({
                   id,
@@ -85,6 +88,7 @@ export const blocksQuery = async (input?: { systemIds: string[] }) => {
                   cuttingFileUrl: Github_cutting_file,
                   lastModified,
                   imageUrl: image[0]?.url, // Use optional chaining here
+                  embodiedCarbonGwp,
                 })
               )
             ).parse
