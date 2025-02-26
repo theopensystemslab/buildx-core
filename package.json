@@ -1,6 +1,6 @@
 {
   "name": "@opensystemslab/buildx-core",
-  "version": "1.0.0",
+  "version": "1.0.1-staging.1",
   "type": "module",
   "exports": {
     ".": {
