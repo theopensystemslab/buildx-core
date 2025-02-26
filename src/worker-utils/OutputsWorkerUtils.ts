@@ -210,14 +210,8 @@ const materialsProc = ({
 
   const blocksByHouse = getBlocksByHouse(orderListRows);
 
-  console.log("=== Debug blocksByHouse ===");
-  console.log("orderListRows:", orderListRows);
-  console.log("blocksByHouse result:", blocksByHouse);
-
   const houseMaterialCalculator = (house: House): MaterialsListRow[] => {
     const { houseId } = house;
-    console.log(`\n=== Processing house ${houseId} ===`);
-    console.log("Blocks for this house:", blocksByHouse[houseId]);
 
     const houseModules = getHouseModules(houseId);
 
@@ -286,7 +280,6 @@ const materialsProc = ({
     const totalBlockCount = pipe(
       blocksByHouse[houseId],
       A.reduce(0, (acc, v) => {
-        console.log("Adding to quantity:", v.count);
         return acc + v.count;
       })
     );
@@ -316,8 +309,6 @@ const materialsProc = ({
       },
     ];
 
-    console.log(`total blocks for ${houseId}: ${totalBlockCount}`);
-
     return [...elementRows, ...augmentedRows].sort((a, b) =>
       a.category.localeCompare(b.category)
     );
@@ -341,9 +332,6 @@ const orderListProc = ({
   blocks: CachedBlock[];
   blockModulesEntries: BlockModulesEntry[];
 }) => {
-  console.log("=== Debug orderListProc ===");
-  console.log("Initial blockModulesEntries:", blockModulesEntries);
-
   outputsCache.orderListRows.clear();
 
   const accum: Record<string, number> = {};
