@@ -193,9 +193,16 @@ const materialsProc = ({
       case "Rodent-protection mesh":
         return (acc, module) => acc + module.floorArea;
 
-      case "Space heating":
-      case "Mechanical ventilation":
       case "Electrical and lighting":
+        return (acc, module) => acc + module.electricalServices;
+
+      case "Plumbing fixtures":
+        return (acc, module) => acc + module.plumbingServices;
+
+      case "Space heating":
+        return (acc, module) => acc + module.heatingServices;
+
+      case "Mechanical ventilation":
       default:
         return () => 0;
     }

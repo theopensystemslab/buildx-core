@@ -106,6 +106,9 @@ export const moduleParser = z
       chassis_install: z.number().default(0),
       exterior_labour: z.number().default(0),
       interior_labour: z.number().default(0),
+      electrical_services: z.number().default(0),
+      plumbing_services: z.number().default(0),
+      heating_services: z.number().default(0),
     }),
   })
   .transform(
@@ -142,6 +145,9 @@ export const moduleParser = z
         chassis_install,
         exterior_labour,
         interior_labour,
+        electrical_services,
+        plumbing_services,
+        heating_services,
       },
     }) => ({
       id,
@@ -176,6 +182,9 @@ export const moduleParser = z
       chassisLabourHours: chassis_install,
       exteriorLabourHours: exterior_labour,
       interiorLabourHours: interior_labour,
+      electricalServices: electrical_services,
+      plumbingServices: plumbing_services,
+      heatingServices: heating_services,
     })
   );
 
